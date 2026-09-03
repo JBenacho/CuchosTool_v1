@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "github.vscode-github-actions",
+    "ms-azuretools.vscode-docker",
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+    "codezombiech.gitignore",
+    "aaron-bond.better-comments",
+    "biomejs.biome"
+  ]
+}

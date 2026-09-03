@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "db:up",
+      "type": "shell",
+      "command": "docker compose up -d db",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev:api",
+      "type": "shell",
+      "command": "npm run dev:api",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "dev:web",
+      "type": "shell",
+      "command": "npm run dev:web",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "typecheck",
+      "type": "shell",
+      "command": "npm run typecheck",
+      "problemMatcher": [
+        "$tsc"
+      ]
+    }
+  ]
+}

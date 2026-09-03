@@ -17,5 +17,8 @@ Thumbs.db
 _NICOLA_work/
 # Docker
 .docker-volumes/
+
+# Cache npm local (sandbox)
+.cache/
 # Drizzle
 apps/api/db/migrations/meta/_journal.json.bak
