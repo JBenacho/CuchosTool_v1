@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CU-CT-003 - Ficha Oficial de Caso de Uso | CuchosTool.com</title>
+  <!-- Motor html2canvas para exportación fiel a PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ==========================================================================
+       RESET Y GEOMETRÍA BASE
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 10px;
+    }
+
+    .toolbar {
+      width: 1600px;
+      max-width: 98vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .toolbar-info {
+      color: #f8fafc;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-resolution {
+      background: #2563eb;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-export {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      padding: 10px 22px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-export:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+    }
+
+    /* CONTENEDOR MAESTRO 4:3 (1600x1200 px) */
+    #ficha-canvas {
+      width: 1600px;
+      height: 1200px;
+      min-width: 1600px;
+      min-height: 1200px;
+      max-width: 1600px;
+      max-height: 1200px;
+      background: #ffffff;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ENCABEZADO CORPORATIVO */
+    .header-banner {
+      background: linear-gradient(90deg, #0b2545 0%, #133b68 60%, #1e40af 100%);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      border-left: 6px solid #f59e0b;
+    }
+
+    .header-titles {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo-icon {
+      width: 44px;
+      height: 44px;
+      background: #f59e0b;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b2545;
+      font-size: 24px;
+      font-weight: 900;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .header-titles h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #93c5fd;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    .header-titles h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+    }
+
+    .header-meta {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 4px 16px;
+      font-size: 11px;
+      text-align: right;
+      color: #e2e8f0;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      padding-left: 16px;
+    }
+
+    .header-meta strong {
+      color: #ffffff;
+    }
+
+    /* MÓDULOS DE TARJETAS */
+    .module-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .module-title {
+      background: #0f2b5c;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-bottom: 1px solid #0b2545;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .module-body {
+      padding: 7px 10px;
+      font-size: 11px;
+      line-height: 1.34;
+      color: #334155;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* CUADRÍCULA 3 FILAS */
+    .grid-row-1 {
+      display: grid;
+      grid-template-columns: 460px 650px 434px;
+      gap: 10px;
+      height: 318px;
+    }
+
+    .grid-row-2 {
+      display: grid;
+      grid-template-columns: 460px 650px 434px;
+      gap: 10px;
+      height: 372px;
+    }
+
+    .grid-row-3 {
+      display: grid;
+      grid-template-columns: 480px 290px 370px 394px;
+      gap: 10px;
+      height: 340px;
+    }
+
+    /* ELEMENTOS DE DATOS Y TABLAS */
+    .data-list {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 3px 6px;
+      font-size: 10.8px;
+    }
+
+    .data-label {
+      font-weight: 700;
+      color: #0b2545;
+    }
+
+    .data-val {
+      color: #1e293b;
+    }
+
+    .badge-status {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .badge-priority {
+      display: inline-block;
+      background: #fee2e2;
+      color: #b91c1c;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .code-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 9.5px;
+      background: #e2e8f0;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .rules-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10.5px;
+    }
+
+    .rules-list li {
+      position: relative;
+      padding-left: 14px;
+      line-height: 1.35;
+    }
+
+    .rules-list li::before {
+      content: "■";
+      position: absolute;
+      left: 0;
+      color: #2563eb;
+      font-size: 8px;
+      top: 1px;
+    }
+
+    .rules-list strong {
+      color: #0b2545;
+    }
+
+    .steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 10.6px;
+    }
+
+    .steps-list li {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      line-height: 1.35;
+    }
+
+    .step-num {
+      background: #0f2b5c;
+      color: #ffffff;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 800;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .tech-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      text-align: left;
+    }
+
+    .tech-table th {
+      background: #f1f5f9;
+      color: #0b2545;
+      font-weight: 800;
+      padding: 4px 6px;
+      border-bottom: 1px solid #cbd5e1;
+      text-transform: uppercase;
+      font-size: 9.5px;
+    }
+
+    .tech-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+      color: #334155;
+      line-height: 1.3;
+    }
+
+    .tech-table tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 10.5px;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      line-height: 1.35;
+    }
+
+    .check-icon {
+      color: #16a34a;
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .footer-governance {
+      background: #f8fafc;
+      border: 1px solid #94a3b8;
+      border-left: 6px solid #2563eb;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      color: #1e293b;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-icon {
+      font-size: 18px;
+      color: #2563eb;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .svg-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    svg text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE ACCIÓN SUPERIOR -->
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <span class="badge-resolution">4:3 — 1600 × 1200 PX</span>
+      <span><strong>Artefacto Oficial:</strong> Ficha de Caso de Uso CU-CT-003 (Baseline v5.0 / ARQ v6.0)</span>
+    </div>
+    <button class="btn-export" onclick="exportarFichaPNG()">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+      </svg>
+      Exportar Ficha Oficial a PNG
+    </button>
+  </div>
+
+  <!-- CANVAS CONTENEDOR 1600x1200 PX -->
+  <div id="ficha-canvas">
+
+    <!-- ENCABEZADO CORPORATIVO -->
+    <header class="header-banner">
+      <div class="header-titles">
+        <div class="header-logo-icon">CT</div>
+        <div>
+          <h2>Ficha de Caso de Uso Oficial</h2>
+          <h1>CU-CT-003 - Gestionar comprobantes</h1>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div><strong>Proyecto:</strong> CuchosTool / CuchosTool.com</div>
+        <div><strong>Versión:</strong> 5.0 (SRS v5.0 / ARQ v6.0 / BL v5.0)</div>
+        <div><strong>Módulo:</strong> ERP / Contabilidad y Comprobantes (DOM-CT-01)</div>
+        <div><strong>Fecha:</strong> 01/09/2026</div>
+        <div><strong>Responsable:</strong> Nicola (Gerente del Proyecto)</div>
+        <div><strong>Rol:</strong> Arquitecto & Dirección Técnica</div>
+      </div>
+    </header>
+
+    <!-- FILA 1 DE CUADRÍCULA (1. INFO GENERAL | 2. DIAGRAMA CU | 3. DESCRIPCIÓN & 4. REGLAS) -->
+    <div class="grid-row-1">
+      
+      <!-- 1. INFORMACIÓN GENERAL -->
+      <section class="module-card">
+        <div class="module-title">1. INFORMACIÓN GENERAL</div>
+        <div class="module-body">
+          <div class="data-list">
+            <span class="data-label">ID / Código:</span>
+            <span class="data-val"><strong>CU-CT-003</strong> [Trazabilidad: RF-CT-003, RNF-CT-001, BL-CT-03]</span>
+
+            <span class="data-label">Nombre:</span>
+            <span class="data-val"><strong>Gestionar comprobantes</strong></span>
+
+            <span class="data-label">Objetivo:</span>
+            <span class="data-val">Emitir, clasificar y administrar los comprobantes contables (ingresos, egresos, notas de diario) que soportan los asientos del ERP.</span>
+
+            <span class="data-label">Actor Principal:</span>
+            <span class="data-val"><strong>CONTADOR / ADMINISTRADOR_CONTABILIDAD</strong> (Autenticado / JWT interno)</span>
+
+            <span class="data-label">Actores Sec.:</span>
+            <span class="data-val">Accounting Service (DOM-CT-01), Cloud SQL PostgreSQL, Cloud Logging</span>
+
+            <span class="data-label">Tipo / Prioridad:</span>
+            <span class="data-val"><span class="badge-status">Transaccional ERP / Comprobantes</span> <span class="badge-priority">Prioridad Alta / Esencial</span></span>
+
+            <span class="data-label">Estado / Alcance:</span>
+            <span class="data-val">Aprobado / Backoffice ERP (Control documental contable bajo RBAC)</span>
+
+            <span class="data-label">Disparador:</span>
+            <span class="data-val">El contador requiere generar un comprobante contable de respaldo para un asiento o auditar los documentos existentes.</span>
+
+            <span class="data-label">Precondiciones:</span>
+            <span class="data-val">1. Movimientos contables registrados (CU-CT-002).<br>2. Usuario autenticado con rol CONTADOR.</span>
+
+            <span class="data-label">Postcondiciones:</span>
+            <span class="data-val">Comprobante persistido en <span class="code-badge">erp_accounting_vouchers</span> y folio documental asociado al asiento.</span>
+
+            <span class="data-label">Resultado Exitoso:</span>
+            <span class="data-val">HTTP 201 Created / 200 OK con VoucherDTO estructurado y soporte documental validado.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. DIAGRAMA DE CASOS DE USO (UML) -->
+      <section class="module-card">
+        <div class="module-title">2. DIAGRAMA DE CASOS DE USO (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 640 280" width="100%" height="100%">
+              <!-- System Boundary -->
+              <rect x="165" y="10" width="320" height="260" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
+              <text x="180" y="30" font-size="11.5" font-weight="bold" fill="#0f2b5c">Módulo ERP - Contabilidad (DOM-CT-01)</text>
+
+              <!-- Actor Contador -->
+              <g transform="translate(45, 105)">
+                <circle cx="20" cy="12" r="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+                <line x1="20" y1="22" x2="20" y2="48" stroke="#2563eb" stroke-width="2"/>
+                <line x1="5" y1="32" x2="35" y2="32" stroke="#2563eb" stroke-width="2"/>
+                <line x1="20" y1="48" x2="6" y2="70" stroke="#2563eb" stroke-width="2"/>
+                <line x1="20" y1="48" x2="34" y2="70" stroke="#2563eb" stroke-width="2"/>
+                <text x="20" y="88" font-size="9" font-weight="bold" fill="#0f2b5c" text-anchor="middle">CONTADOR / ERP</text>
+                <text x="20" y="100" font-size="8.5" fill="#2563eb" text-anchor="middle">(Soporte Documental)</text>
+              </g>
+
+              <!-- CU Principal -->
+              <g transform="translate(185, 115)">
+                <ellipse cx="68" cy="22" rx="64" ry="22" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                <text x="68" y="19" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">CU-CT-003</text>
+                <text x="68" y="30" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">Gestionar comprobantes</text>
+              </g>
+
+              <!-- Sub-casos / Inclusiones -->
+              <g transform="translate(345, 45)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">&lt;&lt;include&gt;&gt; Validar Tipo Comprobante</text>
+              </g>
+
+              <g transform="translate(345, 95)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">Vincular con Asiento (CU-002)</text>
+              </g>
+
+              <g transform="translate(345, 145)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">Persistir en Cloud SQL</text>
+              </g>
+
+              <g transform="translate(345, 205)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">&lt;&lt;extend&gt;&gt; Generar PDF / Soporte</text>
+              </g>
+
+              <!-- Conexión Actor -> CU Principal -->
+              <line x1="85" y1="140" x2="185" y2="137" stroke="#2563eb" stroke-width="1.8"/>
+
+              <!-- Relaciones internas -->
+              <line x1="310" y1="125" x2="345" y2="65" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="315" y1="135" x2="345" y2="112" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="315" y1="145" x2="345" y2="160" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="300" y1="155" x2="350" y2="210" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+              <!-- Actores Secundarios -->
+              <g transform="translate(560, 70)">
+                <circle cx="20" cy="10" r="9" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="19" x2="20" y2="40" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="8" y1="28" x2="32" y2="28" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="9" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="31" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <text x="20" y="72" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">Accounting Service</text>
+              </g>
+              <line x1="465" y1="112" x2="550" y2="95" stroke="#64748b" stroke-width="1.2"/>
+
+              <g transform="translate(560, 165)">
+                <circle cx="20" cy="10" r="9" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="19" x2="20" y2="40" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="8" y1="28" x2="32" y2="28" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="9" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="31" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <text x="20" y="72" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">Cloud SQL (DB)</text>
+              </g>
+              <line x1="465" y1="162" x2="550" y2="185" stroke="#64748b" stroke-width="1.2"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. DESCRIPCIÓN & 4. REGLAS DE NEGOCIO -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- 3. DESCRIPCIÓN Y ALCANCE -->
+        <section class="module-card" style="flex: 0 0 115px;">
+          <div class="module-title">3. DESCRIPCIÓN Y ALCANCE</div>
+          <div class="module-body">
+            <p style="margin-bottom: 4px;">Permite emitir y administrar los documentos soporte y comprobantes contables del ERP.</p>
+            <p><strong>Frontera ERP y Aislamiento:</strong> Módulo financiero interno. Estrictamente aislado del E-Commerce público y conectado con el libro diario.</p>
+          </div>
+        </section>
+
+        <!-- 4. REGLAS DE NEGOCIO (RN) -->
+        <section class="module-card" style="flex: 1;">
+          <div class="module-title">4. REGLAS DE NEGOCIO (RN)</div>
+          <div class="module-body">
+            <ul class="rules-list">
+              <li><strong>RN-CT-01 (Consecutivo por Tipo):</strong> Cada comprobante debe mantener una numeración consecutiva estricta según su clasificación (ING, EGT, NDIA) en <span class="code-badge">erp_accounting_vouchers</span>.</li>
+              <li><strong>RN-CT-02 (Asiento Obligatorio):</strong> Todo comprobante contable debe estar vinculado de manera indisoluble a un asiento contable válido registrado (CU-CT-002).</li>
+              <li><strong>RN-CT-03 (Inmutabilidad Documental):</strong> Un comprobante emitido no puede ser eliminado; cualquier corrección exige un comprobante de anulación.</li>
+              <li><strong>RN-CT-04 (Default Deny):</strong> Acceso restringido exclusivamente al rol CONTADOR bajo la política de seguridad interna.</li>
+              <li><strong>RN-CT-05 (SLO Rendimiento):</strong> Tiempo de procesamiento &le; 250 ms (p95) en Google Cloud Run.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+    </div>
+
+    <!-- FILA 2 DE CUADRÍCULA (5. FLUJO PRINCIPAL | 6. SECUENCIA | 7. ACTIVIDADES) -->
+    <div class="grid-row-2">
+      
+      <!-- 5. FLUJO PRINCIPAL (CAMINO FELIZ) -->
+      <section class="module-card">
+        <div class="module-title">5. FLUJO PRINCIPAL (CAMINO FELIZ)</div>
+        <div class="module-body">
+          <ul class="steps-list">
+            <li>
+              <span class="step-num">1</span>
+              <span><strong>Captura de Comprobante:</strong> El contador envía <span class="code-badge">POST /api/v1/erp/accounting/vouchers</span> indicando voucherType, journalEntryId y detalles de soporte.</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span><strong>Validación de Acceso:</strong> El API Gateway y middleware RBAC verifican el token JWT corporativo y el rol CONTADOR.</span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span><strong>Verificación de Asiento:</strong> Accounting Service comprueba en Cloud SQL que el asiento contable de origen exista y esté balanceado.</span>
+            </li>
+            <li>
+              <span class="step-num">4</span>
+              <span><strong>Persistencia Atómica:</strong> Se registra el comprobante en la tabla <span class="code-badge">erp_accounting_vouchers</span> con estado <span class="code-badge">ISSUED</span>.</span>
+            </li>
+            <li>
+              <span class="step-num">5</span>
+              <span><strong>Auditoría Estructurada:</strong> Se emite log estructurado JSON a Cloud Logging registrando la emisión del documento contable.</span>
+            </li>
+            <li>
+              <span class="step-num">6</span>
+              <span><strong>Confirmación:</strong> El servicio responde HTTP 201 Created con VoucherDTO estructurado y folio asignado.</span>
+            </li>
+            <li>
+              <span class="step-num">7</span>
+              <span><strong>Habilitación Documental:</strong> El comprobante queda disponible para consulta, auditoría y exportación a PDF (CU-CT-006).</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 6. DIAGRAMA DE SECUENCIA (UML) -->
+      <section class="module-card">
+        <div class="module-title">6. DIAGRAMA DE SECUENCIA (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 640 330" width="100%" height="100%">
+              <!-- Lifelines Cajas -->
+              <g transform="translate(15, 10)">
+                <rect x="0" y="0" width="100" height="24" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                <text x="50" y="16" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Contador (Auth)</text>
+              </g>
+              <g transform="translate(145, 10)">
+                <rect x="0" y="0" width="115" height="24" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+                <text x="57" y="16" font-size="9.5" font-weight="bold" fill="#1e40af" text-anchor="middle">ERP Gateway</text>
+              </g>
+              <g transform="translate(290, 10)">
+                <rect x="0" y="0" width="115" height="24" rx="4" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+                <text x="57" y="16" font-size="9.5" font-weight="bold" fill="#6b21a8" text-anchor="middle">Accounting Service</text>
+              </g>
+              <g transform="translate(430, 10)">
+                <rect x="0" y="0" width="90" height="24" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+                <text x="45" y="16" font-size="9.5" font-weight="bold" fill="#92400e" text-anchor="middle">Cloud SQL (DB)</text>
+              </g>
+              <g transform="translate(545, 10)">
+                <rect x="0" y="0" width="85" height="24" rx="4" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+                <text x="42" y="16" font-size="9.5" font-weight="bold" fill="#155e75" text-anchor="middle">Cloud Logging</text>
+              </g>
+
+              <!-- Lifelines Líneas punteadas -->
+              <line x1="65" y1="34" x2="65" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="202" y1="34" x2="202" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="347" y1="34" x2="347" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="475" y1="34" x2="475" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="587" y1="34" x2="587" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+
+              <!-- Barras de Activación -->
+              <rect x="61" y="55" width="8" height="235" fill="#86efac" stroke="#16a34a"/>
+              <rect x="198" y="55" width="8" height="230" fill="#93c5fd" stroke="#2563eb"/>
+              <rect x="343" y="85" width="8" height="165" fill="#d8b4fe" stroke="#9333ea"/>
+              <rect x="471" y="110" width="8" height="55" fill="#fde68a" stroke="#d97706"/>
+
+              <!-- Mensajes -->
+              <line x1="69" y1="65" x2="198" y2="65" stroke="#0f172a" stroke-width="1.5"/>
+              <polygon points="198,65 190,62 190,68" fill="#0f172a"/>
+              <text x="130" y="59" font-size="8.5" font-weight="bold" fill="#0f172a" text-anchor="middle">1. POST /accounting/vouchers (JWT)</text>
+
+              <path d="M 206 72 L 230 72 L 230 84 L 206 84" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+              <polygon points="206,84 213,81 213,87" fill="#2563eb"/>
+              <text x="236" y="80" font-size="8.5" fill="#1e40af">2. Validar rol CONTADOR</text>
+
+              <line x1="206" y1="95" x2="343" y2="95" stroke="#2563eb" stroke-width="1.2"/>
+              <polygon points="343,95 335,92 335,98" fill="#2563eb"/>
+              <text x="272" y="91" font-size="8.5" fill="#1e40af" text-anchor="middle">3. createVoucher(payload)</text>
+
+              <line x1="351" y1="115" x2="471" y2="115" stroke="#7c3aed" stroke-width="1.2"/>
+              <polygon points="471,115 463,112 463,118" fill="#7c3aed"/>
+              <text x="410" y="110" font-size="8" fill="#581c87" text-anchor="middle">3.1 SELECT * FROM erp_journal_entries WHERE id = :jeId</text>
+
+              <line x1="471" y1="135" x2="351" y2="135" stroke="#7c3aed" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <polygon points="351,135 357,132 357,138" fill="#7c3aed"/>
+              <text x="410" y="130" font-size="8.5" fill="#581c87" text-anchor="middle">4. Asiento Origen Válido (OK)</text>
+
+              <path d="M 349 148 L 378 148 L 378 160 L 349 160" fill="none" stroke="#7c3aed" stroke-width="1.2"/>
+              <polygon points="349,160 356,157 356,163" fill="#7c3aed"/>
+              <text x="384" y="157" font-size="8.5" fill="#6b21a8">4.1 INSERT INTO erp_accounting_vouchers</text>
+
+              <line x1="351" y1="205" x2="583" y2="205" stroke="#0891b2" stroke-width="1.2"/>
+              <polygon points="583,205 575,202 575,208" fill="#0891b2"/>
+              <text x="467" y="200" font-size="8.5" fill="#0e7490" text-anchor="middle">5. Cloud Logging (audit: voucher_created)</text>
+
+              <line x1="343" y1="228" x2="206" y2="228" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <polygon points="206,228 214,225 214,231" fill="#2563eb"/>
+              <text x="272" y="223" font-size="8.5" fill="#1e40af" text-anchor="middle">6. Retornar VoucherDTO</text>
+
+              <line x1="198" y1="275" x2="69" y2="275" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="4,4"/>
+              <polygon points="69,275 77,271 77,279" fill="#16a34a"/>
+              <text x="130" y="270" font-size="9" font-weight="bold" fill="#15803d" text-anchor="middle">7. HTTP 201 Created</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. DIAGRAMA DE ACTIVIDADES (UML) -->
+      <section class="module-card">
+        <div class="module-title">7. DIAGRAMA DE ACTIVIDADES (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 420 330" width="100%" height="100%">
+              <circle cx="210" cy="16" r="8" fill="#0f2b5c"/>
+              <line x1="210" y1="24" x2="210" y2="40" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,40 207,34 213,34" fill="#0f2b5c"/>
+
+              <!-- Actividad 1 -->
+              <g transform="translate(115, 40)">
+                <rect x="0" y="0" width="190" height="24" rx="12" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="95" y="16" font-size="9" font-weight="bold" fill="#854d0e" text-anchor="middle">Validar Autenticación y Rol</text>
+              </g>
+              <line x1="210" y1="64" x2="210" y2="78" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,78 207,72 213,72" fill="#0f2b5c"/>
+
+              <!-- Decisión: ¿Rol CONTADOR? -->
+              <polygon points="210,78 255,94 210,110 165,94" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+              <text x="210" y="97" font-size="7.5" font-weight="bold" fill="#0369a1" text-anchor="middle">¿Es Contador?</text>
+
+              <!-- Branch: NO -->
+              <line x1="255" y1="94" x2="330" y2="94" stroke="#dc2626" stroke-width="1.2"/>
+              <polygon points="330,94 324,91 324,97" fill="#dc2626"/>
+              <text x="275" y="88" font-size="8" font-weight="bold" fill="#dc2626">No</text>
+              <g transform="translate(330, 81)">
+                <rect x="0" y="0" width="80" height="26" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+                <text x="40" y="16" font-size="8" fill="#991b1b" text-anchor="middle">403 Forbidden</text>
+              </g>
+
+              <!-- Branch: SI -->
+              <line x1="210" y1="110" x2="210" y2="128" stroke="#16a34a" stroke-width="1.2"/>
+              <polygon points="210,128 207,122 213,122" fill="#16a34a"/>
+              <text x="218" y="122" font-size="8" font-weight="bold" fill="#16a34a">Sí</text>
+
+              <!-- Decisión: ¿Asiento Origen Válido? -->
+              <polygon points="210,128 255,144 210,160 165,144" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+              <text x="210" y="147" font-size="7.5" font-weight="bold" fill="#0369a1" text-anchor="middle">¿Asiento Válido?</text>
+
+              <!-- Branch: NO -->
+              <line x1="255" y1="144" x2="330" y2="144" stroke="#dc2626" stroke-width="1.2"/>
+              <polygon points="330,144 324,141 324,147" fill="#dc2626"/>
+              <text x="275" y="138" font-size="8" font-weight="bold" fill="#dc2626">No</text>
+              <g transform="translate(330, 131)">
+                <rect x="0" y="0" width="80" height="26" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+                <text x="40" y="16" font-size="7.5" fill="#991b1b" text-anchor="middle">422 Unprocessable</text>
+              </g>
+
+              <!-- Branch: SI -->
+              <line x1="210" y1="160" x2="210" y2="182" stroke="#16a34a" stroke-width="1.2"/>
+              <polygon points="210,182 207,176 213,176" fill="#16a34a"/>
+              <text x="218" y="174" font-size="8" font-weight="bold" fill="#16a34a">Sí</text>
+
+              <!-- Actividad 2 -->
+              <g transform="translate(95, 182)">
+                <rect x="0" y="0" width="230" height="26" rx="13" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="115" y="17" font-size="8.8" fill="#854d0e" text-anchor="middle">Persistir Comprobante en Cloud SQL</text>
+              </g>
+              <line x1="210" y1="208" x2="210" y2="230" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,230 207,224 213,224" fill="#0f2b5c"/>
+
+              <!-- Actividad 3 -->
+              <g transform="translate(95, 230)">
+                <rect x="0" y="0" width="230" height="26" rx="13" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="115" y="17" font-size="8.8" fill="#854d0e" text-anchor="middle">Emitir Log de Auditoría a Cloud Logging</text>
+              </g>
+              <line x1="210" y1="256" x2="210" y2="272" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,272 207,266 213,266" fill="#0f2b5c"/>
+
+              <!-- Actividad 4 -->
+              <g transform="translate(95, 272)">
+                <rect x="0" y="0" width="230" height="22" rx="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+                <text x="115" y="15" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Retornar DTO 201 Created</text>
+              </g>
+              <line x1="210" y1="294" x2="210" y2="304" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,304 207,298 213,298" fill="#0f2b5c"/>
+
+              <!-- End Node -->
+              <circle cx="210" cy="314" r="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+              <circle cx="210" cy="314" r="6" fill="#16a34a"/>
+              <text x="238" y="318" font-size="9" font-weight="bold" fill="#166534">201 Created</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- FILA 3 DE CUADRÍCULA (8. EXCEPCIONES | 9. DATOS | 10. DOD | 11. INTEGRACIONES) -->
+    <div class="grid-row-3">
+      
+      <!-- 8. FLUJOS ALTERNATIVOS / EXCEPCIONES -->
+      <section class="module-card">
+        <div class="module-title">8. FLUJOS ALTERNATIVOS / EXCEPCIONES</div>
+        <div class="module-body" style="padding: 4px;">
+          <table class="tech-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Código</th>
+                <th style="width: 130px;">Situación</th>
+                <th>Comportamiento del Sistema</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="code-badge">FA-01</span></td>
+                <td><strong>Asiento contable origen inexistente o desbalanceado</strong></td>
+                <td>HTTP 422 Unprocessable Entity indicando que el asiento asociado no es válido para generar comprobante.</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-02</span></td>
+                <td><strong>Token ausente o rol no autorizado</strong></td>
+                <td>HTTP 403 Forbidden bajo la política de seguridad Default Deny.</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-03</span></td>
+                <td><strong>Tipo de comprobante no soportado</strong></td>
+                <td>HTTP 400 Bad Request por código de clasificación documental inválido.</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-04</span></td>
+                <td><strong>Comprobante inexistente en actualización</strong></td>
+                <td>HTTP 404 Not Found al buscar el ID especificado.</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-05</span></td>
+                <td><strong>Fallo en Cloud SQL</strong></td>
+                <td>HTTP 500. Notificación en Cloud Logging y mensaje amigable de reintento.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9. DATOS UTILIZADOS -->
+      <section class="module-card">
+        <div class="module-title">9. DATOS UTILIZADOS</div>
+        <div class="module-body">
+          <ul class="rules-list" style="font-size: 10px; gap: 5px;">
+            <li><strong>Entidad AccountingVoucher:</strong> <span class="code-badge">id</span> (VCH-YYYY-XXXX), <span class="code-badge">voucherType</span> (ING, EGT, NDIA), <span class="code-badge">journalEntryId</span>, issueDate.</li>
+            <li><strong>Control Documental:</strong> consecutiveNumber, totalAmount.</li>
+            <li><strong>Auditoría:</strong> createdBy, createdAt, updatedBy, updatedAt.</li>
+            <li><strong>Visibilidad:</strong> Estrictamente interno para contabilidad y administración financiera del ERP.</li>
+            <li><strong>Moneda Operativa:</strong> COP ($ Pesos Colombianos).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 10. CRITERIOS DE ACEPTACIÓN (DOD) -->
+      <section class="module-card">
+        <div class="module-title">10. CRITERIOS DE ACEPTACIÓN (DOD)</div>
+        <div class="module-body">
+          <ul class="checklist">
+            <li><span class="check-icon">✓</span> <span>Validación de la existencia y balance del asiento contable de origen.</span></li>
+            <li><span class="check-icon">✓</span> <span>Control de acceso estricto RBAC (rol CONTADOR requerido).</span></li>
+            <li><span class="check-icon">✓</span> <span>Consecutivo documental estricto según el tipo de comprobante contable.</span></li>
+            <li><span class="check-icon">✓</span> <span>Desacoplamiento total frente al E-Commerce público.</span></li>
+            <li><span class="check-icon">✓</span> <span>Latencia de respuesta: &le; 250 ms (p95) en Google Cloud Run.</span></li>
+            <li><span class="check-icon">✓</span> <span>Emisión de logs estructurados JSON a Cloud Logging.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 11. INTEGRACIONES -->
+      <section class="module-card">
+        <div class="module-title">11. INTEGRACIONES</div>
+        <div class="module-body" style="padding: 4px;">
+          <table class="tech-table">
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Protocolo</th>
+                <th>Propósito</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ERP API Gateway</strong></td>
+                <td><span class="code-badge">HTTP REST</span></td>
+                <td>Exposición de endpoints protegidos <span class="code-badge">/api/v1/erp/accounting/vouchers</span>.</td>
+              </tr>
+              <tr>
+                <td><strong>Accounting Service</strong></td>
+                <td><span class="code-badge">TypeScript / Drizzle</span></td>
+                <td>Lógica de negocio y emisión de comprobantes contables y soportes.</td>
+              </tr>
+              <tr>
+                <td><strong>Cloud SQL (DB)</strong></td>
+                <td><span class="code-badge">PostgreSQL</span></td>
+                <td>Persistencia transaccional en tabla <span class="code-badge">erp_accounting_vouchers</span>.</td>
+              </tr>
+              <tr>
+                <td><strong>Cloud Logging</strong></td>
+                <td><span class="code-badge">JSON Logger</span></td>
+                <td>Auditoría contable y financiera de generación de comprobantes.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- PIE DE PÁGINA: NOTA DE GOBERNANZA Y SEGURIDAD -->
+    <footer class="footer-governance">
+      <div class="footer-icon">ℹ</div>
+      <div>
+        <strong>Nota de Gobernanza y Frontera Transaccional (SRS v5.0):</strong> La gestión de comprobantes administra el soporte documental contable en el subsistema Contable (RF-CT-003). Toda emisión exige credenciales internas y rol CONTADOR bajo la política <em>Default Deny</em>. Este módulo financiero opera completamente aislado del E-Commerce y respalda los asientos del libro diario.
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MOTOR DE EXPORTACIÓN A PNG -->
+  <script>
+    function exportarFichaPNG() {
+      const btn = document.querySelector('.btn-export');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Generando imagen PNG...';
+      btn.style.opacity = '0.7';
+
+      const canvasElement = document.getElementById('ficha-canvas');
+
+      html2canvas(canvasElement, {
+        width: 1600,
+        height: 1200,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      }).then(canvas => {
+        const imageURL = canvas.toDataURL('image/png', 1.0);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageURL;
+        downloadLink.download = 'CU-CT-003_Gestionar_comprobantes_CuchosTool.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      }).catch(err => {
+        console.error('Error exportando ficha técnica:', err);
+        alert('Ocurrió un error al generar la imagen PNG. Por favor, revisa la consola del navegador.');
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      });
+    }
+  </script>
+</body>
+</html>

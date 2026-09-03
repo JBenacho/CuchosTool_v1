@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CU-INT-009 - Publicar evento PurchaseReceived</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --navy: #0B2A4A;
+            --navy-dark: #08233E;
+            --navy-mid: #123A63;
+            --gold: #D4A017;
+            --gold-light: #F0C14A;
+            --bg-canvas: #E8EEF4;
+            --panel: #FFFFFF;
+            --panel-alt: #F4F7FB;
+            --line: #C5D0DC;
+            --text: #1B2A3A;
+            --muted: #5B6B7C;
+            --teal: #1F7A8C;
+            --teal-soft: #D7EEF3;
+            --red: #C0392B;
+            --red-soft: #F8D7DA;
+            --green: #1E7A46;
+            --green-soft: #D9F3E3;
+            --seq-client: #2E8B57;
+            --seq-router: #148A8A;
+            --seq-svc: #6B4C9A;
+            --seq-db: #E09B2D;
+            --seq-bus: #5C6B7A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            background-color: #d9e2ec;
+        }
+
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        /* LIENZO FIJO CORPORATIVO 1600x1200 (4:3) */
+        #canvas {
+            width: 1600px;
+            height: 1200px;
+            background-color: var(--bg-canvas);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 12px 36px rgba(11, 42, 74, 0.35);
+            border: 1px solid var(--navy);
+            flex-shrink: 0;
+        }
+
+        /* HEADER CORPORATIVO (68px) */
+        header {
+            height: 68px;
+            background-color: var(--navy-dark);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            border-bottom: 3px solid var(--gold);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-ct {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy-dark);
+            font-weight: 900;
+            font-size: 19px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: 1px solid #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+            flex-shrink: 0;
+        }
+
+        .header-title-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header-title-group h1 {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 1px;
+        }
+
+        .header-title-group h2 {
+            font-size: 22px;
+            color: #FFFFFF;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.3px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 11px;
+            color: #C5D0DC;
+            line-height: 1.35;
+        }
+
+        .header-right span {
+            color: var(--gold-light);
+            font-weight: 600;
+        }
+
+        /* GRID PRINCIPAL DENSO (11 BLOQUES) */
+        .main-grid {
+            flex: 1;
+            padding: 8px 10px;
+            display: grid;
+            grid-template-rows: 304px 436px 304px;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .grid-row {
+            display: grid;
+            gap: 8px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .row-1 {
+            grid-template-columns: 1.05fr 1.15fr 0.95fr;
+        }
+
+        .row-2 {
+            grid-template-columns: 0.95fr 1.25fr 0.95fr;
+        }
+
+        .row-3 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        /* PANELES */
+        .panel {
+            background-color: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(11, 42, 74, 0.05);
+        }
+
+        .panel-header {
+            height: 26px;
+            background-color: var(--navy);
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            border-bottom: 1px solid var(--gold);
+            flex-shrink: 0;
+        }
+
+        .panel-content {
+            padding: 5px 7px;
+            font-size: 11px;
+            line-height: 1.3;
+            color: var(--text);
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5px;
+        }
+
+        .panel-content.scrollable {
+            overflow-y: auto;
+        }
+
+        /* METADATOS CLAVE-VALOR */
+        .kv-row {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .kv-label {
+            font-weight: 700;
+            color: var(--navy);
+            flex-shrink: 0;
+            font-size: 11px;
+        }
+
+        .kv-val {
+            color: var(--text);
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 10.5px;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            vertical-align: middle;
+        }
+
+        .badge-teal {
+            background-color: var(--teal);
+            color: #FFFFFF;
+        }
+
+        .badge-red {
+            background-color: var(--red);
+            color: #FFFFFF;
+        }
+
+        .badge-gold {
+            background-color: var(--gold);
+            color: var(--navy-dark);
+        }
+
+        .badge-navy {
+            background-color: var(--navy);
+            color: #FFFFFF;
+        }
+
+        code {
+            background-color: var(--panel-alt);
+            border: 1px solid var(--line);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-family: Consolas, monospace;
+            font-size: 10.5px;
+            color: var(--navy);
+            font-weight: 600;
+        }
+
+        /* TABLAS INTERNAS */
+        table.dense-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+
+        table.dense-table th, 
+        table.dense-table td {
+            border: 1px solid var(--line);
+            padding: 2px 4px;
+            text-align: left;
+        }
+
+        table.dense-table th {
+            background-color: var(--panel-alt);
+            color: var(--navy);
+            font-weight: 700;
+            font-size: 10.5px;
+        }
+
+        /* LISTAS COMPACTAS */
+        ul.dense-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        ul.dense-list li {
+            position: relative;
+            padding-left: 10px;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        ul.dense-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--navy);
+            font-weight: bold;
+        }
+
+        /* PASOS CAMINO FELIZ */
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            margin-bottom: 2px;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        .step-circle {
+            background-color: var(--navy);
+            color: var(--gold-light);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9.5px;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 1px;
+            border: 1px solid var(--gold);
+        }
+
+        .check-green {
+            color: var(--green);
+            font-weight: 800;
+            font-size: 11.5px;
+        }
+
+        /* CONTENEDOR SVG */
+        .svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #FFFFFF;
+        }
+
+        /* FOOTER DE GOBERNANZA (44px) */
+        <footer>
+            <div class="footer-icon">i</div>
+            <div><strong>Nota de Gobernanza (SRS v5.0):</strong> Publicación de eventos de compras bajo <em>Default Deny</em>; patrón Outbox transaccional obligatorio; desacoplado de pagos y DIAN.</div>
+        </footer>
+
+    </div>
+
+    <!-- BOTÓN DE EXPORTACIÓN FUERA DEL LIENZO -->
+    <div class="controls-container">
+        <button class="export-btn" id="exportBtn">Exportar PNG 1600×1200</button>
+    </div>
+
+    <script>
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const canvasElement = document.getElementById('canvas');
+            
+            html2canvas(canvasElement, {
+                scale: 2,
+                backgroundColor: '#E8EEF4',
+                width: 1600,
+                height: 1200,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'CU-INT-009_Publicar_evento_PurchaseReceived.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error('Error exportando PNG:', err);
+                alert('Ocurrió un error al generar la captura PNG.');
+            });
+        });
+    </script>
+</body>
+</html>

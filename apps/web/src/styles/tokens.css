@@ -1,0 +1,81 @@
+/* ===========================================================================
+   CuchosTool Design Tokens - derivados de IU_CT (validado por el equipo)
+   Tema: modo oscuro azul-noche | acentos verde #0B9F68 y naranja #D16014
+   Tipografia: Inter (UI) + Space Grotesk (titulos) | Baseline SRS v5 / ARQ v6
+   =========================================================================== */
+:root {
+  color-scheme: dark;
+
+  /* Fondo y superficie (niveles) */
+  --ct-bg-0: #05070F;   /* fondo profundo */
+  --ct-bg-1: #0A0F1E;   /* fondo base app */
+  --ct-bg-2: #101A2E;   /* superficie elevada (sidebar/cards) */
+  --ct-bg-3: #16233C;   /* hover / popovers */
+  --ct-bg-4: #1E2C47;   /* activo */
+
+  /* Lienzo medido en IU_CT: azul-noche */
+  --ct-navy-900: #020618;
+  --ct-navy-800: #0E1629;
+  --ct-navy-700: #192033;
+  --ct-navy-600: #203040;
+  --ct-navy-500: #304060;
+
+  /* Texto */
+  --ct-text-strong: #F4F6FB;
+  --ct-text: #E4E9F3;
+  --ct-text-muted: #98A6C0;
+  --ct-text-faint: #64748B;
+
+  /* Lineas / bordes */
+  --ct-line: rgba(148, 163, 184, 0.16);
+  --ct-line-strong: rgba(148, 163, 184, 0.30);
+
+  /* Acentos de marca (IU_CT) */
+  --ct-accent: #0B9F68;      /* verde: exito / primario */
+  --ct-accent-strong: #0DBB7A;
+  --ct-accent-soft: rgba(11, 159, 104, 0.14);
+  --ct-warm: #D16014;        /* naranja/cobre: alerta / destacado */
+  --ct-warm-soft: rgba(209, 96, 20, 0.14);
+  --ct-danger: #E5484D;
+  --ct-danger-soft: rgba(229, 72, 77, 0.14);
+  --ct-info: #4C8DFF;
+  --ct-info-soft: rgba(76, 141, 255, 0.14);
+  --ct-gold: #E3B341;        /* dorado secundario (marca institucional) */
+
+  /* Tipografia */
+  --ct-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ct-font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --ct-font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* Escala de tamano (px) */
+  --ct-text-xs: 12px;
+  --ct-text-sm: 13px;
+  --ct-text-md: 14px;
+  --ct-text-lg: 16px;
+  --ct-text-xl: 20px;
+  --ct-text-2xl: 26px;
+  --ct-text-3xl: 34px;
+
+  /* Espaciado (patron 4px) */
+  --ct-space-1: 4px;
+  --ct-space-2: 8px;
+  --ct-space-3: 12px;
+  --ct-space-4: 16px;
+  --ct-space-5: 24px;
+  --ct-space-6: 32px;
+  --ct-space-7: 48px;
+
+  /* Radio / sombra (patrones IU_CT) */
+  --ct-radius-sm: 6px;
+  --ct-radius-md: 10px;
+  --ct-radius-lg: 16px;
+  --ct-radius-full: 999px;
+  --ct-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ct-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --ct-shadow-focus: 0 0 0 3px rgba(11, 159, 104, 0.35);
+
+  /* Layout */
+  --ct-header-h: 64px;
+  --ct-sidebar-w: 248px;
+  --ct-content-max: 1240px;
+}

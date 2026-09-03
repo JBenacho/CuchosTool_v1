@@ -1,0 +1,22 @@
+{
+  "name": "cuchostool",
+  "private": true,
+  "version": "0.1.0",
+  "description": "CuchosTool.com - monorepo (E-Commerce + ERP + Core) sobre Node/TS/Fastify/Drizzle + PostgreSQL. Trazabilidad Backlog v6.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d db",
+    "compose:up": "docker compose up -d --build",
+    "compose:down": "docker compose down",
+    "dev:api": "npm run dev -w @cuchostool/api",
+    "dev:web": "npm run dev -w @cuchostool/web",
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CU-EC-012 - Ficha Oficial de Caso de Uso | CuchosTool.com</title>
+  <!-- Motor html2canvas para exportación fiel a PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ==========================================================================
+       RESET Y GEOMETRÍA BASE
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 10px;
+    }
+
+    .toolbar {
+      width: 1600px;
+      max-width: 98vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .toolbar-info {
+      color: #f8fafc;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-resolution {
+      background: #2563eb;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-export {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      padding: 10px 22px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-export:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+    }
+
+    /* CONTENEDOR MAESTRO 4:3 (1600x1200 px) */
+    #ficha-canvas {
+      width: 1600px;
+      height: 1200px;
+      min-width: 1600px;
+      min-height: 1200px;
+      max-width: 1600px;
+      max-height: 1200px;
+      background: #ffffff;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ENCABEZADO CORPORATIVO */
+    .header-banner {
+      background: linear-gradient(90deg, #0b2545 0%, #133b68 60%, #1e40af 100%);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      border-left: 6px solid #f59e0b;
+    }
+
+    .header-titles {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo-icon {
+      width: 44px;
+      height: 44px;
+      background: #f59e0b;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b2545;
+      font-size: 24px;
+      font-weight: 900;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .header-titles h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #93c5fd;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    .header-titles h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+    }
+
+    .header-meta {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 4px 16px;
+      font-size: 11px;
+      text-align: right;
+      color: #e2e8f0;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      padding-left: 16px;
+    }
+
+    .header-meta strong {
+      color: #ffffff;
+    }
+
+    /* MÓDULOS DE TARJETAS */
+    .module-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .module-title {
+      background: #0f2b5c;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-bottom: 1px solid #0b2545;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .module-body {
+      padding: 7px 10px;
+      font-size: 11px;
+      line-height: 1.34;
+      color: #334155;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* CUADRÍCULA 3 FILAS */
+    .grid-row-1 {
+      display: grid;
+      grid-template-columns: 460px 650px 434px;
+      gap: 10px;
+      height: 318px;
+    }
+
+    .grid-row-2 {
+      display: grid;
+      grid-template-columns: 460px 650px 434px;
+      gap: 10px;
+      height: 372px;
+    }
+
+    .grid-row-3 {
+      display: grid;
+      grid-template-columns: 480px 290px 370px 394px;
+      gap: 10px;
+      height: 340px;
+    }
+
+    /* ELEMENTOS DE DATOS Y TABLAS */
+    .data-list {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 3px 6px;
+      font-size: 10.8px;
+    }
+
+    .data-label {
+      font-weight: 700;
+      color: #0b2545;
+    }
+
+    .data-val {
+      color: #1e293b;
+    }
+
+    .badge-status {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .badge-priority {
+      display: inline-block;
+      background: #fee2e2;
+      color: #b91c1c;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .code-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 9.5px;
+      background: #e2e8f0;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .rules-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10.5px;
+    }
+
+    .rules-list li {
+      position: relative;
+      padding-left: 14px;
+      line-height: 1.35;
+    }
+
+    .rules-list li::before {
+      content: "■";
+      position: absolute;
+      left: 0;
+      color: #2563eb;
+      font-size: 8px;
+      top: 1px;
+    }
+
+    .rules-list strong {
+      color: #0b2545;
+    }
+
+    .steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 10.6px;
+    }
+
+    .steps-list li {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      line-height: 1.35;
+    }
+
+    .step-num {
+      background: #0f2b5c;
+      color: #ffffff;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 800;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .tech-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      text-align: left;
+    }
+
+    .tech-table th {
+      background: #f1f5f9;
+      color: #0b2545;
+      font-weight: 800;
+      padding: 4px 6px;
+      border-bottom: 1px solid #cbd5e1;
+      text-transform: uppercase;
+      font-size: 9.5px;
+    }
+
+    .tech-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+      color: #334155;
+      line-height: 1.3;
+    }
+
+    .tech-table tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 10.5px;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      line-height: 1.35;
+    }
+
+    .check-icon {
+      color: #16a34a;
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .footer-governance {
+      background: #f8fafc;
+      border: 1px solid #94a3b8;
+      border-left: 6px solid #2563eb;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      color: #1e293b;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-icon {
+      font-size: 18px;
+      color: #2563eb;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .svg-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    svg text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE ACCIÓN SUPERIOR -->
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <span class="badge-resolution">4:3 — 1600 × 1200 PX</span>
+      <span><strong>Artefacto Oficial:</strong> Ficha de Caso de Uso CU-EC-012 (Baseline v5.0 / ARQ v6.0)</span>
+    </div>
+    <button class="btn-export" onclick="exportarFichaPNG()">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+      </svg>
+      Exportar Ficha Oficial a PNG
+    </button>
+  </div>
+
+  <!-- CANVAS CONTENEDOR 1600x1200 PX -->
+  <div id="ficha-canvas">
+
+    <!-- ENCABEZADO CORPORATIVO -->
+    <header class="header-banner">
+      <div class="header-titles">
+        <div class="header-logo-icon">CT</div>
+        <div>
+          <h2>Ficha de Caso de Uso Oficial</h2>
+          <h1>CU-EC-012 - Generar notificaciones de eventos relevantes</h1>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div><strong>Proyecto:</strong> CuchosTool / CuchosTool.com</div>
+        <div><strong>Versión:</strong> 5.0 (SRS v5.0 / ARQ v6.0 / BL v5.0)</div>
+        <div><strong>Módulo:</strong> Integración / Notificaciones Multicanal (DOM-08)</div>
+        <div><strong>Fecha:</strong> 01/09/2026</div>
+        <div><strong>Responsable:</strong> Nicola (Gerente del Proyecto)</div>
+        <div><strong>Rol:</strong> Arquitecto & Dirección Técnica</div>
+      </div>
+    </header>
+
+    <!-- FILA 1 DE CUADRÍCULA (1. INFO GENERAL | 2. DIAGRAMA CU | 3. DESCRIPCIÓN & 4. REGLAS) -->
+    <div class="grid-row-1">
+      
+      <!-- 1. INFORMACIÓN GENERAL -->
+      <section class="module-card">
+        <div class="module-title">1. INFORMACIÓN GENERAL</div>
+        <div class="module-body">
+          <div class="data-list">
+            <span class="data-label">ID / Código:</span>
+            <span class="data-val"><strong>CU-EC-012</strong> [Trazabilidad: RF-EC-006, RF-CORE-004, RI-EVT-001..005, US-012]</span>
+
+            <span class="data-label">Nombre:</span>
+            <span class="data-val"><strong>Generar notificaciones de eventos relevantes</strong></span>
+
+            <span class="data-label">Objetivo:</span>
+            <span class="data-val">Consumir de forma asíncrona eventos de negocio desde Google Cloud Pub/Sub, formatear plantillas multicanal (Email/SMS) y garantizar su entrega trazable e idempotente.</span>
+
+            <span class="data-label">Actor Principal:</span>
+            <span class="data-val"><strong>Sistema / Notification Worker</strong> (Proceso asíncrono en Cloud Run)</span>
+
+            <span class="data-label">Actores Sec.:</span>
+            <span class="data-val">Google Cloud Pub/Sub, Gateway Email/SMS, Cloud SQL, Cloud Logging</span>
+
+            <span class="data-label">Tipo / Prioridad:</span>
+            <span class="data-val"><span class="badge-status">Asíncrono / Event-Driven</span> <span class="badge-priority">Prioridad Alta / Esencial</span></span>
+
+            <span class="data-label">Estado / Alcance:</span>
+            <span class="data-val">Aprobado / Plataforma Transaccional (Consumo desacoplado con DLQ)</span>
+
+            <span class="data-label">Disparador:</span>
+            <span class="data-val">Llegada de mensaje a tópicos Pub/Sub (<span class="code-badge">order.created</span>, <span class="code-badge">OrderPaid</span>, <span class="code-badge">OrderDispatched</span>).</span>
+
+            <span class="data-label">Precondiciones:</span>
+            <span class="data-val">1. Mensaje publicado con schema válido y <span class="code-badge">traceId</span>.<br>2. Suscripción Pub/Sub activa con cola de mensajes muertos (DLQ).</span>
+
+            <span class="data-label">Postcondiciones:</span>
+            <span class="data-val">Notificación entregada al proveedor externo, log guardado en <span class="code-badge">notification_logs</span> y ACK enviado.</span>
+
+            <span class="data-label">Resultado Exitoso:</span>
+            <span class="data-val">Mensaje despachado y confirmado en Pub/Sub; idempotencia registrada sin duplicados.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. DIAGRAMA DE CASOS DE USO (UML) -->
+      <section class="module-card">
+        <div class="module-title">2. DIAGRAMA DE CASOS DE USO (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 640 280" width="100%" height="100%">
+              <!-- System Boundary -->
+              <rect x="165" y="10" width="320" height="260" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
+              <text x="180" y="30" font-size="11.5" font-weight="bold" fill="#0f2b5c">Subsistema de Notificaciones (DOM-08)</text>
+
+              <!-- Actor Cloud Pub/Sub -->
+              <g transform="translate(45, 60)">
+                <circle cx="20" cy="12" r="10" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+                <line x1="20" y1="22" x2="20" y2="48" stroke="#0284c7" stroke-width="2"/>
+                <line x1="5" y1="32" x2="35" y2="32" stroke="#0284c7" stroke-width="2"/>
+                <line x1="20" y1="48" x2="6" y2="70" stroke="#0284c7" stroke-width="2"/>
+                <line x1="20" y1="48" x2="34" y2="70" stroke="#0284c7" stroke-width="2"/>
+                <text x="20" y="88" font-size="9.5" font-weight="bold" fill="#0369a1" text-anchor="middle">Cloud Pub/Sub</text>
+              </g>
+
+              <!-- Actor Sistema / Worker -->
+              <g transform="translate(45, 170)">
+                <circle cx="20" cy="12" r="10" fill="#ffffff" stroke="#4f46e5" stroke-width="2"/>
+                <line x1="20" y1="22" x2="20" y2="48" stroke="#4f46e5" stroke-width="2"/>
+                <line x1="5" y1="32" x2="35" y2="32" stroke="#4f46e5" stroke-width="2"/>
+                <line x1="20" y1="48" x2="6" y2="70" stroke="#4f46e5" stroke-width="2"/>
+                <line x1="20" y1="48" x2="34" y2="70" stroke="#4f46e5" stroke-width="2"/>
+                <text x="20" y="88" font-size="9.5" font-weight="bold" fill="#3730a3" text-anchor="middle">Notification Worker</text>
+              </g>
+
+              <!-- CU Principal -->
+              <g transform="translate(185, 115)">
+                <ellipse cx="68" cy="22" rx="64" ry="22" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                <text x="68" y="19" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">CU-EC-012</text>
+                <text x="68" y="30" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">Generar notificaciones</text>
+              </g>
+
+              <!-- Sub-casos / Inclusiones -->
+              <g transform="translate(345, 45)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">&lt;&lt;include&gt;&gt; Validar Idempotencia</text>
+              </g>
+
+              <g transform="translate(345, 95)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">Renderizar Template</text>
+              </g>
+
+              <g transform="translate(345, 145)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">Despachar Email/SMS</text>
+              </g>
+
+              <g transform="translate(345, 205)">
+                <ellipse cx="65" cy="18" rx="58" ry="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+                <text x="65" y="22" font-size="9" fill="#1e3a8a" text-anchor="middle">&lt;&lt;extend&gt;&gt; Reintento / DLQ</text>
+              </g>
+
+              <!-- Conexión Actores -> CU Principal -->
+              <line x1="85" y1="95" x2="185" y2="130" stroke="#0284c7" stroke-width="1.8"/>
+              <line x1="85" y1="205" x2="185" y2="145" stroke="#4f46e5" stroke-width="1.8"/>
+
+              <!-- Relaciones internas -->
+              <line x1="310" y1="125" x2="345" y2="65" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="315" y1="135" x2="345" y2="112" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="315" y1="145" x2="345" y2="160" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <line x1="300" y1="155" x2="350" y2="210" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+              <!-- Actores Secundarios -->
+              <g transform="translate(560, 70)">
+                <circle cx="20" cy="10" r="9" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="19" x2="20" y2="40" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="8" y1="28" x2="32" y2="28" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="9" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="31" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <text x="20" y="72" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">Gateway Email/SMS</text>
+              </g>
+              <line x1="465" y1="162" x2="550" y2="95" stroke="#64748b" stroke-width="1.2"/>
+
+              <g transform="translate(560, 165)">
+                <circle cx="20" cy="10" r="9" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="19" x2="20" y2="40" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="8" y1="28" x2="32" y2="28" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="9" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <line x1="20" y1="40" x2="31" y2="58" stroke="#64748b" stroke-width="1.8"/>
+                <text x="20" y="72" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">Cloud SQL (DB)</text>
+              </g>
+              <line x1="465" y1="112" x2="550" y2="185" stroke="#64748b" stroke-width="1.2"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. DESCRIPCIÓN & 4. REGLAS DE NEGOCIO -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- 3. DESCRIPCIÓN Y ALCANCE -->
+        <section class="module-card" style="flex: 0 0 115px;">
+          <div class="module-title">3. DESCRIPCIÓN Y ALCANCE</div>
+          <div class="module-body">
+            <p style="margin-bottom: 4px;">Consume eventos asíncronos para comunicar confirmaciones de compra, facturación y despacho al cliente final.</p>
+            <p><strong>Aislamiento y Frontera ERP:</strong> Desacoplamiento total guiado por eventos. El worker opera en segundo plano; no realiza consultas síncronas ni transacciones cruzadas sobre el ERP central[cite: 1, 2].</p>
+          </div>
+        </section>
+
+        <!-- 4. REGLAS DE NEGOCIO (RN) -->
+        <section class="module-card" style="flex: 1;">
+          <div class="module-title">4. REGLAS DE NEGOCIO (RN)</div>
+          <div class="module-body">
+            <ul class="rules-list">
+              <li><strong>RN-NOT-01 (Idempotencia):</strong> Verificación de <span class="code-badge">eventId</span> en <span class="code-badge">notification_logs</span>. Si ya existe, emite ACK sin reenviar[cite: 2, 3].</li>
+              <li><strong>RN-NOT-02 (Resiliencia DLQ):</strong> Máximo 5 reintentos exponenciales; ante fallos continuos, deriva a Dead Letter Queue[cite: 3].</li>
+              <li><strong>RN-NOT-03 (Privacidad / Ley 1581):</strong> Enmascaramiento estricto de datos sensibles y tokenización de enlaces transaccionales.</li>
+              <li><strong>RN-NOT-04 (SLO Asíncrono):</strong> Procesamiento y despacho en &le; 2 segundos tras la publicación en Cloud Pub/Sub[cite: 3].</li>
+              <li><strong>RN-NOT-05 (Trazabilidad):</strong> Propagación mandatoria del encabezado <span class="code-badge">traceId</span> / <span class="code-badge">correlationId</span>[cite: 3, 7].</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+    </div>
+
+    <!-- FILA 2 DE CUADRÍCULA (5. FLUJO PRINCIPAL | 6. SECUENCIA | 7. ACTIVIDADES) -->
+    <div class="grid-row-2">
+      
+      <!-- 5. FLUJO PRINCIPAL (CAMINO FELIZ) -->
+      <section class="module-card">
+        <div class="module-title">5. FLUJO PRINCIPAL (CAMINO FELIZ)</div>
+        <div class="module-body">
+          <ul class="steps-list">
+            <li>
+              <span class="step-num">1</span>
+              <span><strong>Recepción de Evento:</strong> El suscriptor en Cloud Run recibe un mensaje push/pull desde Cloud Pub/Sub con payload JSON firmado[cite: 1, 2].</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span><strong>Control de Idempotencia:</strong> Notification Worker consulta en Cloud SQL si el <span class="code-badge">eventId</span> ya fue procesado exitosamente[cite: 2, 3].</span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span><strong>Resolución de Plantilla:</strong> Se carga la plantilla HTML/Texto asociada al evento (<span class="code-badge">ORDER_CONFIRMED</span>, <span class="code-badge">PAYMENT_RECEIVED</span>, etc.).</span>
+            </li>
+            <li>
+              <span class="step-num">4</span>
+              <span><strong>Inyección de Contexto:</strong> Se fusionan los datos del cliente, número de pedido y totales en COP respetando políticas de privacidad.</span>
+            </li>
+            <li>
+              <span class="step-num">5</span>
+              <span><strong>Despacho al Proveedor:</strong> Se invoca la API REST del proveedor de mensajería (SendGrid / Twilio) con timeout estricto de 3s.</span>
+            </li>
+            <li>
+              <span class="step-num">6</span>
+              <span><strong>Persistencia de Estado:</strong> Se inserta el registro en <span class="code-badge">notification_logs</span> con timestamp, estado SENT y CorrelationId[cite: 2, 7].</span>
+            </li>
+            <li>
+              <span class="step-num">7</span>
+              <span><strong>Confirmación (ACK):</strong> El worker retorna HTTP 200 / ACK a Google Cloud Pub/Sub para retirar el mensaje de la cola activa.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 6. DIAGRAMA DE SECUENCIA (UML) -->
+      <section class="module-card">
+        <div class="module-title">6. DIAGRAMA DE SECUENCIA (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 640 330" width="100%" height="100%">
+              <!-- Lifelines Cajas -->
+              <g transform="translate(15, 10)">
+                <rect x="0" y="0" width="100" height="24" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <text x="50" y="16" font-size="9.5" font-weight="bold" fill="#0369a1" text-anchor="middle">Pub/Sub Topic</text>
+              </g>
+              <g transform="translate(145, 10)">
+                <rect x="0" y="0" width="115" height="24" rx="4" fill="#ede9fe" stroke="#6366f1" stroke-width="1.5"/>
+                <text x="57" y="16" font-size="9.5" font-weight="bold" fill="#4338ca" text-anchor="middle">Notification Worker</text>
+              </g>
+              <g transform="translate(290, 10)">
+                <rect x="0" y="0" width="105" height="24" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+                <text x="52" y="16" font-size="9.5" font-weight="bold" fill="#92400e" text-anchor="middle">Cloud SQL (DB)</text>
+              </g>
+              <g transform="translate(425, 10)">
+                <rect x="0" y="0" width="105" height="24" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+                <text x="52" y="16" font-size="9.5" font-weight="bold" fill="#991b1b" text-anchor="middle">Email / SMS API</text>
+              </g>
+              <g transform="translate(545, 10)">
+                <rect x="0" y="0" width="85" height="24" rx="4" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+                <text x="42" y="16" font-size="9.5" font-weight="bold" fill="#155e75" text-anchor="middle">Cloud Logging</text>
+              </g>
+
+              <!-- Lifelines Líneas punteadas -->
+              <line x1="65" y1="34" x2="65" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="202" y1="34" x2="202" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="342" y1="34" x2="342" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="477" y1="34" x2="477" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="587" y1="34" x2="587" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4"/>
+
+              <!-- Barras de Activación -->
+              <rect x="61" y="55" width="8" height="230" fill="#bae6fd" stroke="#0284c7"/>
+              <rect x="198" y="60" width="8" height="225" fill="#c7d2fe" stroke="#6366f1"/>
+              <rect x="338" y="85" width="8" height="35" fill="#fde68a" stroke="#d97706"/>
+              <rect x="473" y="150" width="8" height="40" fill="#fecaca" stroke="#dc2626"/>
+
+              <!-- Mensajes -->
+              <line x1="69" y1="65" x2="198" y2="65" stroke="#0f172a" stroke-width="1.5"/>
+              <polygon points="198,65 190,62 190,68" fill="#0f172a"/>
+              <text x="130" y="59" font-size="8.5" font-weight="bold" fill="#0f172a" text-anchor="middle">1. Push Event (OrderPaid)</text>
+
+              <!-- DB Idempotency Check -->
+              <line x1="206" y1="88" x2="338" y2="88" stroke="#7c3aed" stroke-width="1.2"/>
+              <polygon points="338,88 330,85 330,91" fill="#7c3aed"/>
+              <text x="272" y="83" font-size="8" fill="#581c87" text-anchor="middle">2. SELECT FROM notification_logs</text>
+
+              <line x1="338" y1="115" x2="206" y2="115" stroke="#7c3aed" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <polygon points="206,115 214,112 214,118" fill="#7c3aed"/>
+              <text x="272" y="110" font-size="8" fill="#581c87" text-anchor="middle">2.1 No existe (Continuar)</text>
+
+              <!-- Template Render -->
+              <path d="M 206 128 L 230 128 L 230 140 L 206 140" fill="none" stroke="#6366f1" stroke-width="1.2"/>
+              <polygon points="206,140 213,137 213,143" fill="#6366f1"/>
+              <text x="236" y="136" font-size="8.5" fill="#4338ca">3. Renderizar template HTML</text>
+
+              <!-- External Gateway Dispatch -->
+              <line x1="206" y1="155" x2="473" y2="155" stroke="#dc2626" stroke-width="1.2"/>
+              <polygon points="473,155 465,152 465,158" fill="#dc2626"/>
+              <text x="340" y="150" font-size="8.5" fill="#991b1b" text-anchor="middle">4. POST /v3/mail/send (REST API)</text>
+
+              <line x1="473" y1="185" x2="206" y2="185" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="3,3"/>
+              <polygon points="206,185 214,182 214,188" fill="#dc2626"/>
+              <text x="340" y="180" font-size="8.5" fill="#991b1b" text-anchor="middle">4.1 HTTP 202 Accepted (MessageId)</text>
+
+              <!-- DB Save Log -->
+              <line x1="206" y1="205" x2="338" y2="205" stroke="#7c3aed" stroke-width="1.2"/>
+              <polygon points="338,205 330,202 330,208" fill="#7c3aed"/>
+              <text x="272" y="200" font-size="8" fill="#581c87" text-anchor="middle">5. INSERT notification_logs (SENT)</text>
+
+              <!-- Cloud Logging -->
+              <line x1="206" y1="228" x2="583" y2="228" stroke="#0891b2" stroke-width="1.2"/>
+              <polygon points="583,228 575,225 575,231" fill="#0891b2"/>
+              <text x="467" y="223" font-size="8.5" fill="#0e7490" text-anchor="middle">6. Log estructurado (traceId, duration)</text>
+
+              <!-- ACK to Pub/Sub -->
+              <line x1="198" y1="255" x2="69" y2="255" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="4,4"/>
+              <polygon points="69,255 77,251 77,259" fill="#16a34a"/>
+              <text x="130" y="250" font-size="9" font-weight="bold" fill="#15803d" text-anchor="middle">7. ACK (Confirmar Consumo)</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. DIAGRAMA DE ACTIVIDADES (UML) -->
+      <section class="module-card">
+        <div class="module-title">7. DIAGRAMA DE ACTIVIDADES (UML)</div>
+        <div class="module-body" style="padding: 2px;">
+          <div class="svg-container">
+            <svg viewBox="0 0 420 330" width="100%" height="100%">
+              <circle cx="210" cy="16" r="8" fill="#0f2b5c"/>
+              <line x1="210" y1="24" x2="210" y2="40" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,40 207,34 213,34" fill="#0f2b5c"/>
+
+              <!-- Actividad 1 -->
+              <g transform="translate(115, 40)">
+                <rect x="0" y="0" width="190" height="24" rx="12" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="95" y="16" font-size="9" font-weight="bold" fill="#854d0e" text-anchor="middle">Recibir Mensaje de Cloud Pub/Sub</text>
+              </g>
+              <line x1="210" y1="64" x2="210" y2="78" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,78 207,72 213,72" fill="#0f2b5c"/>
+
+              <!-- Decisión: ¿Ya fue procesado? -->
+              <polygon points="210,78 255,94 210,110 165,94" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+              <text x="210" y="97" font-size="7.8" font-weight="bold" fill="#0369a1" text-anchor="middle">¿Es Duplicado?</text>
+
+              <!-- Branch: SI DUPLICADO -->
+              <line x1="255" y1="94" x2="330" y2="94" stroke="#f59e0b" stroke-width="1.2"/>
+              <polygon points="330,94 324,91 324,97" fill="#f59e0b"/>
+              <text x="275" y="88" font-size="8" font-weight="bold" fill="#d97706">Sí</text>
+              <g transform="translate(330, 81)">
+                <rect x="0" y="0" width="80" height="26" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                <text x="40" y="16" font-size="7.5" fill="#92400e" text-anchor="middle">ACK Inmediato</text>
+              </g>
+
+              <!-- Branch: NO DUPLICADO -->
+              <line x1="210" y1="110" x2="210" y2="128" stroke="#16a34a" stroke-width="1.2"/>
+              <polygon points="210,128 207,122 213,122" fill="#16a34a"/>
+              <text x="218" y="122" font-size="8" font-weight="bold" fill="#16a34a">No</text>
+
+              <!-- Actividad 2 -->
+              <g transform="translate(95, 128)">
+                <rect x="0" y="0" width="230" height="26" rx="13" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="115" y="17" font-size="8.8" fill="#854d0e" text-anchor="middle">Renderizar Plantilla &amp; Despachar API</text>
+              </g>
+              <line x1="210" y1="154" x2="210" y2="172" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,172 207,166 213,166" fill="#0f2b5c"/>
+
+              <!-- Decisión: ¿Envío Exitoso? -->
+              <polygon points="210,172 255,188 210,204 165,188" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+              <text x="210" y="191" font-size="8" font-weight="bold" fill="#0369a1" text-anchor="middle">¿Entrega Exitosa?</text>
+
+              <!-- Branch: NO -->
+              <line x1="255" y1="188" x2="330" y2="188" stroke="#dc2626" stroke-width="1.2"/>
+              <polygon points="330,188 324,185 324,191" fill="#dc2626"/>
+              <text x="275" y="182" font-size="8" font-weight="bold" fill="#dc2626">No</text>
+              <g transform="translate(330, 175)">
+                <rect x="0" y="0" width="80" height="26" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+                <text x="40" y="16" font-size="7.5" fill="#991b1b" text-anchor="middle">NACK / Reintento</text>
+              </g>
+
+              <!-- Branch: SI -->
+              <line x1="210" y1="204" x2="210" y2="226" stroke="#16a34a" stroke-width="1.2"/>
+              <polygon points="210,226 207,220 213,220" fill="#16a34a"/>
+              <text x="218" y="218" font-size="8" font-weight="bold" fill="#16a34a">Sí</text>
+
+              <!-- Actividad 3 -->
+              <g transform="translate(95, 226)">
+                <rect x="0" y="0" width="230" height="26" rx="13" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.2"/>
+                <text x="115" y="17" font-size="8.8" fill="#854d0e" text-anchor="middle">Registrar Log en BD (SENT)</text>
+              </g>
+              <line x1="210" y1="252" x2="210" y2="272" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,272 207,266 213,266" fill="#0f2b5c"/>
+
+              <!-- Actividad 4 -->
+              <g transform="translate(95, 272)">
+                <rect x="0" y="0" width="230" height="22" rx="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+                <text x="115" y="15" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Emitir ACK a Google Cloud Pub/Sub</text>
+              </g>
+              <line x1="210" y1="294" x2="210" y2="304" stroke="#0f2b5c" stroke-width="1.5"/>
+              <polygon points="210,304 207,298 213,298" fill="#0f2b5c"/>
+
+              <!-- End Node -->
+              <circle cx="210" cy="314" r="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+              <circle cx="210" cy="314" r="6" fill="#16a34a"/>
+              <text x="238" y="318" font-size="9" font-weight="bold" fill="#16a34a">ACK OK</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- FILA 3 DE CUADRÍCULA (8. EXCEPCIONES | 9. DATOS | 10. DOD | 11. INTEGRACIONES) -->
+    <div class="grid-row-3">
+      
+      <!-- 8. FLUJOS ALTERNATIVOS / EXCEPCIONES -->
+      <section class="module-card">
+        <div class="module-title">8. FLUJOS ALTERNATIVOS / EXCEPCIONES</div>
+        <div class="module-body" style="padding: 4px;">
+          <table class="tech-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Código</th>
+                <th style="width: 130px;">Situación</th>
+                <th>Comportamiento del Sistema</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="code-badge">FA-01</span></td>
+                <td><strong>Mensaje duplicado</strong></td>
+                <td>Detección por <span class="code-badge">eventId</span>; emite ACK inmediatamente sin reenviar al cliente[cite: 2, 3].</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-02</span></td>
+                <td><strong>Fallo en API Email/SMS</strong></td>
+                <td>NACK a Pub/Sub para reintento con retroceso exponencial (máx. 5 reintentos)[cite: 3].</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-03</span></td>
+                <td><strong>Agotamiento de reintentos</strong></td>
+                <td>El mensaje se mueve automáticamente a la Dead Letter Queue (DLQ) para análisis[cite: 3].</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-04</span></td>
+                <td><strong>Payload JSON corrupto</strong></td>
+                <td>Rechazo y enrutamiento a DLQ sin provocar caídas del worker; log crítico emitido[cite: 3].</td>
+              </tr>
+              <tr>
+                <td><span class="code-badge">FA-05</span></td>
+                <td><strong>Destinatario inválido</strong></td>
+                <td>Registro como FAILED en <span class="code-badge">notification_logs</span> y emisión de ACK para descartar[cite: 2].</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9. DATOS UTILIZADOS -->
+      <section class="module-card">
+        <div class="module-title">9. DATOS UTILIZADOS</div>
+        <div class="module-body">
+          <ul class="rules-list" style="font-size: 10px; gap: 5px;">
+            <li><strong>Payload Evento:</strong> <span class="code-badge">eventId</span>, <span class="code-badge">eventType</span>, <span class="code-badge">traceId</span>, <span class="code-badge">timestamp</span>, <span class="code-badge">data{}</span>[cite: 2, 7].</li>
+            <li><strong>Datos de Entrega:</strong> recipientEmail, recipientPhone, templateId, channel (EMAIL/SMS).</li>
+            <li><strong>Entidad NotificationLog:</strong> id, eventId, channel, status (SENT/FAILED), errorReason.</li>
+            <li><strong>Trazabilidad:</strong> <span class="code-badge">correlationId</span> transmitido entre microservicios[cite: 2, 7].</li>
+            <li><strong>Credenciales:</strong> API Keys de SendGrid/Twilio gestionadas en Secret Manager[cite: 2, 3].</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 10. CRITERIOS DE ACEPTACIÓN (DOD) -->
+      <section class="module-card">
+        <div class="module-title">10. CRITERIOS DE ACEPTACIÓN (DOD)</div>
+        <div class="module-body">
+          <ul class="checklist">
+            <li><span class="check-icon">✓</span> <span>Consumo desacoplado asíncrono desde Cloud Pub/Sub[cite: 1, 2].</span></li>
+            <li><span class="check-icon">✓</span> <span>Control estricto de idempotencia por <span class="code-badge">eventId</span>[cite: 2, 3].</span></li>
+            <li><span class="check-icon">✓</span> <span>Protección con Dead Letter Queue (DLQ) ante fallos reiterados[cite: 3].</span></li>
+            <li><span class="check-icon">✓</span> <span>Latencia de despacho de eventos &le; 2 segundos tras publicación[cite: 3].</span></li>
+            <li><span class="check-icon">✓</span> <span>Desacoplamiento total: cero impacto sobre bases transaccionales ERP[cite: 1, 2].</span></li>
+            <li><span class="check-icon">✓</span> <span>Auditoría de envíos y propagación de <span class="code-badge">traceId</span> a Cloud Logging[cite: 2, 7].</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 11. INTEGRACIONES -->
+      <section class="module-card">
+        <div class="module-title">11. INTEGRACIONES</div>
+        <div class="module-body" style="padding: 4px;">
+          <table class="tech-table">
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Protocolo</th>
+                <th>Propósito</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Google Cloud Pub/Sub</strong></td>
+                <td><span class="code-badge">gRPC / Push</span></td>
+                <td>Suscripción de eventos asíncronos (<span class="code-badge">order.created</span>, <span class="code-badge">OrderPaid</span>)[cite: 1, 2].</td>
+              </tr>
+              <tr>
+                <td><strong>Notification Worker</strong></td>
+                <td><span class="code-badge">TypeScript / Cloud Run</span></td>
+                <td>Consumidor de eventos, renderizado de plantillas y control de reintentos[cite: 1, 2].</td>
+              </tr>
+              <tr>
+                <td><strong>Gateway Email / SMS</strong></td>
+                <td><span class="code-badge">HTTPS REST</span></td>
+                <td>Despacho transaccional multicanal hacia clientes y transportadoras.</td>
+              </tr>
+              <tr>
+                <td><strong>Cloud SQL (DB)</strong></td>
+                <td><span class="code-badge">PostgreSQL</span></td>
+                <td>Registro y consulta de idempotencia en <span class="code-badge">notification_logs</span>[cite: 1, 2].</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- PIE DE PÁGINA: NOTA DE GOBERNANZA Y SEGURIDAD -->
+    <footer class="footer-governance">
+      <div class="footer-icon">ℹ</div>
+      <div>
+        <strong>Nota de Gobernanza y Frontera Transaccional (SRS v5.0):</strong> El subsistema de notificaciones opera bajo el patrón de arquitectura orientada a eventos (Event-Driven Architecture)[cite: 1, 2]. Ninguna notificación se despacha de forma síncrona dentro del flujo crítico de compra para no degradar la experiencia de usuario ni violar los SLOs de respuesta[cite: 3]. Las comunicaciones transaccionales cumplen con la Ley 1581 (Habeas Data), enmascarando información financiera y custodiando credenciales en Google Secret Manager[cite: 2, 3].
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MOTOR DE EXPORTACIÓN A PNG -->
+  <script>
+    function exportarFichaPNG() {
+      const btn = document.querySelector('.btn-export');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Generando imagen PNG...';
+      btn.style.opacity = '0.7';
+
+      const canvasElement = document.getElementById('ficha-canvas');
+
+      html2canvas(canvasElement, {
+        width: 1600,
+        height: 1200,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      }).then(canvas => {
+        const imageURL = canvas.toDataURL('image/png', 1.0);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageURL;
+        downloadLink.download = 'CU-EC-012_Generar_notificaciones_de_eventos_relevantes_CuchosTool.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      }).catch(err => {
+        console.error('Error exportando ficha técnica:', err);
+        alert('Ocurrió un error al generar la imagen PNG. Por favor, revisa la consola del navegador.');
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      });
+    }
+  </script>
+</body>
+</html>

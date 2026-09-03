@@ -1,0 +1,33 @@
+name: CI
+
+# Politica Git Backlog v6: main protegida, develop integra. CI sobre PR y develop.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    name: Typecheck + build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck -w @cuchostool/${{ matrix.app }}
+      - run: npm run build -w @cuchostool/${{ matrix.app }}
+
+  docker-build:
+    name: Docker images (artefacto inmutable)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t cuchostool-api:ci ./apps/api
+      - run: docker build -t cuchostool-web:ci ./apps/web

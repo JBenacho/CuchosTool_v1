@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+coverage/
+*.log
+.npmrc
+# Entornos
+.env
+.env.local
+.env.*.local
+# Editor/OS
+.DS_Store
+Thumbs.db
+.idea/
+*.suo
+# DSH (artefactos temporales de analisis)
+_NICOLA_work/
+# Docker
+.docker-volumes/
+# Drizzle
+apps/api/db/migrations/meta/_journal.json.bak

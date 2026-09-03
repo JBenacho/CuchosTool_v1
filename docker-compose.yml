@@ -1,0 +1,42 @@
+# Entorno local reproducible F0 (Backlog v6 BL-003/BL-007) - CuchosTool.com
+# Uso: docker compose up -d --build  (dev) | down -v (limpiar)
+name: cuchostool-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cuchostool-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cuchos
+      POSTGRES_PASSWORD: cuchos_dev_pass
+      POSTGRES_DB: cuchostool_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cuchos -d cuchostool_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: cuchostool-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3001
+      DATABASE_URL: postgres://cuchos:cuchos_dev_pass@db:5432/cuchostool_dev
+      LOG_LEVEL: info
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

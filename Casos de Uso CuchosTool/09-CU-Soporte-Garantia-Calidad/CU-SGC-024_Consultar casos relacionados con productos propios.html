@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CU-SGC-024 - Consultar casos relacionados con productos propios</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --navy: #0B2A4A;
+            --navy-dark: #08233E;
+            --navy-mid: #123A63;
+            --gold: #D4A017;
+            --gold-light: #F0C14A;
+            --bg-canvas: #E8EEF4;
+            --panel: #FFFFFF;
+            --panel-alt: #F4F7FB;
+            --line: #C5D0DC;
+            --text: #1B2A3A;
+            --muted: #5B6B7C;
+            --teal: #1F7A8C;
+            --teal-soft: #D7EEF3;
+            --red: #C0392B;
+            --red-soft: #F8D7DA;
+            --green: #1E7A46;
+            --green-soft: #D9F3E3;
+            --seq-client: #2E8B57;
+            --seq-router: #148A8A;
+            --seq-svc: #6B4C9A;
+            --seq-db: #E09B2D;
+            --seq-bus: #5C6B7A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            background-color: #d9e2ec;
+        }
+
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        /* LIENZO FIJO CORPORATIVO 1600x1200 (4:3) */
+        #canvas {
+            width: 1600px;
+            height: 1200px;
+            background-color: var(--bg-canvas);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 12px 36px rgba(11, 42, 74, 0.35);
+            border: 1px solid var(--navy);
+            flex-shrink: 0;
+        }
+
+        /* HEADER CORPORATIVO (68px) */
+        header {
+            height: 68px;
+            background-color: var(--navy-dark);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            border-bottom: 3px solid var(--gold);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-ct {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy-dark);
+            font-weight: 900;
+            font-size: 19px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: 1px solid #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+            flex-shrink: 0;
+        }
+
+        .header-title-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header-title-group h1 {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 1px;
+        }
+
+        .header-title-group h2 {
+            font-size: 22px;
+            color: #FFFFFF;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.3px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 11px;
+            color: #C5D0DC;
+            line-height: 1.35;
+        }
+
+        .header-right span {
+            color: var(--gold-light);
+            font-weight: 600;
+        }
+
+        /* GRID PRINCIPAL DENSO (11 BLOQUES) */
+        .main-grid {
+            flex: 1;
+            padding: 8px 10px;
+            display: grid;
+            grid-template-rows: 304px 436px 304px;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .grid-row {
+            display: grid;
+            gap: 8px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .row-1 {
+            grid-template-columns: 1.05fr 1.15fr 0.95fr;
+        }
+
+        .row-2 {
+            grid-template-columns: 0.95fr 1.25fr 0.95fr;
+        }
+
+        .row-3 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        /* PANELES */
+        .panel {
+            background-color: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(11, 42, 74, 0.05);
+        }
+
+        .panel-header {
+            height: 26px;
+            background-color: var(--navy);
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            border-bottom: 1px solid var(--gold);
+            flex-shrink: 0;
+        }
+
+        .panel-content {
+            padding: 5px 7px;
+            font-size: 11px;
+            line-height: 1.3;
+            color: var(--text);
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5px;
+        }
+
+        .panel-content.scrollable {
+            overflow-y: auto;
+        }
+
+        /* METADATOS CLAVE-VALOR */
+        .kv-row {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .kv-label {
+            font-weight: 700;
+            color: var(--navy);
+            flex-shrink: 0;
+            font-size: 11px;
+        }
+
+        .kv-val {
+            color: var(--text);
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 10.5px;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            vertical-align: middle;
+        }
+
+        .badge-teal {
+            background-color: var(--teal);
+            color: #FFFFFF;
+        }
+
+        .badge-red {
+            background-color: var(--red);
+            color: #FFFFFF;
+        }
+
+        .badge-gold {
+            background-color: var(--gold);
+            color: var(--navy-dark);
+        }
+
+        .badge-navy {
+            background-color: var(--navy);
+            color: #FFFFFF;
+        }
+
+        code {
+            background-color: var(--panel-alt);
+            border: 1px solid var(--line);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-family: Consolas, monospace;
+            font-size: 10.5px;
+            color: var(--navy);
+            font-weight: 600;
+        }
+
+        /* TABLAS INTERNAS */
+        table.dense-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+
+        table.dense-table th, 
+        table.dense-table td {
+            border: 1px solid var(--line);
+            padding: 2px 4px;
+            text-align: left;
+        }
+
+        table.dense-table th {
+            background-color: var(--panel-alt);
+            color: var(--navy);
+            font-weight: 700;
+            font-size: 10.5px;
+        }
+
+        /* LISTAS COMPACTAS */
+        ul.dense-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        ul.dense-list li {
+            position: relative;
+            padding-left: 10px;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        ul.dense-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--navy);
+            font-weight: bold;
+        }
+
+        /* PASOS CAMINO FELIZ */
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            margin-bottom: 2px;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        .step-circle {
+            background-color: var(--navy);
+            color: var(--gold-light);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9.5px;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 1px;
+            border: 1px solid var(--gold);
+        }
+
+        .check-green {
+            color: var(--green);
+            font-weight: 800;
+            font-size: 11.5px;
+        }
+
+        /* CONTENEDOR SVG */
+        .svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #FFFFFF;
+        }
+
+        /* FOOTER DE GOBERNANZA (44px) */
+        footer {
+            height: 44px;
+            background-color: var(--navy);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            font-size: 11px;
+            border-top: 2px solid var(--gold);
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .footer-icon {
+            background-color: var(--gold);
+            color: var(--navy-dark);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 11.5px;
+            flex-shrink: 0;
+        }
+
+        /* CONTROLES FUERA DEL LIENZO */
+        .controls-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .export-btn {
+            background-color: var(--navy);
+            color: var(--gold-light);
+            border: 2px solid var(--gold);
+            padding: 10px 24px;
+            font-size: 13.5px;
+            font-weight: 800;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .export-btn:hover {
+            background-color: var(--navy-dark);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LIENZO PRINCIPAL 1600x1200 (4:3) -->
+    <div id="canvas">
+        
+        <!-- HEADER CORPORATIVO -->
+        <header>
+            <div class="header-left">
+                <div class="logo-ct">CT</div>
+                <div class="header-title-group">
+                    <h1>Ficha de Caso de Uso Oficial</h1>
+                    <h2>CU-SGC-024 - Consultar casos relacionados con productos propios</h2>
+                </div>
+            </div>
+            <div class="header-right">
+                Proyecto: <span>CuchosTool.com</span> | Baseline: <span>SRS v5.0 / ARQ v6.0 / BL v5.0</span><br>
+                Módulo: <span>Soporte, Garantías y Calidad / Productos Propios / DOM-SGC</span> | Fecha: <span>02/09/2026</span><br>
+                Responsable: <span>Nicola</span> | Rol: <span>Arquitecto &amp; Dirección Técnica</span>
+            </div>
+        </header>
+
+        <!-- GRID DE 11 BLOQUES -->
+        <div class="main-grid">
+
+            <!-- FILA 1 (~28%) -->
+            <div class="grid-row row-1">
+                
+                <!-- BLOQUE 1: INFORMACIÓN GENERAL -->
+                <div class="panel">
+                    <div class="panel-header">1. INFORMACIÓN GENERAL</div>
+                    <div class="panel-content scrollable">
+                        <div class="kv-row"><span class="kv-label">ID / Código:</span> <span class="kv-val"><strong>CU-SGC-024</strong></span></div>
+                        <div class="kv-row"><span class="kv-label">Trazabilidad:</span> <span class="kv-val"><code>SGC-24</code>, <code>RNF-001</code>, <code>BL-001</code>, <code>BR-02</code></span></div>
+                        <div class="kv-row"><span class="kv-label">Nombre:</span> <span class="kv-val">Consultar casos relacionados con productos propios</span></div>
+                        <div class="kv-row"><span class="kv-label">Objetivo:</span> <span class="kv-val">Permitir al emprendedor consultar los casos, tickets y reclamaciones de garantía vinculados exclusivamente a los productos de su autoría o catálogo.</span></div>
+                        <div class="kv-row"><span class="kv-label">Actor Principal:</span> <span class="kv-val"><span class="badge badge-navy">Entrepreneur</span> (Seller Role)</span></div>
+                        <div class="kv-row"><span class="kv-label">Actores Sec.:</span> <span class="kv-val">API Gateway, Cloud SQL, Audit Svc</span></div>
+                        <div class="kv-row"><span class="kv-label">Tipo / Prioridad:</span> <span class="kv-val"><span class="badge badge-teal">Soporte y Garantías / Emprendedores</span> <span class="badge badge-red">Prioridad Esencial</span></span></div>
+                        <div class="kv-row"><span class="kv-label">Estado:</span> <span class="kv-val">Aprobado / Casos de Productos Propios (Baseline v6.0)</span></div>
+                        <div class="kv-row"><span class="kv-label">Disparador:</span> <span class="kv-val">Acceso del emprendedor a la sección de soporte de sus productos en su panel corporativo.</span></div>
+                        <div class="kv-row"><span class="kv-label">Precondiciones:</span> <span class="kv-val">1. Sesión activa con rol de emprendedor.<br>2. Productos propios registrados en el sistema.</span></div>
+                        <div class="kv-row"><span class="kv-label">Resultado:</span> <span class="kv-val">HTTP <code>200 OK</code> / Listado filtrado de casos y garantías de sus productos propios devuelto.</span></div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 2: DIAGRAMA CASOS DE USO UML -->
+                <div class="panel">
+                    <div class="panel-header">2. DIAGRAMA DE CASOS DE USO (UML)</div>
+                    <div class="panel-content" style="padding: 2px;">
+                        <div class="svg-container">
+                            <svg width="100%" height="100%" viewBox="0 0 540 265" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Boundary -->
+                                <rect x="12" y="10" width="516" height="245" rx="6" fill="#F4F7FB" stroke="#0B2A4A" stroke-width="1.4" stroke-dasharray="4,3"/>
+                                <text x="24" y="27" font-size="11" font-weight="bold" fill="#0B2A4A">Plataforma CuchosTool - DOM-SGC (Casos Productos Propios)</text>
+
+                                <!-- Actor Stickman Izquierda -->
+                                <g transform="translate(25, 95)">
+                                    <circle cx="20" cy="12" r="11" fill="#FFFFFF" stroke="#0B2A4A" stroke-width="2"/>
+                                    <line x1="20" y1="23" x2="20" y2="52" stroke="#0B2A4A" stroke-width="2"/>
+                                    <line x1="6" y1="34" x2="34" y2="34" stroke="#0B2A4A" stroke-width="2"/>
+                                    <line x1="20" y1="52" x2="7" y2="76" stroke="#0B2A4A" stroke-width="2"/>
+                                    <line x1="20" y1="52" x2="33" y2="76" stroke="#0B2A4A" stroke-width="2"/>
+                                    <text x="20" y="93" font-size="9.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">ENTREPRENEUR</text>
+                                </g>
+
+                                <!-- CU Principal -->
+                                <ellipse cx="270" cy="105" rx="104" ry="34" fill="#0B2A4A" stroke="#D4A017" stroke-width="2"/>
+                                <text x="270" y="100" font-size="11" font-weight="bold" fill="#D4A017" text-anchor="middle">CU-SGC-024</text>
+                                <text x="270" y="116" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Consultar Casos Productos</text>
+
+                                <!-- CU Secundaria (Include) -->
+                                <ellipse cx="270" cy="202" rx="88" ry="24" fill="#FFFFFF" stroke="#1F7A8C" stroke-width="1.6" stroke-dasharray="3,3"/>
+                                <text x="270" y="198" font-size="10" font-weight="bold" fill="#1F7A8C" text-anchor="middle">CU-SEC-008</text>
+                                <text x="270" y="212" font-size="9" font-weight="bold" fill="#1B2A3A" text-anchor="middle">Validar Permisos IAM</text>
+
+                                <!-- Actor Secundario Derecha: Cloud SQL -->
+                                <g transform="translate(445, 65)">
+                                    <rect x="0" y="0" width="75" height="34" rx="4" fill="#FFFFFF" stroke="#E09B2D" stroke-width="1.8"/>
+                                    <text x="37.5" y="15" font-size="9.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">Cloud SQL</text>
+                                    <text x="37.5" y="27" font-size="8.5" fill="#5B6B7C" text-anchor="middle">(Database)</text>
+                                </g>
+
+                                <!-- Actor Secundario Derecha: Audit Svc -->
+                                <g transform="translate(445, 140)">
+                                    <rect x="0" y="0" width="75" height="34" rx="4" fill="#FFFFFF" stroke="#5C6B7A" stroke-width="1.8"/>
+                                    <text x="37.5" y="15" font-size="9.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">Audit Svc</text>
+                                    <text x="37.5" y="27" font-size="8.5" fill="#5B6B7C" text-anchor="middle">(Query Log)</text>
+                                </g>
+
+                                <!-- Conexiones -->
+                                <line x1="60" y1="130" x2="166" y2="110" stroke="#0B2A4A" stroke-width="1.6"/>
+                                <line x1="374" y1="102" x2="445" y2="85" stroke="#E09B2D" stroke-width="1.4" stroke-dasharray="3,3"/>
+                                <line x1="370" y1="118" x2="445" y2="155" stroke="#5C6B7A" stroke-width="1.4" stroke-dasharray="3,3"/>
+
+                                <!-- Flecha Include -->
+                                <line x1="270" y1="139" x2="270" y2="178" stroke="#1F7A8C" stroke-width="1.5" stroke-dasharray="3,3"/>
+                                <text x="282" y="161" font-size="9" font-weight="bold" fill="#1F7A8C">&laquo;include&raquo;</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 3 Y 4: DESCRIPCIÓN Y REGLAS APILADOS (Con scroll y altura ajustada) -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 3. Descripción y Alcance -->
+                    <div class="panel" style="flex: 1 1 50%;">
+                        <div class="panel-header">3. DESCRIPCIÓN Y ALCANCE</div>
+                        <div class="panel-content scrollable">
+                            <p><strong>Propósito:</strong> Facilitar al emprendedor la supervisión de incidencias y garantías asociadas a los artículos que comercializa.</p>
+                            <p><strong>Acceso:</strong> Emprendedor autenticado bajo política <em>Default Deny</em>.</p>
+                            <p><strong>Frontera ERP:</strong> Módulo de soporte de emprendedores; aislado de transacciones de pagos directos y DIAN.</p>
+                        </div>
+                    </div>
+                    <!-- 4. Reglas de Negocio -->
+                    <div class="panel" style="flex: 1 1 50%;">
+                        <div class="panel-header">4. REGLAS DE NEGOCIO (RN)</div>
+                        <div class="panel-content scrollable">
+                            <ul class="dense-list">
+                                <li><strong>BR-02 / RN-SGC-047:</strong> Default Deny estricto en la consulta de casos de productos que no pertenezcan al catálogo del emprendedor autenticado.</li>
+                                <li><strong>RN-SGC-048:</strong> El filtrado debe basarse en el ID del emprendedor asociado a los SKUs de los productos consultados.</li>
+                                <li><strong>RN-OPS-012:</strong> Tiempo de respuesta p99 &le; <code style="color:var(--red);">TBD</code> ms.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FILA 2 (~36%) -->
+            <div class="grid-row row-2">
+                
+                <!-- BLOQUE 5: FLUJO PRINCIPAL -->
+                <div class="panel">
+                    <div class="panel-header">5. FLUJO PRINCIPAL (CAMINO FELIZ)</div>
+                    <div class="panel-content scrollable">
+                        <div class="step-row"><div class="step-circle">1</div><span>Emprendedor accede a la sección de soporte de sus productos en su panel corporativo.</span></div>
+                        <div class="step-row"><div class="step-circle">2</div><div>Selecciona filtros opcionales de estado, categoría de producto o rango de fechas.</div></div>
+                        <div class="step-row"><div class="step-circle">3</div><div>Validación de identidad y permisos de propiedad sobre los SKUs en Cloud SQL.</div></div>
+                        <div class="step-row"><div class="step-circle">4</div><div>Ejecución de consulta paginada vinculando los tickets de soporte con los productos del emprendedor.</div></div>
+                        <div class="step-row"><div class="step-circle">5</div><div>Registro de la consulta en el servicio de auditoría (Audit Svc).</div></div>
+                        <div class="step-row"><div class="step-circle">6</div><div>Serialización de los resultados en formato JSON estructurado.</div></div>
+                        <div class="step-row"><div class="step-circle">7</div><div>Retorno del listado filtrado al emprendedor con código HTTP 200 OK.</div></div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 6: DIAGRAMA DE SECUENCIA -->
+                <div class="panel">
+                    <div class="panel-header">6. DIAGRAMA DE SECUENCIA (UML)</div>
+                    <div class="panel-content" style="padding: 2px;">
+                        <div class="svg-container">
+                            <svg width="100%" height="100%" viewBox="0 0 540 235" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Lifeline Headers -->
+                                <rect x="15" y="10" width="85" height="24" rx="3" fill="#2E8B57"/>
+                                <text x="57" y="26" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Entrepreneur</text>
+
+                                <rect x="125" y="10" width="90" height="24" rx="3" fill="#148A8A"/>
+                                <text x="170" y="26" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">API Gateway</text>
+
+                                <rect x="240" y="10" width="95" height="24" rx="3" fill="#6B4C9A"/>
+                                <text x="287" y="26" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Cloud SQL DB</text>
+
+                                <rect x="360" y="10" width="85" height="24" rx="3" fill="#E09B2D"/>
+                                <text x="402" y="26" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Audit Svc</text>
+
+                                <rect x="465" y="10" width="60" height="24" rx="3" fill="#5C6B7A"/>
+                                <text x="495" y="26" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Logger</text>
+
+                                <!-- Líneas de vida verticales -->
+                                <line x1="57" y1="34" x2="57" y2="225" stroke="#C5D0DC" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                <line x1="170" y1="34" x2="170" y2="225" stroke="#C5D0DC" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                <line x1="287" y1="34" x2="287" y2="225" stroke="#C5D0DC" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                <line x1="402" y1="34" x2="402" y2="225" stroke="#C5D0DC" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                <line x1="495" y1="34" x2="495" y2="225" stroke="#C5D0DC" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+                                <!-- Mensajes -->
+                                <line x1="57" y1="55" x2="170" y2="55" stroke="#0B2A4A" stroke-width="1.4" marker-end="url(#arr)"/>
+                                <text x="113" y="49" font-size="8.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">1. Query Entrepreneur Cases</text>
+
+                                <line x1="170" y1="80" x2="287" y2="80" stroke="#0B2A4A" stroke-width="1.4" marker-end="url(#arr)"/>
+                                <text x="228" y="74" font-size="8.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">2. Fetch Filtered Product Tickets</text>
+
+                                <line x1="170" y1="108" x2="402" y2="108" stroke="#1F7A8C" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+                                <text x="286" y="102" font-size="8.5" font-weight="bold" fill="#1F7A8C" text-anchor="middle">3. Audit Query Access</text>
+
+                                <line x1="170" y1="135" x2="495" y2="135" stroke="#5C6B7A" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+                                <text x="332" y="129" font-size="8.5" font-weight="bold" fill="#5C6B7A" text-anchor="middle">4. Log Query Event</text>
+
+                                <line x1="170" y1="165" x2="57" y2="165" stroke="#1E7A46" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+                                <text x="113" y="159" font-size="9" font-weight="bold" fill="#1E7A46" text-anchor="middle">5. Return Cases List (200 OK)</text>
+
+                                <defs>
+                                    <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#0B2A4A"/>
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 7: DIAGRAMA DE ACTIVIDADES -->
+                <div class="panel">
+                    <div class="panel-header">7. DIAGRAMA DE ACTIVIDADES (UML)</div>
+                    <div class="panel-content" style="padding: 2px;">
+                        <div class="svg-container">
+                            <svg width="100%" height="100%" viewBox="0 0 360 235" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Inicio -->
+                                <circle cx="180" cy="15" r="7" fill="#0B2A4A"/>
+
+                                <!-- Paso 1: Consultar Casos -->
+                                <rect x="105" y="32" width="150" height="24" rx="4" fill="#F0C14A" stroke="#0B2A4A" stroke-width="1.2"/>
+                                <text x="180" y="48" font-size="9" font-weight="bold" fill="#0B2A4A" text-anchor="middle">Filtrar por Productos Propios</text>
+                                <line x1="180" y1="22" x2="180" y2="32" stroke="#0B2A4A" stroke-width="1.4"/>
+
+                                <!-- Decisión 1: ¿Emprendedor Válido? -->
+                                <polygon points="180,64 220,80 180,96 140,80" fill="#D7EEF3" stroke="#1F7A8C" stroke-width="1.3"/>
+                                <text x="180" y="83" font-size="8.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">¿Autorizado?</text>
+                                <line x1="180" y1="56" x2="180" y2="64" stroke="#0B2A4A" stroke-width="1.4"/>
+
+                                <!-- Rama No -> Denegar (403) -->
+                                <line x1="220" y1="80" x2="260" y2="80" stroke="#C0392B" stroke-width="1.4"/>
+                                <text x="236" y="74" font-size="8" font-weight="bold" fill="#C0392B">No</text>
+                                <rect x="260" y="68" width="85" height="24" rx="3" fill="#F8D7DA" stroke="#C0392B" stroke-width="1.2"/>
+                                <text x="302" y="83" font-size="8.5" font-weight="bold" fill="#C0392B" text-anchor="middle">Denegar (403)</text>
+
+                                <!-- Rama Sí -> Consultar Cloud SQL -->
+                                <line x1="180" y1="96" x2="180" y2="112" stroke="#0B2A4A" stroke-width="1.4"/>
+                                <text x="186" y="106" font-size="8" font-weight="bold" fill="#0B2A4A">Sí</text>
+                                <rect x="105" y="112" width="150" height="24" rx="4" fill="#F0C14A" stroke="#0B2A4A" stroke-width="1.2"/>
+                                <text x="180" y="128" font-size="9" font-weight="bold" fill="#0B2A4A" text-anchor="middle">Consultar Cloud SQL DB</text>
+
+                                <!-- Decisión 2: ¿Query OK? -->
+                                <polygon points="180,146 220,162 180,178 140,162" fill="#D7EEF3" stroke="#1F7A8C" stroke-width="1.3"/>
+                                <text x="180" y="165" font-size="8.5" font-weight="bold" fill="#0B2A4A" text-anchor="middle">¿Query OK?</text>
+                                <line x1="180" y1="136" x2="180" y2="146" stroke="#0B2A4A" stroke-width="1.4"/>
+
+                                <!-- Rama No -> Error DB -->
+                                <line x1="220" y1="162" x2="260" y2="162" stroke="#C0392B" stroke-width="1.4"/>
+                                <text x="236" y="156" font-size="8" font-weight="bold" fill="#C0392B">No</text>
+                                <rect x="260" y="150" width="85" height="24" rx="3" fill="#F8D7DA" stroke="#C0392B" stroke-width="1.2"/>
+                                <text x="302" y="165" font-size="8.5" font-weight="bold" fill="#C0392B" text-anchor="middle">Error DB (500)</text>
+
+                                <!-- Rama Sí -> Success -->
+                                <line x1="180" y1="178" x2="180" y2="192" stroke="#1E7A46" stroke-width="1.4"/>
+                                <text x="186" y="187" font-size="8" font-weight="bold" fill="#1E7A46">Sí</text>
+                                <rect x="95" y="192" width="170" height="24" rx="4" fill="#D9F3E3" stroke="#1E7A46" stroke-width="1.2"/>
+                                <text x="180" y="208" font-size="9" font-weight="bold" fill="#1E7A46" text-anchor="middle">Product Cases Query Success</text>
+
+                                <!-- Fin OK -->
+                                <circle cx="180" cy="226" r="6" fill="none" stroke="#1E7A46" stroke-width="2"/>
+                                <circle cx="180" cy="226" r="3" fill="#1E7A46"/>
+                                <line x1="180" y1="216" x2="180" y2="220" stroke="#1E7A46" stroke-width="1.4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FILA 3 (~26%) -->
+            <div class="grid-row row-3">
+                
+                <!-- BLOQUE 8: FLUJOS ALTERNATIVOS -->
+                <div class="panel">
+                    <div class="panel-header">8. FLUJOS ALTERNATIVOS / FALLOS</div>
+                    <div class="panel-content scrollable" style="padding: 2px;">
+                        <table class="dense-table">
+                            <thead>
+                                <tr><th>Código</th><th>Situación</th><th>Comportamiento</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>FA-01</code></td><td>Emprendedor sin productos registrados.</td><td>Retorna lista vacía (HTTP 200 OK).</td></tr>
+                                <tr><td><code>FA-02</code></td><td>Intento de acceso a productos ajenos.</td><td>Rechazo de acceso (HTTP 403 Forbidden).</td></tr>
+                                <tr><td><code>FA-03</code></td><td>Sesión expirada o token inválido.</td><td>Rechazo de acceso (HTTP 401).</td></tr>
+                                <tr><td><code>FA-04</code></td><td>Timeout en base de datos.</td><td>HTTP <code>504 Gateway Timeout</code>.</td></tr>
+                                <tr><td><code>FA-05</code></td><td>Fallo en servicio de auditoría.</td><td>Registro local y alerta SRE.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 9: DATOS UTILIZADOS -->
+                <div class="panel">
+                    <div class="panel-header">9. DATOS UTILIZADOS Y DTO</div>
+                    <div class="panel-content scrollable">
+                        <ul class="dense-list">
+                            <li><code>EntrepreneurCasesQueryDTO</code>: entrepreneurId, statusFilter, categoryFilter, page, limit.</li>
+                            <li><code>ProductCaseSummaryDTO</code>: ticketNumber, sku, productName, issueType, status, updatedAt.</li>
+                            <li><code>AuditLogRecord</code>: entityId, action, timestamp, entrepreneurId.</li>
+                            <li><code>X-Correlation-ID</code>: Trazabilidad distribuida.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 10: CRITERIOS DOD -->
+                <div class="panel">
+                    <div class="panel-header">10. CRITERIOS DE ACEPTACIÓN (DOD)</div>
+                    <div class="panel-content scrollable">
+                        <ul class="dense-list">
+                            <li><span class="check-green">&check;</span> Consulta de casos relacionados con productos propios operativa.</li>
+                            <li><span class="check-green">&check;</span> Filtrado estricto por catálogo del emprendedor verificado.</li>
+                            <li><span class="check-green">&check;</span> Registro de auditoría inmutable comprobado.</li>
+                            <li><span class="check-green">&check;</span> Latencia p99 validada (BL-001).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- BLOQUE 11: INTEGRACIONES -->
+                <div class="panel">
+                    <div class="panel-header">11. MATRIZ DE INTEGRACIONES</div>
+                    <div class="panel-content scrollable" style="padding: 2px;">
+                        <table class="dense-table">
+                            <thead>
+                                <tr><th>Servicio</th><th>Protocolo</th><th>Propósito</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Entrepreneur Portal</td><td>HTTPS / REST</td><td>Interfaz de consulta de casos de productos.</td></tr>
+                                <tr><td>Cloud SQL</td><td>PostgreSQL</td><td>Consulta transaccional vinculada a SKUs propios.</td></tr>
+                                <tr><td>Audit Svc</td><td>Event Stream</td><td>Auditoría de consultas de emprendedores.</td></tr>
+                                <tr><td>Cloud Logging</td><td>Event Stream</td><td>Trazabilidad operativa.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PIE CORPORATIVO DE GOBERNANZA -->
+        <footer>
+            <div class="footer-icon">i</div>
+            <div><strong>Nota de Gobernanza (SRS v5.0):</strong> Consulta de casos de productos propios bajo <em>Default Deny</em>; validación estricta de propiedad de SKUs; desacoplado de pagos y DIAN.</div>
+        </footer>
+
+    </div>
+
+    <!-- BOTÓN DE EXPORTACIÓN FUERA DEL LIENZO -->
+    <div class="controls-container">
+        <button class="export-btn" id="exportBtn">Exportar PNG 1600×1200</button>
+    </div>
+
+    <script>
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const canvasElement = document.getElementById('canvas');
+            
+            html2canvas(canvasElement, {
+                scale: 2,
+                backgroundColor: '#E8EEF4',
+                width: 1600,
+                height: 1200,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'CU-SGC-024_Consultar_casos_relacionados_con_productos_propios.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error('Error exportando PNG:', err);
+                alert('Ocurrió un error al generar la captura PNG.');
+            });
+        });
+    </script>
+</body>
+</html>
