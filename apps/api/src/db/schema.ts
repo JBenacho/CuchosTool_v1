@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, bigint, timestamp, index, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, bigint, timestamp, index, jsonb, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Catalogo publico (CU-EC-001..006): producto + categoria.
 // Precios en centavos COP (bigint) para evitar errores de redondeo.
@@ -68,3 +68,24 @@ export const outboxEvents = pgTable('outbox_events', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   publishedAt: timestamp('published_at', { withTimezone: true }),
 });
+
+// Carrito de compra (CU-EC-007). En local el cliente se identifica por X-Customer-Id
+// hasta cerrar identidad (CU-EC-013/014). Precios se resuelven vivos al checkout.
+export const carts = pgTable('carts', {
+  id: serial('id').primaryKey(),
+  customerId: text('customer_id').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const cartItems = pgTable(
+  'cart_items',
+  {
+    id: serial('id').primaryKey(),
+    cartId: integer('cart_id').notNull().references(() => carts.id),
+    productId: integer('product_id').notNull(),
+    quantity: integer('quantity').notNull(),
+    addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('cart_items_cart_product_idx').on(table.cartId, table.productId)]
+);

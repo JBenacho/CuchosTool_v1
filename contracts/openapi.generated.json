@@ -231,13 +231,138 @@
                                                                            }
                                                          }
                                              },
+                  "/cart":  {
+                                "get":  {
+                                            "summary":  "Consultar carrito",
+                                            "tags":  [
+                                                         "cart"
+                                                     ],
+                                            "description":  "Contenido y total del carrito (CU-EC-007).",
+                                            "responses":  {
+                                                              "200":  {
+                                                                          "description":  "Default Response"
+                                                                      }
+                                                          }
+                                        }
+                            },
+                  "/cart/items":  {
+                                      "post":  {
+                                                   "summary":  "Agregar producto al carrito",
+                                                   "tags":  [
+                                                                "cart"
+                                                            ],
+                                                   "requestBody":  {
+                                                                       "required":  true,
+                                                                       "content":  {
+                                                                                       "application/json":  {
+                                                                                                                "schema":  {
+                                                                                                                               "type":  "object",
+                                                                                                                               "required":  [
+                                                                                                                                                "productId",
+                                                                                                                                                "quantity"
+                                                                                                                                            ],
+                                                                                                                               "properties":  {
+                                                                                                                                                  "productId":  {
+                                                                                                                                                                    "type":  "integer"
+                                                                                                                                                                },
+                                                                                                                                                  "quantity":  {
+                                                                                                                                                                   "type":  "integer"
+                                                                                                                                                               }
+                                                                                                                                              }
+                                                                                                                           }
+                                                                                                            }
+                                                                                   }
+                                                                   },
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Default Response"
+                                                                             }
+                                                                 }
+                                               }
+                                  },
+                  "/cart/items/{productId}":  {
+                                                  "patch":  {
+                                                                "summary":  "Actualizar cantidad",
+                                                                "tags":  [
+                                                                             "cart"
+                                                                         ],
+                                                                "requestBody":  {
+                                                                                    "required":  true,
+                                                                                    "content":  {
+                                                                                                    "application/json":  {
+                                                                                                                             "schema":  {
+                                                                                                                                            "type":  "object",
+                                                                                                                                            "required":  [
+                                                                                                                                                             "quantity"
+                                                                                                                                                         ],
+                                                                                                                                            "properties":  {
+                                                                                                                                                               "quantity":  {
+                                                                                                                                                                                "type":  "integer"
+                                                                                                                                                                            }
+                                                                                                                                                           }
+                                                                                                                                        }
+                                                                                                                         }
+                                                                                                }
+                                                                                },
+                                                                "parameters":  [
+                                                                                   {
+                                                                                       "schema":  {
+                                                                                                      "type":  "string"
+                                                                                                  },
+                                                                                       "in":  "path",
+                                                                                       "name":  "productId",
+                                                                                       "required":  true
+                                                                                   }
+                                                                               ],
+                                                                "responses":  {
+                                                                                  "200":  {
+                                                                                              "description":  "Default Response"
+                                                                                          }
+                                                                              }
+                                                            },
+                                                  "delete":  {
+                                                                 "summary":  "Quitar producto del carrito",
+                                                                 "tags":  [
+                                                                              "cart"
+                                                                          ],
+                                                                 "parameters":  [
+                                                                                    {
+                                                                                        "schema":  {
+                                                                                                       "type":  "string"
+                                                                                                   },
+                                                                                        "in":  "path",
+                                                                                        "name":  "productId",
+                                                                                        "required":  true
+                                                                                    }
+                                                                                ],
+                                                                 "responses":  {
+                                                                                   "200":  {
+                                                                                               "description":  "Default Response"
+                                                                                           }
+                                                                               }
+                                                             }
+                                              },
+                  "/cart/checkout":  {
+                                         "post":  {
+                                                      "summary":  "Crear pedido desde el carrito",
+                                                      "tags":  [
+                                                                   "cart"
+                                                               ],
+                                                      "description":  "Vacia el carrito y crea el pedido (CU-EC-008).",
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Default Response"
+                                                                                }
+                                                                    }
+                                                  }
+                                     },
                   "/orders":  {
                                   "post":  {
                                                "summary":  "Crear pedido unico desde checkout",
                                                "tags":  [
                                                             "orders"
                                                         ],
-                                               "description":  "Crea el pedido y reserva conceptual de stock; publica OrderCreated via Outbox (CU-EC-008, BL-030/033).",
+                                               "description":  "Transaccion ACID + Outbox OrderCreated. Idempotency-Key opcional (BL-023).",
                                                "requestBody":  {
                                                                    "required":  true,
                                                                    "content":  {
@@ -284,7 +409,7 @@
                                                          "tags":  [
                                                                       "orders"
                                                                   ],
-                                                         "description":  "Consulta un pedido por orderRef (CU-EC-009).",
+                                                         "description":  "Pedido por orderRef (CU-EC-009).",
                                                          "parameters":  [
                                                                             {
                                                                                 "schema":  {
@@ -338,6 +463,10 @@
                  {
                      "name":  "orders",
                      "description":  "Pedidos y Outbox (CU-EC-008/009, CU-INT-001)"
+                 },
+                 {
+                     "name":  "cart",
+                     "description":  "Carrito de compra (CU-EC-007)"
                  }
              ]
 }

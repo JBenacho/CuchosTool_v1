@@ -5,6 +5,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { healthRoutes } from './modules/health/health.routes';
 import { catalogRoutes } from './modules/catalog/catalog.routes';
 import { ordersRoutes } from './modules/orders/orders.routes';
+import { cartRoutes } from './modules/cart/cart.routes';
 import { config } from './config';
 
 // Contrato OpenAPI (BL-015 / CU-INT-010): documentado y expuesto en /docs y /docs/json.
@@ -28,6 +29,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
         { name: 'health', description: 'Salud y disponibilidad' },
         { name: 'catalog', description: 'Catalogo publico (CU-EC-001..006)' },
         { name: 'orders', description: 'Pedidos y Outbox (CU-EC-008/009, CU-INT-001)' },
+        { name: 'cart', description: 'Carrito de compra (CU-EC-007)' },
       ],
     },
   });
@@ -37,6 +39,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   // Registro de modulos.
   await app.register(healthRoutes);
   await app.register(catalogRoutes, { prefix: '/catalog' });
+  await app.register(cartRoutes);
   await app.register(ordersRoutes);
 
   app.get('/', async () => ({

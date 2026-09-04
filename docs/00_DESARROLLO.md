@@ -31,6 +31,7 @@ Trazabilidad de cada tarea con su ID de backlog (BL-xxx).
 | BL-030 / CU-EC-008 | POST /orders (transaccion ACID, idempotencia, validacion stock) | Hecho |
 | BL-033 / CU-INT-001 | Outbox OrderCreated (evento transaccional versionado) | Hecho |
 | CU-EC-009 | GET /orders/:orderRef (pedido propio) | Hecho |
+| BL-029 / CU-EC-007 | Carrito: GET/POST/PATCH/DELETE + checkout que vacia carrito | Hecho (cliente por X-Customer-Id provisional) |
 
 ## Proximas fases
 - F1: modelo/seguridad/contratos (RBAC/ABAC base, OpenAPI, eventos) - BL-015..026.

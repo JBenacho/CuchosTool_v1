@@ -15,6 +15,13 @@
       "when": 1788480869392,
       "tag": "0001_lonely_malice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788481058666,
+      "tag": "0002_superb_slapstick",
+      "breakpoints": true
     }
   ]
 }
