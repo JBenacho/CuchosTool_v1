@@ -8,6 +8,13 @@
       "when": 1788543812404,
       "tag": "0000_illegal_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788552144682,
+      "tag": "0001_modern_wild_child",
+      "breakpoints": true
     }
   ]
 }
