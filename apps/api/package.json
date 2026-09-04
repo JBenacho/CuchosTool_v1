@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo '(sin pruebas aun) ok'"
+    "test": "vitest run"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
@@ -28,7 +28,8 @@
     "@types/pg": "^8.11.10",
     "drizzle-kit": "*",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=20"

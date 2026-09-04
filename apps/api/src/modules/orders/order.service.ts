@@ -12,6 +12,16 @@ function newOrderRef(): string {
   return 'ORD-' + randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase();
 }
 
+// Calculo puro de totales (testeable sin DB).
+export function computeTotals(
+  lines: OrderLine[],
+  priceOf: (productId: number) => number | undefined
+): { subtotal: number; shipping: number; total: number } {
+  const subtotal = lines.reduce(function (s, l) { return s + (priceOf(l.productId) || 0) * l.quantity; }, 0);
+  const shipping = 0;
+  return { subtotal: subtotal, shipping: shipping, total: subtotal + shipping };
+}
+
 export async function createOrder(customerId: string, idem: string | undefined, lines: OrderLine[]): Promise<CreateOrderResult> {
   if (lines.length === 0) return { ok: false, status: 400, error: 'items_invalidos' };
   if (idem) {
@@ -30,9 +40,10 @@ export async function createOrder(customerId: string, idem: string | undefined, 
     if (l.quantity > p.stock) return { ok: false, status: 409, error: 'stock_insuficiente', productId: l.productId, stock: p.stock };
   }
 
-  const subtotal = lines.reduce(function (s, l) { return s + (pmap.get(l.productId) ? pmap.get(l.productId)!.priceCents : 0) * l.quantity; }, 0);
-  const shipping = 0;
-  const total = subtotal + shipping;
+  const totals = computeTotals(lines, function (pid) { const p = pmap.get(pid); return p ? p.priceCents : undefined; });
+  const subtotal = totals.subtotal;
+  const shipping = totals.shipping;
+  const total = totals.total;
   const orderRef = newOrderRef();
   const correlationId = randomUUID();
 

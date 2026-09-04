@@ -22,6 +22,7 @@ jobs:
           cache: npm
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck -w @cuchostool/${{ matrix.app }}
+      - run: npm run test -w @cuchostool/${{ matrix.app }} --if-present
       - run: npm run build -w @cuchostool/${{ matrix.app }}
 
   docker-build:
