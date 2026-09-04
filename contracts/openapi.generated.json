@@ -1,0 +1,254 @@
+﻿{
+    "openapi":  "3.0.3",
+    "info":  {
+                 "title":  "CuchosTool API",
+                 "description":  "Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.",
+                 "version":  "0.1.0"
+             },
+    "components":  {
+                       "schemas":  {
+
+                                   }
+                   },
+    "paths":  {
+                  "/healthz":  {
+                                   "get":  {
+                                               "responses":  {
+                                                                 "200":  {
+                                                                             "description":  "Default Response"
+                                                                         }
+                                                             }
+                                           }
+                               },
+                  "/readyz":  {
+                                  "get":  {
+                                              "responses":  {
+                                                                "200":  {
+                                                                            "description":  "Default Response"
+                                                                        }
+                                                            }
+                                          }
+                              },
+                  "/catalog/products":  {
+                                            "get":  {
+                                                        "summary":  "Listar productos activos del catalogo",
+                                                        "tags":  [
+                                                                     "catalog"
+                                                                 ],
+                                                        "description":  "Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.",
+                                                        "parameters":  [
+                                                                           {
+                                                                               "schema":  {
+                                                                                              "type":  "string"
+                                                                                          },
+                                                                               "in":  "query",
+                                                                               "name":  "q",
+                                                                               "required":  false
+                                                                           },
+                                                                           {
+                                                                               "schema":  {
+                                                                                              "type":  "string"
+                                                                                          },
+                                                                               "in":  "query",
+                                                                               "name":  "limit",
+                                                                               "required":  false
+                                                                           },
+                                                                           {
+                                                                               "schema":  {
+                                                                                              "type":  "string"
+                                                                                          },
+                                                                               "in":  "query",
+                                                                               "name":  "offset",
+                                                                               "required":  false
+                                                                           }
+                                                                       ],
+                                                        "responses":  {
+                                                                          "200":  {
+                                                                                      "description":  "Default Response",
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "type":  "object",
+                                                                                                                                              "properties":  {
+                                                                                                                                                                 "data":  {
+                                                                                                                                                                              "type":  "array",
+                                                                                                                                                                              "items":  {
+                                                                                                                                                                                            "type":  "object",
+                                                                                                                                                                                            "properties":  {
+                                                                                                                                                                                                               "id":  {
+                                                                                                                                                                                                                          "type":  "integer"
+                                                                                                                                                                                                                      },
+                                                                                                                                                                                                               "slug":  {
+                                                                                                                                                                                                                            "type":  "string"
+                                                                                                                                                                                                                        },
+                                                                                                                                                                                                               "name":  {
+                                                                                                                                                                                                                            "type":  "string"
+                                                                                                                                                                                                                        },
+                                                                                                                                                                                                               "description":  {
+                                                                                                                                                                                                                                   "type":  [
+                                                                                                                                                                                                                                                "null",
+                                                                                                                                                                                                                                                "string"
+                                                                                                                                                                                                                                            ]
+                                                                                                                                                                                                                               },
+                                                                                                                                                                                                               "priceCents":  {
+                                                                                                                                                                                                                                  "type":  "integer"
+                                                                                                                                                                                                                              },
+                                                                                                                                                                                                               "currency":  {
+                                                                                                                                                                                                                                "type":  "string"
+                                                                                                                                                                                                                            },
+                                                                                                                                                                                                               "stock":  {
+                                                                                                                                                                                                                             "type":  "integer"
+                                                                                                                                                                                                                         },
+                                                                                                                                                                                                               "imageUrl":  {
+                                                                                                                                                                                                                                "type":  [
+                                                                                                                                                                                                                                             "null",
+                                                                                                                                                                                                                                             "string"
+                                                                                                                                                                                                                                         ]
+                                                                                                                                                                                                                            },
+                                                                                                                                                                                                               "category":  {
+                                                                                                                                                                                                                                "type":  [
+                                                                                                                                                                                                                                             "null",
+                                                                                                                                                                                                                                             "string"
+                                                                                                                                                                                                                                         ]
+                                                                                                                                                                                                                            },
+                                                                                                                                                                                                               "price":  {
+                                                                                                                                                                                                                             "type":  "string"
+                                                                                                                                                                                                                         }
+                                                                                                                                                                                                           }
+                                                                                                                                                                                        }
+                                                                                                                                                                          },
+                                                                                                                                                                 "meta":  {
+                                                                                                                                                                              "type":  "object",
+                                                                                                                                                                              "properties":  {
+                                                                                                                                                                                                 "limit":  {
+                                                                                                                                                                                                               "type":  "integer"
+                                                                                                                                                                                                           },
+                                                                                                                                                                                                 "offset":  {
+                                                                                                                                                                                                                "type":  "integer"
+                                                                                                                                                                                                            },
+                                                                                                                                                                                                 "count":  {
+                                                                                                                                                                                                               "type":  "integer"
+                                                                                                                                                                                                           }
+                                                                                                                                                                                             }
+                                                                                                                                                                          }
+                                                                                                                                                             }
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  }
+                                                                                  }
+                                                                      }
+                                                    }
+                                        },
+                  "/catalog/products/{id}":  {
+                                                 "get":  {
+                                                             "summary":  "Consultar ficha de producto",
+                                                             "tags":  [
+                                                                          "catalog"
+                                                                      ],
+                                                             "description":  "Ficha de producto activo por id (CU-EC-004).",
+                                                             "parameters":  [
+                                                                                {
+                                                                                    "schema":  {
+                                                                                                   "type":  "string"
+                                                                                               },
+                                                                                    "in":  "path",
+                                                                                    "name":  "id",
+                                                                                    "required":  true
+                                                                                }
+                                                                            ],
+                                                             "responses":  {
+                                                                               "200":  {
+                                                                                           "description":  "Default Response",
+                                                                                           "content":  {
+                                                                                                           "application/json":  {
+                                                                                                                                    "schema":  {
+                                                                                                                                                   "type":  "object",
+                                                                                                                                                   "properties":  {
+                                                                                                                                                                      "data":  {
+                                                                                                                                                                                   "type":  "object",
+                                                                                                                                                                                   "properties":  {
+                                                                                                                                                                                                      "id":  {
+                                                                                                                                                                                                                 "type":  "integer"
+                                                                                                                                                                                                             },
+                                                                                                                                                                                                      "slug":  {
+                                                                                                                                                                                                                   "type":  "string"
+                                                                                                                                                                                                               },
+                                                                                                                                                                                                      "name":  {
+                                                                                                                                                                                                                   "type":  "string"
+                                                                                                                                                                                                               },
+                                                                                                                                                                                                      "description":  {
+                                                                                                                                                                                                                          "type":  [
+                                                                                                                                                                                                                                       "null",
+                                                                                                                                                                                                                                       "string"
+                                                                                                                                                                                                                                   ]
+                                                                                                                                                                                                                      },
+                                                                                                                                                                                                      "priceCents":  {
+                                                                                                                                                                                                                         "type":  "integer"
+                                                                                                                                                                                                                     },
+                                                                                                                                                                                                      "currency":  {
+                                                                                                                                                                                                                       "type":  "string"
+                                                                                                                                                                                                                   },
+                                                                                                                                                                                                      "stock":  {
+                                                                                                                                                                                                                    "type":  "integer"
+                                                                                                                                                                                                                },
+                                                                                                                                                                                                      "imageUrl":  {
+                                                                                                                                                                                                                       "type":  [
+                                                                                                                                                                                                                                    "null",
+                                                                                                                                                                                                                                    "string"
+                                                                                                                                                                                                                                ]
+                                                                                                                                                                                                                   },
+                                                                                                                                                                                                      "category":  {
+                                                                                                                                                                                                                       "type":  [
+                                                                                                                                                                                                                                    "null",
+                                                                                                                                                                                                                                    "string"
+                                                                                                                                                                                                                                ]
+                                                                                                                                                                                                                   },
+                                                                                                                                                                                                      "price":  {
+                                                                                                                                                                                                                    "type":  "string"
+                                                                                                                                                                                                                }
+                                                                                                                                                                                                  }
+                                                                                                                                                                               }
+                                                                                                                                                                  }
+                                                                                                                                               }
+                                                                                                                                }
+                                                                                                       }
+                                                                                       },
+                                                                               "404":  {
+                                                                                           "description":  "Default Response",
+                                                                                           "content":  {
+                                                                                                           "application/json":  {
+                                                                                                                                    "schema":  {
+                                                                                                                                                   "type":  "object",
+                                                                                                                                                   "properties":  {
+                                                                                                                                                                      "error":  {
+                                                                                                                                                                                    "type":  "string"
+                                                                                                                                                                                }
+                                                                                                                                                                  }
+                                                                                                                                               }
+                                                                                                                                }
+                                                                                                       }
+                                                                                       }
+                                                                           }
+                                                         }
+                                             },
+                  "/":  {
+                            "get":  {
+                                        "responses":  {
+                                                          "200":  {
+                                                                      "description":  "Default Response"
+                                                                  }
+                                                      }
+                                    }
+                        }
+              },
+    "tags":  [
+                 {
+                     "name":  "health",
+                     "description":  "Salud y disponibilidad"
+                 },
+                 {
+                     "name":  "catalog",
+                     "description":  "Catalogo publico (CU-EC-001..006)"
+                 }
+             ]
+}

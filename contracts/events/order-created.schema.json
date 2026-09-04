@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cuchostool.com/contracts/events/order-created.schema.json",
+  "title": "OrderCreated",
+  "description": "Evento emitido al crear un pedido empresarial unico (CU-INT-001 / BL-033). Envelope versionado + idempotencia + correlacion.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "type",
+    "version",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "const": "com.cuchostool.order.created"
+    },
+    "version": {
+      "const": "1.0"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "orderId",
+        "customerId",
+        "items",
+        "totalCents",
+        "currency"
+      ],
+      "properties": {
+        "orderId": {
+          "type": "string"
+        },
+        "customerId": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "productId",
+              "quantity",
+              "unitPriceCents"
+            ],
+            "properties": {
+              "productId": {
+                "type": "integer"
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "unitPriceCents": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "subtotalCents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shippingCents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalCents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "const": "COP"
+        }
+      }
+    }
+  }
+}

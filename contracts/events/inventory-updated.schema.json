@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cuchostool.com/contracts/events/inventory-updated.schema.json",
+  "title": "InventoryUpdated",
+  "description": "Evento emitido al cambiar stock/reservas (CU-INT-003). Inventory Service es fuente unica de verdad.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "type",
+    "version",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "const": "com.cuchostool.inventory.updated"
+    },
+    "version": {
+      "const": "1.0"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "productId",
+        "stockAvailable",
+        "stockReserved"
+      ],
+      "properties": {
+        "productId": {
+          "type": "integer"
+        },
+        "stockAvailable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stockReserved": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

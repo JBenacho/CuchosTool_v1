@@ -14,6 +14,14 @@ Trazabilidad de cada tarea con su ID de backlog (BL-xxx).
 | BL-014 | Cierre spike runtime contractual (Node+TS+Fastify+Drizzle) | Decidido |
 | RN-GOB-011 / ARQ v6 | Design tokens IU_CT y patrones UI | Documentado (docs/design) |
 
+## Fase F1 - Modelo, seguridad y contratos (en curso)
+| Backlog | Tarea | Estado |
+|---|---|---|
+| BL-015 | Contratos OpenAPI criticos | Hecho: OpenAPI vivo en /docs y /docs/json; instantanea contracts/openapi.generated.json |
+| BL-016 | Esquemas JSON de eventos criticos | Parcial: OrderCreated, OrderPaid, InventoryUpdated (contracts/events) |
+| BL-096 | Catalogo de APIs/eventos versionado | Hecho: contracts/README.md (registro) |
+| BL-019 | RBAC + ABAC + Default Deny | Pendiente |
+
 ## Fase F2 - Catalogo publico (en curso)
 | Backlog | Tarea | Estado |
 |---|---|---|

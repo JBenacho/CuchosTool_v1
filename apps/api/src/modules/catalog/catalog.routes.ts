@@ -11,8 +11,51 @@ function formatCop(cents: number): string {
 
 type ProductQuery = { q?: string; limit?: string; offset?: string };
 
+// Schemas JSON para documentar el contrato OpenAPI (BL-015 / CU-INT-010).
+const productSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'integer' },
+    slug: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: ['string', 'null'] },
+    priceCents: { type: 'integer' },
+    currency: { type: 'string' },
+    stock: { type: 'integer' },
+    imageUrl: { type: ['string', 'null'] },
+    category: { type: ['string', 'null'] },
+    price: { type: 'string' },
+  },
+} as const;
+
 export async function catalogRoutes(app: FastifyInstance): Promise<void> {
-  app.get<{ Querystring: ProductQuery }>('/products', async (req) => {
+  app.get<{ Querystring: ProductQuery }>('/products', {
+    schema: {
+      tags: ['catalog'],
+      summary: 'Listar productos activos del catalogo',
+      description: 'Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.',
+      querystring: {
+        type: 'object',
+        properties: {
+          q: { type: 'string' },
+          limit: { type: 'string' },
+          offset: { type: 'string' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: productSchema },
+            meta: {
+              type: 'object',
+              properties: { limit: { type: 'integer' }, offset: { type: 'integer' }, count: { type: 'integer' } },
+            },
+          },
+        },
+      },
+    },
+  }, async (req) => {
     const q = (req.query.q || '').trim();
     const limit = Math.min(parseInt(req.query.limit || '50', 10) || 50, 200);
     const offset = parseInt(req.query.offset || '0', 10) || 0;
@@ -50,7 +93,18 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  app.get<{ Params: { id: string } }>('/products/:id', async (req, reply) => {
+  app.get<{ Params: { id: string } }>('/products/:id', {
+    schema: {
+      tags: ['catalog'],
+      summary: 'Consultar ficha de producto',
+      description: 'Ficha de producto activo por id (CU-EC-004).',
+      params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      response: {
+        200: { type: 'object', properties: { data: productSchema } },
+        404: { type: 'object', properties: { error: { type: 'string' } } },
+      },
+    },
+  }, async (req, reply) => {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return reply.code(400).send({ error: 'id_invalido' });
 

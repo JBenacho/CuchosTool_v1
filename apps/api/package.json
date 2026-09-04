@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^6.1.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "*",
     "fastify": "^5.1.0",
