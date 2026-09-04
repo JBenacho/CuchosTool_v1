@@ -14,11 +14,5 @@
     "**/dist/**": true
   },
   "cSpell.language": "es,en",
-  "cSpell.words": [
-    "CuchosTool",
-    "Fastify",
-    "Drizzle",
-    "healthz",
-    "readyz"
-  ]
+  "cSpell.words": ["CuchosTool", "Fastify", "Drizzle", "healthz", "readyz"]
 }

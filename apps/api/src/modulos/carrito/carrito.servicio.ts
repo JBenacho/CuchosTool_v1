@@ -26,9 +26,16 @@ export interface VistaCarrito {
  * @returns id interno del carrito.
  */
 async function obtenerOCrearCarrito(clienteId: string): Promise<number> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
   if (existentes[0]) return existentes[0].id;
-  const [creado] = await base.insert(carritos).values({ clienteId: clienteId }).returning({ id: carritos.id });
+  const [creado] = await base
+    .insert(carritos)
+    .values({ clienteId: clienteId })
+    .returning({ id: carritos.id });
   return creado.id;
 }
 
@@ -37,7 +44,11 @@ async function obtenerOCrearCarrito(clienteId: string): Promise<number> {
  * @param clienteId cliente autenticado.
  */
 export async function vistaCarrito(clienteId: string): Promise<VistaCarrito> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
   if (!existentes[0]) return { articulos: [], totalCentavos: 0 };
   const filas = await base
     .select({
@@ -51,7 +62,9 @@ export async function vistaCarrito(clienteId: string): Promise<VistaCarrito> {
     .from(carritoArticulos)
     .innerJoin(productos, eq(carritoArticulos.productoId, productos.id))
     .where(eq(carritoArticulos.carritoId, existentes[0].id));
-  const totalCentavos = filas.reduce(function (acumulado, fila) { return acumulado + (fila.precioCentavos || 0) * fila.cantidad; }, 0);
+  const totalCentavos = filas.reduce(function (acumulado, fila) {
+    return acumulado + (fila.precioCentavos || 0) * fila.cantidad;
+  }, 0);
   return { articulos: filas, totalCentavos: totalCentavos };
 }
 
@@ -63,20 +76,43 @@ export async function vistaCarrito(clienteId: string): Promise<VistaCarrito> {
 export async function agregarArticulo(
   clienteId: string,
   productoId: number,
-  cantidad: number
-): Promise<{ ok: boolean; vista?: VistaCarrito; codigoEstado?: number; error?: string; stock?: number }> {
-  if (!(productoId > 0) || !(cantidad >= 1)) return { ok: false, codigoEstado: 400, error: 'articulos_invalidos' };
-  const filasProducto = await base.select().from(productos).where(and(eq(productos.id, productoId), eq(productos.estado, ESTADO_ACTIVO))).limit(1);
+  cantidad: number,
+): Promise<{
+  ok: boolean;
+  vista?: VistaCarrito;
+  codigoEstado?: number;
+  error?: string;
+  stock?: number;
+}> {
+  if (!(productoId > 0) || !(cantidad >= 1))
+    return { ok: false, codigoEstado: 400, error: 'articulos_invalidos' };
+  const filasProducto = await base
+    .select()
+    .from(productos)
+    .where(and(eq(productos.id, productoId), eq(productos.estado, ESTADO_ACTIVO)))
+    .limit(1);
   const producto = filasProducto[0];
   if (!producto) return { ok: false, codigoEstado: 422, error: 'producto_no_disponible' };
-  if (cantidad > producto.stock) return { ok: false, codigoEstado: 409, error: 'stock_insuficiente', stock: producto.stock };
+  if (cantidad > producto.stock)
+    return { ok: false, codigoEstado: 409, error: 'stock_insuficiente', stock: producto.stock };
 
   const carritoId = await obtenerOCrearCarrito(clienteId);
-  const existentes = await base.select().from(carritoArticulos).where(and(eq(carritoArticulos.carritoId, carritoId), eq(carritoArticulos.productoId, productoId))).limit(1);
+  const existentes = await base
+    .select()
+    .from(carritoArticulos)
+    .where(
+      and(eq(carritoArticulos.carritoId, carritoId), eq(carritoArticulos.productoId, productoId)),
+    )
+    .limit(1);
   if (existentes[0]) {
-    await base.update(carritoArticulos).set({ cantidad: existentes[0].cantidad + cantidad }).where(eq(carritoArticulos.id, existentes[0].id));
+    await base
+      .update(carritoArticulos)
+      .set({ cantidad: existentes[0].cantidad + cantidad })
+      .where(eq(carritoArticulos.id, existentes[0].id));
   } else {
-    await base.insert(carritoArticulos).values({ carritoId: carritoId, productoId: productoId, cantidad: cantidad });
+    await base
+      .insert(carritoArticulos)
+      .values({ carritoId: carritoId, productoId: productoId, cantidad: cantidad });
   }
   return { ok: true, vista: await vistaCarrito(clienteId) };
 }
@@ -84,13 +120,36 @@ export async function agregarArticulo(
 /**
  * Actualiza la cantidad de un articulo (cantidad 0 o negativa lo elimina).
  */
-export async function actualizarCantidad(clienteId: string, productoId: number, cantidad: number): Promise<{ ok: boolean; vista?: VistaCarrito; codigoEstado?: number; error?: string }> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
+export async function actualizarCantidad(
+  clienteId: string,
+  productoId: number,
+  cantidad: number,
+): Promise<{ ok: boolean; vista?: VistaCarrito; codigoEstado?: number; error?: string }> {
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
   if (!existentes[0]) return { ok: false, codigoEstado: 404, error: 'carrito_vacio' };
   if (cantidad <= 0) {
-    await base.delete(carritoArticulos).where(and(eq(carritoArticulos.carritoId, existentes[0].id), eq(carritoArticulos.productoId, productoId)));
+    await base
+      .delete(carritoArticulos)
+      .where(
+        and(
+          eq(carritoArticulos.carritoId, existentes[0].id),
+          eq(carritoArticulos.productoId, productoId),
+        ),
+      );
   } else {
-    await base.update(carritoArticulos).set({ cantidad: cantidad }).where(and(eq(carritoArticulos.carritoId, existentes[0].id), eq(carritoArticulos.productoId, productoId)));
+    await base
+      .update(carritoArticulos)
+      .set({ cantidad: cantidad })
+      .where(
+        and(
+          eq(carritoArticulos.carritoId, existentes[0].id),
+          eq(carritoArticulos.productoId, productoId),
+        ),
+      );
   }
   return { ok: true, vista: await vistaCarrito(clienteId) };
 }
@@ -98,27 +157,57 @@ export async function actualizarCantidad(clienteId: string, productoId: number, 
 /**
  * Elimina un articulo del carrito.
  */
-export async function quitarArticulo(clienteId: string, productoId: number): Promise<{ ok: boolean; vista?: VistaCarrito; codigoEstado?: number; error?: string }> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
+export async function quitarArticulo(
+  clienteId: string,
+  productoId: number,
+): Promise<{ ok: boolean; vista?: VistaCarrito; codigoEstado?: number; error?: string }> {
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
   if (!existentes[0]) return { ok: false, codigoEstado: 404, error: 'carrito_vacio' };
-  await base.delete(carritoArticulos).where(and(eq(carritoArticulos.carritoId, existentes[0].id), eq(carritoArticulos.productoId, productoId)));
+  await base
+    .delete(carritoArticulos)
+    .where(
+      and(
+        eq(carritoArticulos.carritoId, existentes[0].id),
+        eq(carritoArticulos.productoId, productoId),
+      ),
+    );
   return { ok: true, vista: await vistaCarrito(clienteId) };
 }
 
 /**
  * Devuelve los articulos actuales del carrito como lineas de pedido.
  */
-export async function articulosDelCarrito(clienteId: string): Promise<{ productoId: number; cantidad: number }[]> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
+export async function articulosDelCarrito(
+  clienteId: string,
+): Promise<{ productoId: number; cantidad: number }[]> {
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
   if (!existentes[0]) return [];
-  const filas = await base.select().from(carritoArticulos).where(eq(carritoArticulos.carritoId, existentes[0].id));
-  return filas.map(function (fila) { return { productoId: fila.productoId, cantidad: fila.cantidad }; });
+  const filas = await base
+    .select()
+    .from(carritoArticulos)
+    .where(eq(carritoArticulos.carritoId, existentes[0].id));
+  return filas.map(function (fila) {
+    return { productoId: fila.productoId, cantidad: fila.cantidad };
+  });
 }
 
 /**
  * Vacia el carrito (se ejecuta despues de crear el pedido con exito).
  */
 export async function vaciarCarrito(clienteId: string): Promise<void> {
-  const existentes = await base.select().from(carritos).where(eq(carritos.clienteId, clienteId)).limit(1);
-  if (existentes[0]) await base.delete(carritoArticulos).where(eq(carritoArticulos.carritoId, existentes[0].id));
+  const existentes = await base
+    .select()
+    .from(carritos)
+    .where(eq(carritos.clienteId, clienteId))
+    .limit(1);
+  if (existentes[0])
+    await base.delete(carritoArticulos).where(eq(carritoArticulos.carritoId, existentes[0].id));
 }

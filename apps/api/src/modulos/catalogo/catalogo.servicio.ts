@@ -3,7 +3,11 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { categorias, productos } from '../../bd/esquema';
-import { CATALOGO_LIMITE_DEFECTO, CATALOGO_LIMITE_MAXIMO, ESTADO_ACTIVO } from '../../dominio/constantes';
+import {
+  CATALOGO_LIMITE_DEFECTO,
+  CATALOGO_LIMITE_MAXIMO,
+  ESTADO_ACTIVO,
+} from '../../dominio/constantes';
 
 // Resumen de producto que expone la API (nunca se expone la fila cruda de la base).
 export interface ProductoResumen {
@@ -37,8 +41,14 @@ export function formatearPrecioPesos(centavos: number): string {
  * Normaliza los limites de paginacion recibidos desde la API (dato externo).
  * Regla: ningun cliente puede pedir mas de CATALOGO_LIMITE_MAXIMO registros.
  */
-function normalizarLimites(valorLimite: string | undefined, valorDesplazamiento: string | undefined): { limite: number; desplazamiento: number } {
-  const limite = Math.min(parseInt(valorLimite || '', 10) || CATALOGO_LIMITE_DEFECTO, CATALOGO_LIMITE_MAXIMO);
+function normalizarLimites(
+  valorLimite: string | undefined,
+  valorDesplazamiento: string | undefined,
+): { limite: number; desplazamiento: number } {
+  const limite = Math.min(
+    parseInt(valorLimite || '', 10) || CATALOGO_LIMITE_DEFECTO,
+    CATALOGO_LIMITE_MAXIMO,
+  );
   const desplazamiento = Math.max(parseInt(valorDesplazamiento || '', 10) || 0, 0);
   return { limite: limite, desplazamiento: desplazamiento };
 }
@@ -49,13 +59,19 @@ function normalizarLimites(valorLimite: string | undefined, valorDesplazamiento:
  * @param valorLimite, valorDesplazamiento valores crudos del query string (se normalizan).
  * @returns productos activos junto con totales de paginacion.
  */
-export async function listarProductosActivos(busqueda: string, valorLimite?: string, valorDesplazamiento?: string) {
+export async function listarProductosActivos(
+  busqueda: string,
+  valorLimite?: string,
+  valorDesplazamiento?: string,
+) {
   const { limite, desplazamiento } = normalizarLimites(valorLimite, valorDesplazamiento);
   const texto = (busqueda || '').trim();
   const condiciones = [eq(productos.estado, ESTADO_ACTIVO)];
   if (texto) {
     const patron = '%' + texto.toLowerCase() + '%';
-    condiciones.push(sql`(${productos.nombre} ilike ${patron} or coalesce(${productos.descripcion}, '') ilike ${patron})`);
+    condiciones.push(
+      sql`(${productos.nombre} ilike ${patron} or coalesce(${productos.descripcion}, '') ilike ${patron})`,
+    );
   }
   const filas = await base
     .select({

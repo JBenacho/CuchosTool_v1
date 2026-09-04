@@ -7,40 +7,40 @@
   color-scheme: dark;
 
   /* Fondo y superficie (niveles) */
-  --ct-bg-0: #05070F;   /* fondo profundo */
-  --ct-bg-1: #0A0F1E;   /* fondo base app */
-  --ct-bg-2: #101A2E;   /* superficie elevada (sidebar/cards) */
-  --ct-bg-3: #16233C;   /* hover / popovers */
-  --ct-bg-4: #1E2C47;   /* activo */
+  --ct-bg-0: #05070f; /* fondo profundo */
+  --ct-bg-1: #0a0f1e; /* fondo base app */
+  --ct-bg-2: #101a2e; /* superficie elevada (sidebar/cards) */
+  --ct-bg-3: #16233c; /* hover / popovers */
+  --ct-bg-4: #1e2c47; /* activo */
 
   /* Lienzo medido en IU_CT: azul-noche */
   --ct-navy-900: #020618;
-  --ct-navy-800: #0E1629;
+  --ct-navy-800: #0e1629;
   --ct-navy-700: #192033;
   --ct-navy-600: #203040;
   --ct-navy-500: #304060;
 
   /* Texto */
-  --ct-text-strong: #F4F6FB;
-  --ct-text: #E4E9F3;
-  --ct-text-muted: #98A6C0;
-  --ct-text-faint: #64748B;
+  --ct-text-strong: #f4f6fb;
+  --ct-text: #e4e9f3;
+  --ct-text-muted: #98a6c0;
+  --ct-text-faint: #64748b;
 
   /* Lineas / bordes */
   --ct-line: rgba(148, 163, 184, 0.16);
-  --ct-line-strong: rgba(148, 163, 184, 0.30);
+  --ct-line-strong: rgba(148, 163, 184, 0.3);
 
   /* Acentos de marca (IU_CT) */
-  --ct-accent: #0B9F68;      /* verde: exito / primario */
-  --ct-accent-strong: #0DBB7A;
+  --ct-accent: #0b9f68; /* verde: exito / primario */
+  --ct-accent-strong: #0dbb7a;
   --ct-accent-soft: rgba(11, 159, 104, 0.14);
-  --ct-warm: #D16014;        /* naranja/cobre: alerta / destacado */
+  --ct-warm: #d16014; /* naranja/cobre: alerta / destacado */
   --ct-warm-soft: rgba(209, 96, 20, 0.14);
-  --ct-danger: #E5484D;
+  --ct-danger: #e5484d;
   --ct-danger-soft: rgba(229, 72, 77, 0.14);
-  --ct-info: #4C8DFF;
+  --ct-info: #4c8dff;
   --ct-info-soft: rgba(76, 141, 255, 0.14);
-  --ct-gold: #E3B341;        /* dorado secundario (marca institucional) */
+  --ct-gold: #e3b341; /* dorado secundario (marca institucional) */
 
   /* Tipografia */
   --ct-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;

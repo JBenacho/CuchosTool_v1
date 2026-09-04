@@ -13,7 +13,13 @@ const kpis = [
 ] as const;
 
 const orders = [
-  { id: 'ORD-10421', client: 'Ana Torres', total: '$ 186.000', state: 'PENDING_PAYMENT', tone: 'warn' },
+  {
+    id: 'ORD-10421',
+    client: 'Ana Torres',
+    total: '$ 186.000',
+    state: 'PENDING_PAYMENT',
+    tone: 'warn',
+  },
   { id: 'ORD-10420', client: 'Luis Rojas', total: '$ 92.500', state: 'PAID', tone: 'ok' },
   { id: 'ORD-10419', client: 'Carla Ruiz', total: '$ 41.200', state: 'SHIPPED', tone: 'info' },
   { id: 'ORD-10418', client: 'Pedro Gil', total: '$ 312.700', state: 'DELIVERED', tone: 'ok' },
@@ -23,7 +29,16 @@ const fallbackProducts: Product[] = [
   { id: 0, name: 'Cargando catalogo...', price: '', category: 'sin conexion a la API' },
 ];
 
-const nav = ['Dashboard', 'Catalogo', 'Pedidos', 'Emprendedores', 'Soporte / Garantias', 'ERP', 'Gerencia', 'Seguridad'] as const;
+const nav = [
+  'Dashboard',
+  'Catalogo',
+  'Pedidos',
+  'Emprendedores',
+  'Soporte / Garantias',
+  'ERP',
+  'Gerencia',
+  'Seguridad',
+] as const;
 
 function Header(): JSX.Element {
   return (
@@ -47,12 +62,19 @@ function App(): JSX.Element {
   useEffect(function () {
     let active = true;
     fetch('/api/catalogo/productos')
-      .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('bad status');
+        return r.json();
+      })
       .then(function (json) {
         if (active && json && Array.isArray(json.data)) setProducts(json.data);
       })
-      .catch(function () { if (active) setCatalogError(true); });
-    return function () { active = false; };
+      .catch(function () {
+        if (active) setCatalogError(true);
+      });
+    return function () {
+      active = false;
+    };
   }, []);
 
   return (
@@ -62,7 +84,15 @@ function App(): JSX.Element {
         <aside className="app-sidebar">
           <nav className="side-nav">
             {nav.map(function (item, i) {
-              return <a key={item} className={'side-link' + (i === 0 ? ' is-active' : '')} href={'#' + item.toLowerCase()}>{item}</a>;
+              return (
+                <a
+                  key={item}
+                  className={'side-link' + (i === 0 ? ' is-active' : '')}
+                  href={'#' + item.toLowerCase()}
+                >
+                  {item}
+                </a>
+              );
             })}
           </nav>
         </aside>
@@ -101,15 +131,28 @@ function App(): JSX.Element {
           </section>
 
           <section className="panel">
-            <div className="panel-head"><h2>Pedidos recientes</h2></div>
+            <div className="panel-head">
+              <h2>Pedidos recientes</h2>
+            </div>
             <table className="table">
-              <thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
               <tbody>
                 {orders.map(function (o) {
                   return (
                     <tr key={o.id}>
-                      <td>{o.id}</td><td>{o.client}</td><td>{o.total}</td>
-                      <td><span className={'chip chip--' + o.tone}>{o.state}</span></td>
+                      <td>{o.id}</td>
+                      <td>{o.client}</td>
+                      <td>{o.total}</td>
+                      <td>
+                        <span className={'chip chip--' + o.tone}>{o.state}</span>
+                      </td>
                     </tr>
                   );
                 })}
@@ -117,7 +160,9 @@ function App(): JSX.Element {
             </table>
           </section>
 
-          {catalogError && <p className="muted">No se pudo conectar con la API (/api/catalog/products).</p>}
+          {catalogError && (
+            <p className="muted">No se pudo conectar con la API (/api/catalog/products).</p>
+          )}
 
           <footer className="app-footer">
             CuchosTool.com - SRS v5.0 / ARQ v6.0 / Backlog v6.0 - Design System IU_CT

@@ -1,0 +1,13 @@
+node_modules
+dist
+.cache
+_NICOLA_work
+_tools
+coverage
+package-lock.json
+Casos de Uso CuchosTool
+*.docx
+*.xlsx
+*.pdf
+*.png
+*.jpg

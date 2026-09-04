@@ -7,14 +7,9 @@
       "name": "Debug API (tsx)",
       "cwd": "${workspaceFolder}/apps/api",
       "runtimeExecutable": "node",
-      "runtimeArgs": [
-        "--import",
-        "tsx"
-      ],
+      "runtimeArgs": ["--import", "tsx"],
       "program": "${workspaceFolder}/apps/api/src/server.ts",
-      "outFiles": [
-        "${workspaceFolder}/apps/api/dist/**/*.js"
-      ]
+      "outFiles": ["${workspaceFolder}/apps/api/dist/**/*.js"]
     }
   ]
 }

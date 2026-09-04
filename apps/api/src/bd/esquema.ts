@@ -1,7 +1,17 @@
 // Esquema de datos de CuchosTool (capa de datos).
 // Convencion: tablas y campos en espanol (snake_case en base de datos), camelCase en el codigo.
 // Precios en centavos (bigint) para evitar errores de redondeo con decimales.
-import { pgTable, serial, text, integer, bigint, timestamp, index, jsonb, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  text,
+  integer,
+  bigint,
+  timestamp,
+  index,
+  jsonb,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
 // Catalogo publico (CU-EC-001..006).
 export const categorias = pgTable('categorias', {
@@ -30,7 +40,7 @@ export const productos = pgTable(
   (tabla) => [
     index('productos_categoria_idx').on(tabla.categoriaId),
     index('productos_estado_idx').on(tabla.estado),
-  ]
+  ],
 );
 
 // Cliente del canal E-Commerce (CU-EC-013/014).
@@ -56,12 +66,16 @@ export const carritoArticulos = pgTable(
   'carrito_articulos',
   {
     id: serial('id').primaryKey(),
-    carritoId: integer('carrito_id').notNull().references(() => carritos.id),
+    carritoId: integer('carrito_id')
+      .notNull()
+      .references(() => carritos.id),
     productoId: integer('producto_id').notNull(),
     cantidad: integer('cantidad').notNull(),
     agregadoEn: timestamp('agregado_en', { withTimezone: true }).notNull().defaultNow(),
   },
-  (tabla) => [uniqueIndex('carrito_articulos_carrito_producto_idx').on(tabla.carritoId, tabla.productoId)]
+  (tabla) => [
+    uniqueIndex('carrito_articulos_carrito_producto_idx').on(tabla.carritoId, tabla.productoId),
+  ],
 );
 
 // Pedido empresarial unico (CU-ARCH-001 / CU-EC-008). Order Service es dueno del ciclo (RN-GOB-003).
@@ -81,7 +95,9 @@ export const pedidos = pgTable('pedidos', {
 
 export const pedidoArticulos = pgTable('pedido_articulos', {
   id: serial('id').primaryKey(),
-  pedidoId: integer('pedido_id').notNull().references(() => pedidos.id),
+  pedidoId: integer('pedido_id')
+    .notNull()
+    .references(() => pedidos.id),
   productoId: integer('producto_id').notNull(),
   cantidad: integer('cantidad').notNull(),
   precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }).notNull(),

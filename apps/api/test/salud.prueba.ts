@@ -10,7 +10,9 @@ describe('API base', function () {
     aplicacion = await construirAplicacion({ logger: false });
     await aplicacion.ready();
   });
-  afterAll(async function () { await aplicacion.close(); });
+  afterAll(async function () {
+    await aplicacion.close();
+  });
 
   it('GET /salud/estado responde 200 ok', async function () {
     const respuesta = await aplicacion.inject({ method: 'GET', url: '/salud/estado' });

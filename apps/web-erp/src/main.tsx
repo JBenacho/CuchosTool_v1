@@ -9,6 +9,6 @@ if (contenedor) {
   createRoot(contenedor).render(
     <StrictMode>
       <Aplicacion />
-    </StrictMode>
+    </StrictMode>,
   );
 }

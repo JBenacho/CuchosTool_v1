@@ -16,7 +16,8 @@ import { config } from './config';
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
 const informacionApi = {
   title: 'CuchosTool API',
-  description: 'Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.',
+  description:
+    'Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.',
   version: '0.2.0',
 } as const;
 
@@ -24,7 +25,9 @@ const informacionApi = {
  * Construye la aplicacion Fastify con todos los plugins y rutas registrados.
  * Se separa del arranque para poder probarla con app.inject (sin abrir puerto).
  */
-export async function construirAplicacion(opciones?: { logger?: boolean }): Promise<FastifyInstance> {
+export async function construirAplicacion(opciones?: {
+  logger?: boolean;
+}): Promise<FastifyInstance> {
   const aplicacion = Fastify({
     logger: opciones && opciones.logger ? { level: config.nivelLog } : false,
   });
@@ -37,10 +40,16 @@ export async function construirAplicacion(opciones?: { logger?: boolean }): Prom
       tags: [
         { name: 'salud', description: 'Salud y disponibilidad' },
         { name: 'catalogo', description: 'Catalogo publico (CU-EC-001..006)' },
-        { name: 'autenticacion', description: 'Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)' },
+        {
+          name: 'autenticacion',
+          description: 'Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)',
+        },
         { name: 'carrito', description: 'Carrito de compra (CU-EC-007)' },
         { name: 'pedidos', description: 'Pedidos y buzon (CU-EC-008/009, CU-INT-001)' },
-        { name: 'administracion', description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)' },
+        {
+          name: 'administracion',
+          description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
+        },
       ],
     },
   });
@@ -51,8 +60,15 @@ export async function construirAplicacion(opciones?: { logger?: boolean }): Prom
   // Decorador de autorizacion por rol (RBAC, Default Deny).
   // Regla: si el JWT no tiene un rol permitido, se responde 403; sin token, 401.
   aplicacion.decorate('requerirRol', function (rolesPermitidos: string[]) {
-    return async function (solicitud: import('fastify').FastifyRequest, respuesta: import('fastify').FastifyReply) {
-      try { await solicitud.jwtVerify(); } catch { return respuesta.code(401).send({ error: 'no_autorizado' }); }
+    return async function (
+      solicitud: import('fastify').FastifyRequest,
+      respuesta: import('fastify').FastifyReply,
+    ) {
+      try {
+        await solicitud.jwtVerify();
+      } catch {
+        return respuesta.code(401).send({ error: 'no_autorizado' });
+      }
       const usuario = (solicitud as any).usuario;
       const rol = usuario && usuario.rol;
       if (!rolesPermitidos.includes(rol)) return respuesta.code(403).send({ error: 'prohibido' });
@@ -60,15 +76,21 @@ export async function construirAplicacion(opciones?: { logger?: boolean }): Prom
   });
 
   // Decorador de autenticacion: exige JWT valido y deja el payload en solicitud.usuario.
-  aplicacion.decorate('autenticar', async function (solicitud: import('fastify').FastifyRequest, respuesta: import('fastify').FastifyReply) {
-    try {
-      await solicitud.jwtVerify();
-      // @fastify/jwt guarda el payload en request.user; lo exponemos como .usuario para el resto del codigo.
-      (solicitud as any).usuario = (solicitud as any).user;
-    } catch {
-      return respuesta.code(401).send({ error: 'no_autorizado' });
-    }
-  });
+  aplicacion.decorate(
+    'autenticar',
+    async function (
+      solicitud: import('fastify').FastifyRequest,
+      respuesta: import('fastify').FastifyReply,
+    ) {
+      try {
+        await solicitud.jwtVerify();
+        // @fastify/jwt guarda el payload en request.user; lo exponemos como .usuario para el resto del codigo.
+        (solicitud as any).usuario = (solicitud as any).user;
+      } catch {
+        return respuesta.code(401).send({ error: 'no_autorizado' });
+      }
+    },
+  );
 
   // Registro de modulos por dominio.
   await aplicacion.register(rutasSalud);

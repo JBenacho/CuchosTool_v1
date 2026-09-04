@@ -4,13 +4,7 @@
   "title": "InventarioActualizado",
   "description": "Evento emitido al cambiar stock/reservas (CU-INT-003). Inventory Service es fuente unica de verdad.",
   "type": "object",
-  "required": [
-    "eventId",
-    "type",
-    "version",
-    "occurredAt",
-    "data"
-  ],
+  "required": ["eventId", "type", "version", "occurredAt", "data"],
   "properties": {
     "eventId": {
       "type": "string",
@@ -34,11 +28,7 @@
     },
     "data": {
       "type": "object",
-      "required": [
-        "productoId",
-        "stockDisponible",
-        "stockReservado"
-      ],
+      "required": ["productoId", "stockDisponible", "stockReservado"],
       "properties": {
         "productoId": {
           "type": "integer"

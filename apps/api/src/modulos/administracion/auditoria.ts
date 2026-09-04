@@ -18,7 +18,7 @@ export async function registrarAuditoria(
   recurso: string,
   recursoId: string | null,
   resultado: string,
-  metadatos?: Record<string, unknown>
+  metadatos?: Record<string, unknown>,
 ): Promise<void> {
   const usuario = solicitud && solicitud.usuario ? solicitud.usuario : null;
   await base.insert(auditoriaRegistros).values({

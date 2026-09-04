@@ -4,13 +4,7 @@
   "title": "PedidoPagado",
   "description": "Evento emitido tras confirmacion bancaria del pago (CU-INT-002). Consumidores idempotentes.",
   "type": "object",
-  "required": [
-    "eventId",
-    "type",
-    "version",
-    "occurredAt",
-    "data"
-  ],
+  "required": ["eventId", "type", "version", "occurredAt", "data"],
   "properties": {
     "eventId": {
       "type": "string",
@@ -34,12 +28,7 @@
     },
     "data": {
       "type": "object",
-      "required": [
-        "pedidoId",
-        "pagoId",
-        "montoCentavos",
-        "moneda"
-      ],
+      "required": ["pedidoId", "pagoId", "montoCentavos", "moneda"],
       "properties": {
         "pedidoId": {
           "type": "string"

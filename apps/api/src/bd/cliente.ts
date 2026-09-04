@@ -17,12 +17,18 @@ export const pool = new Pool({
  */
 export async function verificarBaseDisponible(): Promise<boolean> {
   const temporizador = new Promise<boolean>(function (resolver) {
-    setTimeout(function () { resolver(false); }, 2000);
+    setTimeout(function () {
+      resolver(false);
+    }, 2000);
   });
   const consulta = pool
     .query('SELECT 1')
-    .then(function () { return true; })
-    .catch(function () { return false; });
+    .then(function () {
+      return true;
+    })
+    .catch(function () {
+      return false;
+    });
   return Promise.race([consulta, temporizador]);
 }
 

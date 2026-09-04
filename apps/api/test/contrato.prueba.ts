@@ -10,7 +10,13 @@ describe('Contrato OpenAPI', function () {
     expect(respuesta.statusCode).toBe(200);
     const especificacion = respuesta.json();
     expect(especificacion.openapi).toBeTruthy();
-    for (const ruta of ['/catalogo/productos', '/pedidos', '/carrito', '/autenticacion/registro', '/autenticacion/ingreso']) {
+    for (const ruta of [
+      '/catalogo/productos',
+      '/pedidos',
+      '/carrito',
+      '/autenticacion/registro',
+      '/autenticacion/ingreso',
+    ]) {
       expect(Object.keys(especificacion.paths || {})).toContain(ruta);
     }
     await aplicacion.close();

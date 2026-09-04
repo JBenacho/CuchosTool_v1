@@ -5,7 +5,13 @@ import { randomUUID } from 'crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { eventosBuzon, pedidoArticulos, pedidos, productos } from '../../bd/esquema';
-import { COSTO_ENVIO_CENTAVOS, ESTADO_ACTIVO, EVENTO_PEDIDO_CREADO, MONEDA_COP, PEDIDO_PENDIENTE_PAGO } from '../../dominio/constantes';
+import {
+  COSTO_ENVIO_CENTAVOS,
+  ESTADO_ACTIVO,
+  EVENTO_PEDIDO_CREADO,
+  MONEDA_COP,
+  PEDIDO_PENDIENTE_PAGO,
+} from '../../dominio/constantes';
 
 export interface ArticuloPedido {
   productoId: number;
@@ -32,14 +38,18 @@ function generarReferenciaPedido(): string {
  */
 export function calcularTotales(
   articulos: ArticuloPedido[],
-  precioDe: (productoId: number) => number | undefined
+  precioDe: (productoId: number) => number | undefined,
 ): { subtotalCentavos: number; envioCentavos: number; totalCentavos: number } {
   const subtotalCentavos = articulos.reduce(function (acumulado, articulo) {
     return acumulado + (precioDe(articulo.productoId) || 0) * articulo.cantidad;
   }, 0);
   // Costo de envio por definir (regla logistica pendiente en F3); constante nombrada.
   const envioCentavos = COSTO_ENVIO_CENTAVOS;
-  return { subtotalCentavos: subtotalCentavos, envioCentavos: envioCentavos, totalCentavos: subtotalCentavos + envioCentavos };
+  return {
+    subtotalCentavos: subtotalCentavos,
+    envioCentavos: envioCentavos,
+    totalCentavos: subtotalCentavos + envioCentavos,
+  };
 }
 
 /**
@@ -53,28 +63,73 @@ export function calcularTotales(
 export async function crearPedido(
   clienteId: string,
   claveIdempotencia: string | undefined,
-  articulos: ArticuloPedido[]
+  articulos: ArticuloPedido[],
 ): Promise<ResultadoCrearPedido> {
-  if (articulos.length === 0) return { creado: false, codigoEstado: 400, error: 'articulos_invalidos' };
+  if (articulos.length === 0)
+    return { creado: false, codigoEstado: 400, error: 'articulos_invalidos' };
 
   // Idempotencia: si la clave ya fue usada, se devuelve el pedido existente sin duplicar.
   if (claveIdempotencia) {
-    const existentes = await base.select().from(pedidos).where(eq(pedidos.claveIdempotencia, claveIdempotencia)).limit(1);
-    if (existentes[0]) return { creado: true, referenciaPedido: existentes[0].referenciaPedido, totalCentavos: existentes[0].totalCentavos };
+    const existentes = await base
+      .select()
+      .from(pedidos)
+      .where(eq(pedidos.claveIdempotencia, claveIdempotencia))
+      .limit(1);
+    if (existentes[0])
+      return {
+        creado: true,
+        referenciaPedido: existentes[0].referenciaPedido,
+        totalCentavos: existentes[0].totalCentavos,
+      };
   }
 
-  const idsProducto = Array.from(new Set(articulos.map(function (a) { return a.productoId; })));
-  const filasProductos = await base.select().from(productos).where(and(inArray(productos.id, idsProducto), eq(productos.estado, ESTADO_ACTIVO)));
-  const precioPorProducto = new Map(filasProductos.map(function (p) { return [p.id, p]; }));
+  const idsProducto = Array.from(
+    new Set(
+      articulos.map(function (a) {
+        return a.productoId;
+      }),
+    ),
+  );
+  const filasProductos = await base
+    .select()
+    .from(productos)
+    .where(and(inArray(productos.id, idsProducto), eq(productos.estado, ESTADO_ACTIVO)));
+  const precioPorProducto = new Map(
+    filasProductos.map(function (p) {
+      return [p.id, p];
+    }),
+  );
 
   for (const articulo of articulos) {
     const producto = precioPorProducto.get(articulo.productoId);
-    if (!producto) return { creado: false, codigoEstado: 422, error: 'producto_no_disponible', productoId: articulo.productoId };
-    if (!(articulo.cantidad >= 1)) return { creado: false, codigoEstado: 400, error: 'cantidad_invalida', productoId: articulo.productoId };
-    if (articulo.cantidad > producto.stock) return { creado: false, codigoEstado: 409, error: 'stock_insuficiente', productoId: articulo.productoId, stock: producto.stock };
+    if (!producto)
+      return {
+        creado: false,
+        codigoEstado: 422,
+        error: 'producto_no_disponible',
+        productoId: articulo.productoId,
+      };
+    if (!(articulo.cantidad >= 1))
+      return {
+        creado: false,
+        codigoEstado: 400,
+        error: 'cantidad_invalida',
+        productoId: articulo.productoId,
+      };
+    if (articulo.cantidad > producto.stock)
+      return {
+        creado: false,
+        codigoEstado: 409,
+        error: 'stock_insuficiente',
+        productoId: articulo.productoId,
+        stock: producto.stock,
+      };
   }
 
-  const totales = calcularTotales(articulos, function (id) { const p = precioPorProducto.get(id); return p ? p.precioCentavos : undefined; });
+  const totales = calcularTotales(articulos, function (id) {
+    const p = precioPorProducto.get(id);
+    return p ? p.precioCentavos : undefined;
+  });
   const referenciaPedido = generarReferenciaPedido();
   const correlacionId = randomUUID();
 
@@ -93,9 +148,16 @@ export async function crearPedido(
       })
       .returning({ id: pedidos.id });
 
-    await transaccion.insert(pedidoArticulos).values(articulos.map(function (a) {
-      return { pedidoId: creado.id, productoId: a.productoId, cantidad: a.cantidad, precioUnitarioCentavos: precioPorProducto.get(a.productoId)!.precioCentavos };
-    }));
+    await transaccion.insert(pedidoArticulos).values(
+      articulos.map(function (a) {
+        return {
+          pedidoId: creado.id,
+          productoId: a.productoId,
+          cantidad: a.cantidad,
+          precioUnitarioCentavos: precioPorProducto.get(a.productoId)!.precioCentavos,
+        };
+      }),
+    );
 
     // Buzon transaccional: el evento se publica en la misma transaccion (sin perdida).
     await transaccion.insert(eventosBuzon).values({

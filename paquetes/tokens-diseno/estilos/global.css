@@ -1,7 +1,15 @@
 /* Reset y base */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
 
 body {
   background: var(--ct-bg-1);
@@ -12,28 +20,61 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--ct-font-display);
   color: var(--ct-text-strong);
   letter-spacing: -0.01em;
 }
 
-a { color: var(--ct-accent-strong); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a {
+  color: var(--ct-accent-strong);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
 
-button { font-family: var(--ct-font-sans); cursor: pointer; }
+button {
+  font-family: var(--ct-font-sans);
+  cursor: pointer;
+}
 
 /* Utilidades de estado (patron IU_CT) */
 .chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: var(--ct-text-xs); font-weight: 600;
-  padding: 3px 10px; border-radius: var(--ct-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ct-text-xs);
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--ct-radius-full);
 }
-.chip--ok { color: var(--ct-accent-strong); background: var(--ct-accent-soft); }
-.chip--warn { color: var(--ct-warm); background: var(--ct-warm-soft); }
-.chip--danger { color: var(--ct-danger); background: var(--ct-danger-soft); }
-.chip--info { color: var(--ct-info); background: var(--ct-info-soft); }
+.chip--ok {
+  color: var(--ct-accent-strong);
+  background: var(--ct-accent-soft);
+}
+.chip--warn {
+  color: var(--ct-warm);
+  background: var(--ct-warm-soft);
+}
+.chip--danger {
+  color: var(--ct-danger);
+  background: var(--ct-danger-soft);
+}
+.chip--info {
+  color: var(--ct-info);
+  background: var(--ct-info-soft);
+}
 
 /* Scrollbar discreta */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--ct-bg-4); border-radius: 6px; }
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ct-bg-4);
+  border-radius: 6px;
+}

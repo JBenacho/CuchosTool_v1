@@ -12,11 +12,11 @@ services:
       POSTGRES_PASSWORD: cuchos_dev_pass
       POSTGRES_DB: cuchostool_dev
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cuchos -d cuchostool_dev"]
+      test: ['CMD-SHELL', 'pg_isready -U cuchos -d cuchostool_dev']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -34,7 +34,7 @@ services:
       JWT_SECRET: dev-secret-cambiar-en-produccion
       LOG_LEVEL: info
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       db:
         condition: service_healthy

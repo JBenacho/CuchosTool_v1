@@ -4,13 +4,7 @@
   "title": "PedidoCreado",
   "description": "Evento emitido al crear un pedido empresarial unico (CU-INT-001 / BL-033). Envelope versionado + idempotencia + correlacion.",
   "type": "object",
-  "required": [
-    "eventId",
-    "type",
-    "version",
-    "occurredAt",
-    "data"
-  ],
+  "required": ["eventId", "type", "version", "occurredAt", "data"],
   "properties": {
     "eventId": {
       "type": "string",
@@ -34,13 +28,7 @@
     },
     "data": {
       "type": "object",
-      "required": [
-        "pedidoId",
-        "clienteId",
-        "articulos",
-        "totalCentavos",
-        "moneda"
-      ],
+      "required": ["pedidoId", "clienteId", "articulos", "totalCentavos", "moneda"],
       "properties": {
         "pedidoId": {
           "type": "string"
@@ -52,11 +40,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "productoId",
-              "cantidad",
-              "precioUnitarioCentavos"
-            ],
+            "required": ["productoId", "cantidad", "precioUnitarioCentavos"],
             "properties": {
               "productoId": {
                 "type": "integer"

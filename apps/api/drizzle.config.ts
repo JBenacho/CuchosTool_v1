@@ -7,8 +7,9 @@ export default defineConfig({
   schema: './src/bd/esquema.ts',
   out: './bd/migraciones',
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev'
+    url:
+      process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev',
   },
   verbose: true,
-  strict: true
+  strict: true,
 });

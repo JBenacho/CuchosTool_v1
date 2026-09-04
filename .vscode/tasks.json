@@ -25,9 +25,7 @@
       "label": "typecheck",
       "type": "shell",
       "command": "npm run typecheck",
-      "problemMatcher": [
-        "$tsc"
-      ]
+      "problemMatcher": ["$tsc"]
     }
   ]
 }
