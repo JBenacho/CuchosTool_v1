@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import './styles/tokens.css';
-import './styles/global.css';
+import '@cuchostool/tokens-diseno/tokens.css';
+import '@cuchostool/tokens-diseno/global.css';
 
 const container = document.getElementById('root');
 if (container) {

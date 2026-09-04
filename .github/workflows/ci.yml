@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, web]
+        app: [api, web-ecommerce, web-erp]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,4 +41,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t cuchostool-api:ci ./apps/api
-      - run: docker build -t cuchostool-web:ci ./apps/web
+      - run: docker build -t cuchostool-web-ecommerce:ci ./apps/web-ecommerce
+      - run: docker build -t cuchostool-web-erp:ci ./apps/web-erp

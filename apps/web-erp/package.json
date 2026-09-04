@@ -1,18 +1,19 @@
 {
-  "name": "@cuchostool/web",
+  "name": "@cuchostool/web-erp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "CuchosTool UI (Vite + React) - design system IU_CT",
+  "description": "CuchosTool ERP (sitio administrativo) - design system IU_CT",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@cuchostool/tokens-diseno": "*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

@@ -1,0 +1,28 @@
+{
+  "name": "@cuchostool/web-ecommerce",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CuchosTool E-Commerce (sitio publico) - design system IU_CT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "@cuchostool/tokens-diseno": "*",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
