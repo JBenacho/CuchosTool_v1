@@ -26,10 +26,19 @@ Este repositorio implementa la politica Git del Backlog v6.0 (capitulo 9) y el D
 - Migraciones versionadas y reversibles cuando aplique.
 - Artefacto versionado y trazabilidad completa (BL/CU en commit).
 
+## Convenciones de codigo (obligatorias)
+
+- Nomenclatura 100% en espanol: variables, funciones, archivos, tablas, campos y rutas (camelCase en TS/JS, snake_case en BD).
+- Capas separadas: *.servicio.ts (reglas de negocio) y *.rutas.ts (transporte HTTP); la BD solo via src/bd.
+- Valores de negocio solo en src/dominio/constantes.ts (nada hardcodeado).
+- Comentarios de proposito/entradas/salidas/reglas en funciones y procesos relevantes.
+
 ## Comandos utiles
 
+- npm run lint (ESLint)
+- npm run format / npm run format:check (Prettier)
 - npm run typecheck (typecheck de api y web)
 - npm test -w @cuchostool/api (suite de pruebas)
 - npm run validate:contracts (integridad de contratos de eventos)
 - npm run db:up (docker compose up -d db)
-- npm run dev:api / npm run dev:web
+- npm run dev:api / npm run dev:web-ecommerce / npm run dev:web-erp
