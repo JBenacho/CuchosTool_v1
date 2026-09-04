@@ -32,6 +32,7 @@ Node.js 24 + TypeScript + Fastify + Drizzle ORM + PostgreSQL (Docker) + Vite/Rea
 6. npm run dev:web  (http://localhost:5173)
 
 ## Politica Git (Backlog v6, cap. 9)
+Ver CONTRIBUTING.md (ramas, PR, DoD y convencion de commits con trazabilidad BL/CU).
 main protegida; develop rama de integracion; PR revisado por otro integrante; nadie aprueba su propio PR; cambios pequenos, compatibles, reversibles y observables.
 
 ## Estado de avance

@@ -14,7 +14,8 @@
     "dev:web": "npm run dev -w @cuchostool/web",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "validate:contracts": "node scripts/validate-contracts.mjs"
   },
   "engines": {
     "node": ">=20"
