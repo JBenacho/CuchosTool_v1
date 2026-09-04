@@ -1,13 +1,13 @@
 import type { FastifyInstance } from 'fastify';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { carts, cartItems, products } from '../../db/schema';
 import { createOrder } from '../orders/order.service';
 
-// Carrito (CU-EC-007). Cliente identificado por X-Customer-Id (provisional hasta CU-EC-013/014).
-function customerOf(req: { headers: Record<string, unknown> }): string {
-  const v = req.headers['x-customer-id'];
-  return typeof v === 'string' ? v : 'anon';
+// Carrito (CU-EC-007) - requiere sesion de cliente (JWT, CU-EC-014).
+function customerOf(req: any): string {
+  const u = (req && req.user) ? req.user : null;
+  return u && u.sub ? String(u.sub) : 'anon';
 }
 
 async function getOrCreateCart(customerId: string): Promise<number> {
@@ -39,20 +39,24 @@ async function cartView(customerId: string) {
 type AddItemBody = { productId: number; quantity: number };
 
 export async function cartRoutes(app: FastifyInstance): Promise<void> {
+  const auth = (app as any).authenticate;
+
   app.get('/cart', {
-    schema: { tags: ['cart'], summary: 'Consultar carrito', description: 'Contenido y total del carrito (CU-EC-007).' },
+    preHandler: auth,
+    schema: { tags: ['cart'], summary: 'Consultar carrito', description: 'Contenido y total del carrito del cliente autenticado (CU-EC-007).' },
   }, async (req) => {
-    return cartView(customerOf(req as { headers: Record<string, unknown> }));
+    return cartView(customerOf(req));
   });
 
   app.post<{ Body: AddItemBody }>('/cart/items', {
+    preHandler: auth,
     schema: {
       tags: ['cart'],
       summary: 'Agregar producto al carrito',
       body: { type: 'object', required: ['productId', 'quantity'], properties: { productId: { type: 'integer' }, quantity: { type: 'integer' } } },
     },
   }, async (req, reply) => {
-    const customerId = customerOf(req as { headers: Record<string, unknown> });
+    const customerId = customerOf(req);
     const productId = Number(req.body?.productId);
     const quantity = Number(req.body?.quantity);
     if (!(productId > 0) || !(quantity >= 1)) return reply.code(400).send({ error: 'items_invalidos' });
@@ -70,9 +74,10 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.patch<{ Params: { productId: string }; Body: { quantity: number } }>('/cart/items/:productId', {
+    preHandler: auth,
     schema: { tags: ['cart'], summary: 'Actualizar cantidad', body: { type: 'object', required: ['quantity'], properties: { quantity: { type: 'integer' } } } },
   }, async (req, reply) => {
-    const customerId = customerOf(req as { headers: Record<string, unknown> });
+    const customerId = customerOf(req);
     const productId = Number(req.params.productId);
     const quantity = Number(req.body?.quantity);
     const existing = await db.select().from(carts).where(eq(carts.customerId, customerId)).limit(1);
@@ -86,9 +91,10 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.delete<{ Params: { productId: string } }>('/cart/items/:productId', {
+    preHandler: auth,
     schema: { tags: ['cart'], summary: 'Quitar producto del carrito' },
   }, async (req, reply) => {
-    const customerId = customerOf(req as { headers: Record<string, unknown> });
+    const customerId = customerOf(req);
     const productId = Number(req.params.productId);
     const existing = await db.select().from(carts).where(eq(carts.customerId, customerId)).limit(1);
     if (!existing[0]) return reply.code(404).send({ error: 'carrito_vacio' });
@@ -97,9 +103,10 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.post('/cart/checkout', {
+    preHandler: auth,
     schema: { tags: ['cart'], summary: 'Crear pedido desde el carrito', description: 'Vacia el carrito y crea el pedido (CU-EC-008).' },
   }, async (req, reply) => {
-    const customerId = customerOf(req as { headers: Record<string, unknown> });
+    const customerId = customerOf(req);
     const idem = typeof req.headers['idempotency-key'] === 'string' ? req.headers['idempotency-key'] : undefined;
     const existing = await db.select().from(carts).where(eq(carts.customerId, customerId)).limit(1);
     if (!existing[0]) return reply.code(400).send({ error: 'carrito_vacio' });

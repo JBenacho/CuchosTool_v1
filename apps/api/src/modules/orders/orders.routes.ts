@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { eq, isNull, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { orders, orderItems, outboxEvents } from '../../db/schema';
 import { createOrder, type OrderLine } from './order.service';
@@ -8,7 +8,10 @@ import { createOrder, type OrderLine } from './order.service';
 type OrderBody = { items: OrderLine[] };
 
 export async function ordersRoutes(app: FastifyInstance): Promise<void> {
+  const auth = (app as any).authenticate;
+
   app.post<{ Body: OrderBody }>('/orders', {
+    preHandler: auth,
     schema: {
       tags: ['orders'],
       summary: 'Crear pedido unico desde checkout',
@@ -26,7 +29,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     },
   }, async (req, reply) => {
     const idem = typeof req.headers['idempotency-key'] === 'string' ? req.headers['idempotency-key'] : undefined;
-    const customerId = typeof req.headers['x-customer-id'] === 'string' ? req.headers['x-customer-id'] : 'anon';
+    const customerId = String((req as any).user?.sub || 'anon');
     const lines: OrderLine[] = (req.body && Array.isArray(req.body.items) ? req.body.items : []).map(function (i) {
       return { productId: Number(i.productId), quantity: Number(i.quantity) };
     });
@@ -36,9 +39,11 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get<{ Params: { orderRef: string } }>('/orders/:orderRef', {
-    schema: { tags: ['orders'], summary: 'Consultar pedido propio', description: 'Pedido por orderRef (CU-EC-009).' },
+    preHandler: auth,
+    schema: { tags: ['orders'], summary: 'Consultar pedido propio', description: 'Pedido por orderRef del cliente autenticado (CU-EC-009).' },
   }, async (req, reply) => {
-    const o = await db.select().from(orders).where(eq(orders.orderRef, req.params.orderRef)).limit(1);
+    const customerId = String((req as any).user?.sub || 'anon');
+    const o = await db.select().from(orders).where(and(eq(orders.orderRef, req.params.orderRef), eq(orders.customerId, customerId))).limit(1);
     if (!o[0]) return reply.code(404).send({ error: 'pedido_no_encontrado' });
     const items = await db.select().from(orderItems).where(eq(orderItems.orderId, o[0].id));
     return { data: { ...o[0], items: items } };

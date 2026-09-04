@@ -11,6 +11,7 @@ export const config = {
   host: process.env.HOST || '0.0.0.0',
   port: intEnv('PORT', 3001),
   logLevel: process.env.LOG_LEVEL || 'info',
+  jwtSecret: process.env.JWT_SECRET || 'dev-secret-cambiar-en-produccion',
   databaseUrl: process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev',
 };
 

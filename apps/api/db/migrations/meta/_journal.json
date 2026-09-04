@@ -22,6 +22,13 @@
       "when": 1788481058666,
       "tag": "0002_superb_slapstick",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788481368534,
+      "tag": "0003_violet_alex_power",
+      "breakpoints": true
     }
   ]
 }

@@ -29,6 +29,80 @@
                                                             }
                                           }
                               },
+                  "/auth/register":  {
+                                         "post":  {
+                                                      "summary":  "Registrar cliente E-Commerce",
+                                                      "tags":  [
+                                                                   "auth"
+                                                               ],
+                                                      "requestBody":  {
+                                                                          "required":  true,
+                                                                          "content":  {
+                                                                                          "application/json":  {
+                                                                                                                   "schema":  {
+                                                                                                                                  "type":  "object",
+                                                                                                                                  "required":  [
+                                                                                                                                                   "email",
+                                                                                                                                                   "password",
+                                                                                                                                                   "name"
+                                                                                                                                               ],
+                                                                                                                                  "properties":  {
+                                                                                                                                                     "email":  {
+                                                                                                                                                                   "type":  "string"
+                                                                                                                                                               },
+                                                                                                                                                     "password":  {
+                                                                                                                                                                      "type":  "string"
+                                                                                                                                                                  },
+                                                                                                                                                     "name":  {
+                                                                                                                                                                  "type":  "string"
+                                                                                                                                                              }
+                                                                                                                                                 }
+                                                                                                                              }
+                                                                                                               }
+                                                                                      }
+                                                                      },
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Default Response"
+                                                                                }
+                                                                    }
+                                                  }
+                                     },
+                  "/auth/login":  {
+                                      "post":  {
+                                                   "summary":  "Iniciar sesion de cliente",
+                                                   "tags":  [
+                                                                "auth"
+                                                            ],
+                                                   "requestBody":  {
+                                                                       "required":  true,
+                                                                       "content":  {
+                                                                                       "application/json":  {
+                                                                                                                "schema":  {
+                                                                                                                               "type":  "object",
+                                                                                                                               "required":  [
+                                                                                                                                                "email",
+                                                                                                                                                "password"
+                                                                                                                                            ],
+                                                                                                                               "properties":  {
+                                                                                                                                                  "email":  {
+                                                                                                                                                                "type":  "string"
+                                                                                                                                                            },
+                                                                                                                                                  "password":  {
+                                                                                                                                                                   "type":  "string"
+                                                                                                                                                               }
+                                                                                                                                              }
+                                                                                                                           }
+                                                                                                            }
+                                                                                   }
+                                                                   },
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Default Response"
+                                                                             }
+                                                                 }
+                                               }
+                                  },
                   "/catalog/products":  {
                                             "get":  {
                                                         "summary":  "Listar productos activos del catalogo",
@@ -237,7 +311,7 @@
                                             "tags":  [
                                                          "cart"
                                                      ],
-                                            "description":  "Contenido y total del carrito (CU-EC-007).",
+                                            "description":  "Contenido y total del carrito del cliente autenticado (CU-EC-007).",
                                             "responses":  {
                                                               "200":  {
                                                                           "description":  "Default Response"
@@ -409,7 +483,7 @@
                                                          "tags":  [
                                                                       "orders"
                                                                   ],
-                                                         "description":  "Pedido por orderRef (CU-EC-009).",
+                                                         "description":  "Pedido por orderRef del cliente autenticado (CU-EC-009).",
                                                          "parameters":  [
                                                                             {
                                                                                 "schema":  {
@@ -467,6 +541,10 @@
                  {
                      "name":  "cart",
                      "description":  "Carrito de compra (CU-EC-007)"
+                 },
+                 {
+                     "name":  "auth",
+                     "description":  "Identidad de cliente (CU-EC-013/014)"
                  }
              ]
 }

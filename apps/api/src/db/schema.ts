@@ -89,3 +89,14 @@ export const cartItems = pgTable(
   },
   (table) => [uniqueIndex('cart_items_cart_product_idx').on(table.cartId, table.productId)]
 );
+
+// Cliente E-Commerce (CU-EC-013/014). Identidad minima para carrito/checkout autenticados.
+export const customers = pgTable('customers', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  name: text('name').notNull(),
+  status: text('status').notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -38,4 +38,4 @@ main protegida; develop rama de integracion; PR revisado por otro integrante; na
 - F0 (fundacion): COMPLETADA - repo, Docker Compose (db+api), servicios base, design tokens IU_CT, CI.
 - F2 (catalogo publico): EN CURSO - esquema Postgres + migraciones Drizzle + API /catalog/products + UI conectada (BL-027/028).
 - F1 (contratos): EN CURSO - OpenAPI vivo (/docs, /docs/json) + registro de contratos de eventos en /contracts (BL-015/016/096). Pendiente: RBAC/ABAC base y JSON Schema del resto de eventos.
-- F2 (orders y carrito): EN CURSO - Carrito (CU-EC-007) + checkout -> Order Service con idempotencia y Outbox OrderCreated (BL-029/030/033, CU-EC-008/009, CU-INT-001). Pendiente: autenticacion de cliente (CU-EC-013/014) para carrito autenticado real.
+- F2 (orders, carrito e identidad): EN CURSO - Identidad cliente (register/login + JWT), carrito y checkout autenticados -> Order Service con idempotencia y Outbox OrderCreated (BL-029/030/032/033, CU-EC-007/008/009/013/014, CU-INT-001).
