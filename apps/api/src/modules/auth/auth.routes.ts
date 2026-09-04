@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { customers } from '../../db/schema';
+import { customers, users } from '../../db/schema';
 
 // Identidad de cliente E-Commerce (CU-EC-013 registrar / CU-EC-014 iniciar sesion).
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,5 +48,24 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!ok) return reply.code(401).send({ error: 'credenciales_invalidas' });
     const token = (app as any).jwt.sign({ sub: String(c.id), role: 'CUSTOMER' });
     return { data: { customer: { id: c.id, email: c.email, name: c.name }, token: token } };
+  });
+
+  // Login de usuarios internos (RBAC/ABAC). Default Deny: solo roles conocidos.
+  app.post<{ Body: LoginBody }>('/auth/internal-login', {
+    schema: {
+      tags: ['auth'],
+      summary: 'Iniciar sesion de usuario interno',
+      body: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } },
+    },
+  }, async (req, reply) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const row = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const u = row[0];
+    if (!u || u.status !== 'ACTIVE') return reply.code(401).send({ error: 'credenciales_invalidas' });
+    const ok = await bcrypt.compare(password, u.passwordHash);
+    if (!ok) return reply.code(401).send({ error: 'credenciales_invalidas' });
+    const token = (app as any).jwt.sign({ sub: String(u.id), role: u.role, zoneId: u.zoneId, vendorId: u.vendorId });
+    return { data: { user: { id: u.id, email: u.email, role: u.role, zoneId: u.zoneId, vendorId: u.vendorId }, token: token } };
   });
 }

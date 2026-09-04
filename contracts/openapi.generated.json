@@ -103,6 +103,80 @@
                                                                  }
                                                }
                                   },
+                  "/auth/internal-login":  {
+                                               "post":  {
+                                                            "summary":  "Iniciar sesion de usuario interno",
+                                                            "tags":  [
+                                                                         "auth"
+                                                                     ],
+                                                            "requestBody":  {
+                                                                                "required":  true,
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "type":  "object",
+                                                                                                                                        "required":  [
+                                                                                                                                                         "email",
+                                                                                                                                                         "password"
+                                                                                                                                                     ],
+                                                                                                                                        "properties":  {
+                                                                                                                                                           "email":  {
+                                                                                                                                                                         "type":  "string"
+                                                                                                                                                                     },
+                                                                                                                                                           "password":  {
+                                                                                                                                                                            "type":  "string"
+                                                                                                                                                                        }
+                                                                                                                                                       }
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            },
+                                                            "responses":  {
+                                                                              "200":  {
+                                                                                          "description":  "Default Response"
+                                                                                      }
+                                                                          }
+                                                        }
+                                           },
+                  "/admin/customers":  {
+                                           "get":  {
+                                                       "summary":  "Listar clientes (ADMIN)",
+                                                       "tags":  [
+                                                                    "admin"
+                                                                ],
+                                                       "responses":  {
+                                                                         "200":  {
+                                                                                     "description":  "Default Response"
+                                                                                 }
+                                                                     }
+                                                   }
+                                       },
+                  "/admin/orders":  {
+                                        "get":  {
+                                                    "summary":  "Listar pedidos (ADMIN / ZONAL_MANAGER)",
+                                                    "tags":  [
+                                                                 "admin"
+                                                             ],
+                                                    "responses":  {
+                                                                      "200":  {
+                                                                                  "description":  "Default Response"
+                                                                              }
+                                                                  }
+                                                }
+                                    },
+                  "/admin/audit":  {
+                                       "get":  {
+                                                   "summary":  "Consultar auditoria de operaciones (ADMIN / AUDITOR)",
+                                                   "tags":  [
+                                                                "admin"
+                                                            ],
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Default Response"
+                                                                             }
+                                                                 }
+                                               }
+                                   },
                   "/catalog/products":  {
                                             "get":  {
                                                         "summary":  "Listar productos activos del catalogo",
@@ -545,6 +619,10 @@
                  {
                      "name":  "auth",
                      "description":  "Identidad de cliente (CU-EC-013/014)"
+                 },
+                 {
+                     "name":  "admin",
+                     "description":  "Consola administrativa RBAC/ABAC (CU-SEC-001..015)"
                  }
              ]
 }

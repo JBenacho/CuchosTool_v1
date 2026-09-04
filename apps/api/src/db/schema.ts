@@ -90,6 +90,32 @@ export const cartItems = pgTable(
   (table) => [uniqueIndex('cart_items_cart_product_idx').on(table.cartId, table.productId)]
 );
 
+// Usuarios internos (RBAC) y auditoria de operaciones sensibles (CU-SEC-001..015, BL-019).
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull(), // ADMIN | ZONAL_MANAGER | AGENT_SOPORTE | AUDITOR
+  zoneId: text('zone_id'),     // ABAC: alcance por zona
+  vendorId: text('vendor_id'), // ABAC: alcance por vendedor
+  status: text('status').notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  actorId: text('actor_id'),
+  actorRole: text('actor_role'),
+  action: text('action').notNull(),
+  resource: text('resource').notNull(),
+  resourceId: text('resource_id'),
+  result: text('result').notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  ip: text('ip'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Cliente E-Commerce (CU-EC-013/014). Identidad minima para carrito/checkout autenticados.
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),

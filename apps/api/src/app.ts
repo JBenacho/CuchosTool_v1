@@ -8,6 +8,7 @@ import { catalogRoutes } from './modules/catalog/catalog.routes';
 import { ordersRoutes } from './modules/orders/orders.routes';
 import { cartRoutes } from './modules/cart/cart.routes';
 import { authRoutes } from './modules/auth/auth.routes';
+import { adminRoutes } from './modules/admin/admin.routes';
 import { config } from './config';
 
 // Contrato OpenAPI (BL-015 / CU-INT-010): documentado y expuesto en /docs y /docs/json.
@@ -33,6 +34,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
         { name: 'orders', description: 'Pedidos y Outbox (CU-EC-008/009, CU-INT-001)' },
         { name: 'cart', description: 'Carrito de compra (CU-EC-007)' },
         { name: 'auth', description: 'Identidad de cliente (CU-EC-013/014)' },
+        { name: 'admin', description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)' },
       ],
     },
   });
@@ -40,6 +42,14 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await app.register(swaggerUi, { routePrefix: '/docs' });
 
   await app.register(jwt, { secret: config.jwtSecret });
+
+  app.decorate('requireRole', function (roles: string[]) {
+    return async function (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) {
+      try { await request.jwtVerify(); } catch { return reply.code(401).send({ error: 'no_autorizado' }); }
+      const role = (request as any).user && (request as any).user.role;
+      if (!roles.includes(role)) return reply.code(403).send({ error: 'prohibido' });
+    };
+  });
 
   app.decorate('authenticate', async function (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) {
     try {
@@ -52,6 +62,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   // Registro de modulos.
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(adminRoutes);
   await app.register(catalogRoutes, { prefix: '/catalog' });
   await app.register(cartRoutes);
   await app.register(ordersRoutes);
