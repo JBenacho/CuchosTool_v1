@@ -1,79 +1,92 @@
+// Aplicacion Fastify de CuchosTool: registro de plugins, decoradores de seguridad y modulos.
+// Convenciones: nombres en espanol; cada modulo vive en src/modulos/<dominio>/.
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import jwt from '@fastify/jwt';
-import { healthRoutes } from './modules/health/health.routes';
-import { catalogRoutes } from './modules/catalog/catalog.routes';
-import { ordersRoutes } from './modules/orders/orders.routes';
-import { cartRoutes } from './modules/cart/cart.routes';
-import { authRoutes } from './modules/auth/auth.routes';
-import { adminRoutes } from './modules/admin/admin.routes';
+import { rutasSalud } from './modulos/salud/salud.rutas';
+import { rutasCatalogo } from './modulos/catalogo/catalogo.rutas';
+import { rutasAutenticacion } from './modulos/autenticacion/autenticacion.rutas';
+import { rutasCarrito } from './modulos/carrito/carrito.rutas';
+import { rutasPedidos } from './modulos/pedidos/pedidos.rutas';
+import { rutasAdministracion } from './modulos/administracion/administracion.rutas';
 import { config } from './config';
 
-// Contrato OpenAPI (BL-015 / CU-INT-010): documentado y expuesto en /docs y /docs/json.
-const apiInfo = {
+// Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
+const informacionApi = {
   title: 'CuchosTool API',
   description: 'Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.',
-  version: '0.1.0',
+  version: '0.2.0',
 } as const;
 
-export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
-  const app = Fastify({
-    logger: opts && opts.logger ? { level: config.logLevel } : false,
+/**
+ * Construye la aplicacion Fastify con todos los plugins y rutas registrados.
+ * Se separa del arranque para poder probarla con app.inject (sin abrir puerto).
+ */
+export async function construirAplicacion(opciones?: { logger?: boolean }): Promise<FastifyInstance> {
+  const aplicacion = Fastify({
+    logger: opciones && opciones.logger ? { level: config.nivelLog } : false,
   });
 
-  await app.register(cors, { origin: true });
+  await aplicacion.register(cors, { origin: true });
 
-  await app.register(swagger, {
+  await aplicacion.register(swagger, {
     openapi: {
-      info: apiInfo,
+      info: informacionApi,
       tags: [
-        { name: 'health', description: 'Salud y disponibilidad' },
-        { name: 'catalog', description: 'Catalogo publico (CU-EC-001..006)' },
-        { name: 'orders', description: 'Pedidos y Outbox (CU-EC-008/009, CU-INT-001)' },
-        { name: 'cart', description: 'Carrito de compra (CU-EC-007)' },
-        { name: 'auth', description: 'Identidad de cliente (CU-EC-013/014)' },
-        { name: 'admin', description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)' },
+        { name: 'salud', description: 'Salud y disponibilidad' },
+        { name: 'catalogo', description: 'Catalogo publico (CU-EC-001..006)' },
+        { name: 'autenticacion', description: 'Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)' },
+        { name: 'carrito', description: 'Carrito de compra (CU-EC-007)' },
+        { name: 'pedidos', description: 'Pedidos y buzon (CU-EC-008/009, CU-INT-001)' },
+        { name: 'administracion', description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)' },
       ],
     },
   });
+  await aplicacion.register(swaggerUi, { routePrefix: '/docs' });
 
-  await app.register(swaggerUi, { routePrefix: '/docs' });
+  await aplicacion.register(jwt, { secret: config.secretoJwt });
 
-  await app.register(jwt, { secret: config.jwtSecret });
-
-  app.decorate('requireRole', function (roles: string[]) {
-    return async function (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) {
-      try { await request.jwtVerify(); } catch { return reply.code(401).send({ error: 'no_autorizado' }); }
-      const role = (request as any).user && (request as any).user.role;
-      if (!roles.includes(role)) return reply.code(403).send({ error: 'prohibido' });
+  // Decorador de autorizacion por rol (RBAC, Default Deny).
+  // Regla: si el JWT no tiene un rol permitido, se responde 403; sin token, 401.
+  aplicacion.decorate('requerirRol', function (rolesPermitidos: string[]) {
+    return async function (solicitud: import('fastify').FastifyRequest, respuesta: import('fastify').FastifyReply) {
+      try { await solicitud.jwtVerify(); } catch { return respuesta.code(401).send({ error: 'no_autorizado' }); }
+      const usuario = (solicitud as any).usuario;
+      const rol = usuario && usuario.rol;
+      if (!rolesPermitidos.includes(rol)) return respuesta.code(403).send({ error: 'prohibido' });
     };
   });
 
-  app.decorate('authenticate', async function (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) {
+  // Decorador de autenticacion: exige JWT valido y deja el payload en solicitud.usuario.
+  aplicacion.decorate('autenticar', async function (solicitud: import('fastify').FastifyRequest, respuesta: import('fastify').FastifyReply) {
     try {
-      await request.jwtVerify();
-    } catch (err) {
-      return reply.code(401).send({ error: 'no_autorizado' });
+      await solicitud.jwtVerify();
+      // @fastify/jwt guarda el payload en request.user; lo exponemos como .usuario para el resto del codigo.
+      (solicitud as any).usuario = (solicitud as any).user;
+    } catch {
+      return respuesta.code(401).send({ error: 'no_autorizado' });
     }
   });
 
-  // Registro de modulos.
-  await app.register(healthRoutes);
-  await app.register(authRoutes);
-  await app.register(adminRoutes);
-  await app.register(catalogRoutes, { prefix: '/catalog' });
-  await app.register(cartRoutes);
-  await app.register(ordersRoutes);
+  // Registro de modulos por dominio.
+  await aplicacion.register(rutasSalud);
+  await aplicacion.register(rutasAutenticacion);
+  await aplicacion.register(rutasAdministracion);
+  await aplicacion.register(rutasCatalogo);
+  await aplicacion.register(rutasCarrito);
+  await aplicacion.register(rutasPedidos);
 
-  app.get('/', async () => ({
-    name: 'CuchosTool API',
-    version: '0.1.0',
-    baseline: 'SRS v5.0 / ARQ v6.0 / BL v6.0',
-    status: 'f2-identity',
-    docs: '/docs',
-  }));
+  aplicacion.get('/', async function () {
+    return {
+      nombre: 'CuchosTool API',
+      version: '0.2.0',
+      baseline: 'SRS v5.0 / ARQ v6.0 / BL v6.0',
+      estado: 'f2-completo',
+      docs: '/docs',
+    };
+  });
 
-  return app;
+  return aplicacion;
 }

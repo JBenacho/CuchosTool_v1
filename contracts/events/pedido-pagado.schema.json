@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cuchostool.com/contracts/events/pedido-pagado.schema.json",
+  "title": "PedidoPagado",
+  "description": "Evento emitido tras confirmacion bancaria del pago (CU-INT-002). Consumidores idempotentes.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "type",
+    "version",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "const": "com.cuchostool.pedido.pagado"
+    },
+    "version": {
+      "const": "1.0"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "pedidoId",
+        "pagoId",
+        "montoCentavos",
+        "moneda"
+      ],
+      "properties": {
+        "pedidoId": {
+          "type": "string"
+        },
+        "pagoId": {
+          "type": "string"
+        },
+        "montoCentavos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "moneda": {
+          "const": "COP"
+        },
+        "pagadoEn": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

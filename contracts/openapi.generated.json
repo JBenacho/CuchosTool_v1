@@ -3,7 +3,7 @@
     "info":  {
                  "title":  "CuchosTool API",
                  "description":  "Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.",
-                 "version":  "0.1.0"
+                 "version":  "0.2.0"
              },
     "components":  {
                        "schemas":  {
@@ -11,152 +11,8 @@
                                    }
                    },
     "paths":  {
-                  "/healthz":  {
-                                   "get":  {
-                                               "responses":  {
-                                                                 "200":  {
-                                                                             "description":  "Default Response"
-                                                                         }
-                                                             }
-                                           }
-                               },
-                  "/readyz":  {
-                                  "get":  {
-                                              "responses":  {
-                                                                "200":  {
-                                                                            "description":  "Default Response"
-                                                                        }
-                                                            }
-                                          }
-                              },
-                  "/auth/register":  {
-                                         "post":  {
-                                                      "summary":  "Registrar cliente E-Commerce",
-                                                      "tags":  [
-                                                                   "auth"
-                                                               ],
-                                                      "requestBody":  {
-                                                                          "required":  true,
-                                                                          "content":  {
-                                                                                          "application/json":  {
-                                                                                                                   "schema":  {
-                                                                                                                                  "type":  "object",
-                                                                                                                                  "required":  [
-                                                                                                                                                   "email",
-                                                                                                                                                   "password",
-                                                                                                                                                   "name"
-                                                                                                                                               ],
-                                                                                                                                  "properties":  {
-                                                                                                                                                     "email":  {
-                                                                                                                                                                   "type":  "string"
-                                                                                                                                                               },
-                                                                                                                                                     "password":  {
-                                                                                                                                                                      "type":  "string"
-                                                                                                                                                                  },
-                                                                                                                                                     "name":  {
-                                                                                                                                                                  "type":  "string"
-                                                                                                                                                              }
-                                                                                                                                                 }
-                                                                                                                              }
-                                                                                                               }
-                                                                                      }
-                                                                      },
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
-                                                                                }
-                                                                    }
-                                                  }
-                                     },
-                  "/auth/login":  {
-                                      "post":  {
-                                                   "summary":  "Iniciar sesion de cliente",
-                                                   "tags":  [
-                                                                "auth"
-                                                            ],
-                                                   "requestBody":  {
-                                                                       "required":  true,
-                                                                       "content":  {
-                                                                                       "application/json":  {
-                                                                                                                "schema":  {
-                                                                                                                               "type":  "object",
-                                                                                                                               "required":  [
-                                                                                                                                                "email",
-                                                                                                                                                "password"
-                                                                                                                                            ],
-                                                                                                                               "properties":  {
-                                                                                                                                                  "email":  {
-                                                                                                                                                                "type":  "string"
-                                                                                                                                                            },
-                                                                                                                                                  "password":  {
-                                                                                                                                                                   "type":  "string"
-                                                                                                                                                               }
-                                                                                                                                              }
-                                                                                                                           }
-                                                                                                            }
-                                                                                   }
-                                                                   },
-                                                   "responses":  {
-                                                                     "200":  {
-                                                                                 "description":  "Default Response"
-                                                                             }
-                                                                 }
-                                               }
-                                  },
-                  "/auth/internal-login":  {
-                                               "post":  {
-                                                            "summary":  "Iniciar sesion de usuario interno",
-                                                            "tags":  [
-                                                                         "auth"
-                                                                     ],
-                                                            "requestBody":  {
-                                                                                "required":  true,
-                                                                                "content":  {
-                                                                                                "application/json":  {
-                                                                                                                         "schema":  {
-                                                                                                                                        "type":  "object",
-                                                                                                                                        "required":  [
-                                                                                                                                                         "email",
-                                                                                                                                                         "password"
-                                                                                                                                                     ],
-                                                                                                                                        "properties":  {
-                                                                                                                                                           "email":  {
-                                                                                                                                                                         "type":  "string"
-                                                                                                                                                                     },
-                                                                                                                                                           "password":  {
-                                                                                                                                                                            "type":  "string"
-                                                                                                                                                                        }
-                                                                                                                                                       }
-                                                                                                                                    }
-                                                                                                                     }
-                                                                                            }
-                                                                            },
-                                                            "responses":  {
-                                                                              "200":  {
-                                                                                          "description":  "Default Response"
-                                                                                      }
-                                                                          }
-                                                        }
-                                           },
-                  "/admin/customers":  {
-                                           "get":  {
-                                                       "summary":  "Listar clientes (ADMIN)",
-                                                       "tags":  [
-                                                                    "admin"
-                                                                ],
-                                                       "responses":  {
-                                                                         "200":  {
-                                                                                     "description":  "Default Response"
-                                                                                 }
-                                                                     }
-                                                   }
-                                       },
-                  "/admin/orders":  {
+                  "/salud/estado":  {
                                         "get":  {
-                                                    "summary":  "Listar pedidos (ADMIN / ZONAL_MANAGER)",
-                                                    "tags":  [
-                                                                 "admin"
-                                                             ],
                                                     "responses":  {
                                                                       "200":  {
                                                                                   "description":  "Default Response"
@@ -164,12 +20,8 @@
                                                                   }
                                                 }
                                     },
-                  "/admin/audit":  {
+                  "/salud/listo":  {
                                        "get":  {
-                                                   "summary":  "Consultar auditoria de operaciones (ADMIN / AUDITOR)",
-                                                   "tags":  [
-                                                                "admin"
-                                                            ],
                                                    "responses":  {
                                                                      "200":  {
                                                                                  "description":  "Default Response"
@@ -177,324 +29,472 @@
                                                                  }
                                                }
                                    },
-                  "/catalog/products":  {
-                                            "get":  {
-                                                        "summary":  "Listar productos activos del catalogo",
-                                                        "tags":  [
-                                                                     "catalog"
-                                                                 ],
-                                                        "description":  "Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.",
-                                                        "parameters":  [
-                                                                           {
-                                                                               "schema":  {
-                                                                                              "type":  "string"
-                                                                                          },
-                                                                               "in":  "query",
-                                                                               "name":  "q",
-                                                                               "required":  false
-                                                                           },
-                                                                           {
-                                                                               "schema":  {
-                                                                                              "type":  "string"
-                                                                                          },
-                                                                               "in":  "query",
-                                                                               "name":  "limit",
-                                                                               "required":  false
-                                                                           },
-                                                                           {
-                                                                               "schema":  {
-                                                                                              "type":  "string"
-                                                                                          },
-                                                                               "in":  "query",
-                                                                               "name":  "offset",
-                                                                               "required":  false
-                                                                           }
-                                                                       ],
-                                                        "responses":  {
-                                                                          "200":  {
-                                                                                      "description":  "Default Response",
-                                                                                      "content":  {
-                                                                                                      "application/json":  {
-                                                                                                                               "schema":  {
-                                                                                                                                              "type":  "object",
-                                                                                                                                              "properties":  {
-                                                                                                                                                                 "data":  {
-                                                                                                                                                                              "type":  "array",
-                                                                                                                                                                              "items":  {
-                                                                                                                                                                                            "type":  "object",
-                                                                                                                                                                                            "properties":  {
-                                                                                                                                                                                                               "id":  {
-                                                                                                                                                                                                                          "type":  "integer"
-                                                                                                                                                                                                                      },
-                                                                                                                                                                                                               "slug":  {
-                                                                                                                                                                                                                            "type":  "string"
-                                                                                                                                                                                                                        },
-                                                                                                                                                                                                               "name":  {
-                                                                                                                                                                                                                            "type":  "string"
-                                                                                                                                                                                                                        },
-                                                                                                                                                                                                               "description":  {
-                                                                                                                                                                                                                                   "type":  [
-                                                                                                                                                                                                                                                "null",
-                                                                                                                                                                                                                                                "string"
-                                                                                                                                                                                                                                            ]
-                                                                                                                                                                                                                               },
-                                                                                                                                                                                                               "priceCents":  {
-                                                                                                                                                                                                                                  "type":  "integer"
-                                                                                                                                                                                                                              },
-                                                                                                                                                                                                               "currency":  {
-                                                                                                                                                                                                                                "type":  "string"
-                                                                                                                                                                                                                            },
-                                                                                                                                                                                                               "stock":  {
-                                                                                                                                                                                                                             "type":  "integer"
-                                                                                                                                                                                                                         },
-                                                                                                                                                                                                               "imageUrl":  {
-                                                                                                                                                                                                                                "type":  [
-                                                                                                                                                                                                                                             "null",
-                                                                                                                                                                                                                                             "string"
-                                                                                                                                                                                                                                         ]
-                                                                                                                                                                                                                            },
-                                                                                                                                                                                                               "category":  {
-                                                                                                                                                                                                                                "type":  [
-                                                                                                                                                                                                                                             "null",
-                                                                                                                                                                                                                                             "string"
-                                                                                                                                                                                                                                         ]
-                                                                                                                                                                                                                            },
-                                                                                                                                                                                                               "price":  {
-                                                                                                                                                                                                                             "type":  "string"
-                                                                                                                                                                                                                         }
-                                                                                                                                                                                                           }
-                                                                                                                                                                                        }
-                                                                                                                                                                          },
-                                                                                                                                                                 "meta":  {
-                                                                                                                                                                              "type":  "object",
-                                                                                                                                                                              "properties":  {
-                                                                                                                                                                                                 "limit":  {
-                                                                                                                                                                                                               "type":  "integer"
-                                                                                                                                                                                                           },
-                                                                                                                                                                                                 "offset":  {
-                                                                                                                                                                                                                "type":  "integer"
-                                                                                                                                                                                                            },
-                                                                                                                                                                                                 "count":  {
-                                                                                                                                                                                                               "type":  "integer"
-                                                                                                                                                                                                           }
-                                                                                                                                                                                             }
-                                                                                                                                                                          }
-                                                                                                                                                             }
-                                                                                                                                          }
-                                                                                                                           }
-                                                                                                  }
-                                                                                  }
-                                                                      }
-                                                    }
-                                        },
-                  "/catalog/products/{id}":  {
-                                                 "get":  {
-                                                             "summary":  "Consultar ficha de producto",
-                                                             "tags":  [
-                                                                          "catalog"
-                                                                      ],
-                                                             "description":  "Ficha de producto activo por id (CU-EC-004).",
-                                                             "parameters":  [
-                                                                                {
-                                                                                    "schema":  {
-                                                                                                   "type":  "string"
-                                                                                               },
-                                                                                    "in":  "path",
-                                                                                    "name":  "id",
-                                                                                    "required":  true
-                                                                                }
-                                                                            ],
-                                                             "responses":  {
-                                                                               "200":  {
-                                                                                           "description":  "Default Response",
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "type":  "object",
-                                                                                                                                                   "properties":  {
-                                                                                                                                                                      "data":  {
-                                                                                                                                                                                   "type":  "object",
-                                                                                                                                                                                   "properties":  {
-                                                                                                                                                                                                      "id":  {
-                                                                                                                                                                                                                 "type":  "integer"
-                                                                                                                                                                                                             },
-                                                                                                                                                                                                      "slug":  {
-                                                                                                                                                                                                                   "type":  "string"
-                                                                                                                                                                                                               },
-                                                                                                                                                                                                      "name":  {
-                                                                                                                                                                                                                   "type":  "string"
-                                                                                                                                                                                                               },
-                                                                                                                                                                                                      "description":  {
-                                                                                                                                                                                                                          "type":  [
-                                                                                                                                                                                                                                       "null",
-                                                                                                                                                                                                                                       "string"
-                                                                                                                                                                                                                                   ]
-                                                                                                                                                                                                                      },
-                                                                                                                                                                                                      "priceCents":  {
-                                                                                                                                                                                                                         "type":  "integer"
-                                                                                                                                                                                                                     },
-                                                                                                                                                                                                      "currency":  {
-                                                                                                                                                                                                                       "type":  "string"
-                                                                                                                                                                                                                   },
-                                                                                                                                                                                                      "stock":  {
-                                                                                                                                                                                                                    "type":  "integer"
-                                                                                                                                                                                                                },
-                                                                                                                                                                                                      "imageUrl":  {
-                                                                                                                                                                                                                       "type":  [
-                                                                                                                                                                                                                                    "null",
-                                                                                                                                                                                                                                    "string"
-                                                                                                                                                                                                                                ]
-                                                                                                                                                                                                                   },
-                                                                                                                                                                                                      "category":  {
-                                                                                                                                                                                                                       "type":  [
-                                                                                                                                                                                                                                    "null",
-                                                                                                                                                                                                                                    "string"
-                                                                                                                                                                                                                                ]
-                                                                                                                                                                                                                   },
-                                                                                                                                                                                                      "price":  {
-                                                                                                                                                                                                                    "type":  "string"
-                                                                                                                                                                                                                }
-                                                                                                                                                                                                  }
-                                                                                                                                                                               }
-                                                                                                                                                                  }
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       },
-                                                                               "404":  {
-                                                                                           "description":  "Default Response",
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "type":  "object",
-                                                                                                                                                   "properties":  {
-                                                                                                                                                                      "error":  {
-                                                                                                                                                                                    "type":  "string"
-                                                                                                                                                                                }
-                                                                                                                                                                  }
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       }
-                                                                           }
-                                                         }
-                                             },
-                  "/cart":  {
-                                "get":  {
-                                            "summary":  "Consultar carrito",
-                                            "tags":  [
-                                                         "cart"
-                                                     ],
-                                            "description":  "Contenido y total del carrito del cliente autenticado (CU-EC-007).",
-                                            "responses":  {
-                                                              "200":  {
-                                                                          "description":  "Default Response"
-                                                                      }
-                                                          }
-                                        }
-                            },
-                  "/cart/items":  {
-                                      "post":  {
-                                                   "summary":  "Agregar producto al carrito",
-                                                   "tags":  [
-                                                                "cart"
-                                                            ],
-                                                   "requestBody":  {
-                                                                       "required":  true,
-                                                                       "content":  {
-                                                                                       "application/json":  {
-                                                                                                                "schema":  {
-                                                                                                                               "type":  "object",
-                                                                                                                               "required":  [
-                                                                                                                                                "productId",
-                                                                                                                                                "quantity"
-                                                                                                                                            ],
-                                                                                                                               "properties":  {
-                                                                                                                                                  "productId":  {
-                                                                                                                                                                    "type":  "integer"
-                                                                                                                                                                },
-                                                                                                                                                  "quantity":  {
-                                                                                                                                                                   "type":  "integer"
-                                                                                                                                                               }
-                                                                                                                                              }
-                                                                                                                           }
-                                                                                                            }
-                                                                                   }
-                                                                   },
-                                                   "responses":  {
-                                                                     "200":  {
-                                                                                 "description":  "Default Response"
+                  "/autenticacion/registro":  {
+                                                  "post":  {
+                                                               "summary":  "Registrar cliente E-Commerce",
+                                                               "tags":  [
+                                                                            "autenticacion"
+                                                                        ],
+                                                               "requestBody":  {
+                                                                                   "required":  true,
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "type":  "object",
+                                                                                                                                           "required":  [
+                                                                                                                                                            "correo",
+                                                                                                                                                            "contrasena",
+                                                                                                                                                            "nombre"
+                                                                                                                                                        ],
+                                                                                                                                           "properties":  {
+                                                                                                                                                              "correo":  {
+                                                                                                                                                                             "type":  "string"
+                                                                                                                                                                         },
+                                                                                                                                                              "contrasena":  {
+                                                                                                                                                                                 "type":  "string"
+                                                                                                                                                                             },
+                                                                                                                                                              "nombre":  {
+                                                                                                                                                                             "type":  "string"
+                                                                                                                                                                         }
+                                                                                                                                                          }
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               },
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Default Response"
+                                                                                         }
                                                                              }
-                                                                 }
-                                               }
-                                  },
-                  "/cart/items/{productId}":  {
-                                                  "patch":  {
-                                                                "summary":  "Actualizar cantidad",
-                                                                "tags":  [
-                                                                             "cart"
-                                                                         ],
-                                                                "requestBody":  {
-                                                                                    "required":  true,
-                                                                                    "content":  {
-                                                                                                    "application/json":  {
-                                                                                                                             "schema":  {
-                                                                                                                                            "type":  "object",
-                                                                                                                                            "required":  [
-                                                                                                                                                             "quantity"
-                                                                                                                                                         ],
-                                                                                                                                            "properties":  {
-                                                                                                                                                               "quantity":  {
-                                                                                                                                                                                "type":  "integer"
+                                                           }
+                                              },
+                  "/autenticacion/ingreso":  {
+                                                 "post":  {
+                                                              "summary":  "Iniciar sesion de cliente",
+                                                              "tags":  [
+                                                                           "autenticacion"
+                                                                       ],
+                                                              "requestBody":  {
+                                                                                  "required":  true,
+                                                                                  "content":  {
+                                                                                                  "application/json":  {
+                                                                                                                           "schema":  {
+                                                                                                                                          "type":  "object",
+                                                                                                                                          "required":  [
+                                                                                                                                                           "correo",
+                                                                                                                                                           "contrasena"
+                                                                                                                                                       ],
+                                                                                                                                          "properties":  {
+                                                                                                                                                             "correo":  {
+                                                                                                                                                                            "type":  "string"
+                                                                                                                                                                        },
+                                                                                                                                                             "contrasena":  {
+                                                                                                                                                                                "type":  "string"
                                                                                                                                                                             }
-                                                                                                                                                           }
-                                                                                                                                        }
-                                                                                                                         }
-                                                                                                }
-                                                                                },
-                                                                "parameters":  [
-                                                                                   {
-                                                                                       "schema":  {
-                                                                                                      "type":  "string"
-                                                                                                  },
-                                                                                       "in":  "path",
-                                                                                       "name":  "productId",
-                                                                                       "required":  true
-                                                                                   }
+                                                                                                                                                         }
+                                                                                                                                      }
+                                                                                                                       }
+                                                                                              }
+                                                                              },
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Default Response"
+                                                                                        }
+                                                                            }
+                                                          }
+                                             },
+                  "/autenticacion/ingreso-interno":  {
+                                                         "post":  {
+                                                                      "summary":  "Iniciar sesion de usuario interno",
+                                                                      "tags":  [
+                                                                                   "autenticacion"
                                                                                ],
+                                                                      "requestBody":  {
+                                                                                          "required":  true,
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "type":  "object",
+                                                                                                                                                  "required":  [
+                                                                                                                                                                   "correo",
+                                                                                                                                                                   "contrasena"
+                                                                                                                                                               ],
+                                                                                                                                                  "properties":  {
+                                                                                                                                                                     "correo":  {
+                                                                                                                                                                                    "type":  "string"
+                                                                                                                                                                                },
+                                                                                                                                                                     "contrasena":  {
+                                                                                                                                                                                        "type":  "string"
+                                                                                                                                                                                    }
+                                                                                                                                                                 }
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      },
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Default Response"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                     },
+                  "/administracion/clientes":  {
+                                                   "get":  {
+                                                               "summary":  "Listar clientes (ADMIN)",
+                                                               "tags":  [
+                                                                            "administracion"
+                                                                        ],
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Default Response"
+                                                                                         }
+                                                                             }
+                                                           }
+                                               },
+                  "/administracion/pedidos":  {
+                                                  "get":  {
+                                                              "summary":  "Listar pedidos (ADMIN / GERENTE_ZONA)",
+                                                              "tags":  [
+                                                                           "administracion"
+                                                                       ],
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Default Response"
+                                                                                        }
+                                                                            }
+                                                          }
+                                              },
+                  "/administracion/auditoria":  {
+                                                    "get":  {
+                                                                "summary":  "Consultar auditoria de operaciones (ADMIN / AUDITOR)",
+                                                                "tags":  [
+                                                                             "administracion"
+                                                                         ],
                                                                 "responses":  {
                                                                                   "200":  {
                                                                                               "description":  "Default Response"
                                                                                           }
                                                                               }
-                                                            },
-                                                  "delete":  {
-                                                                 "summary":  "Quitar producto del carrito",
-                                                                 "tags":  [
-                                                                              "cart"
-                                                                          ],
-                                                                 "parameters":  [
-                                                                                    {
-                                                                                        "schema":  {
-                                                                                                       "type":  "string"
-                                                                                                   },
-                                                                                        "in":  "path",
-                                                                                        "name":  "productId",
-                                                                                        "required":  true
+                                                            }
+                                                },
+                  "/catalogo/productos":  {
+                                              "get":  {
+                                                          "summary":  "Listar productos activos del catalogo",
+                                                          "tags":  [
+                                                                       "catalogo"
+                                                                   ],
+                                                          "description":  "Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.",
+                                                          "parameters":  [
+                                                                             {
+                                                                                 "schema":  {
+                                                                                                "type":  "string"
+                                                                                            },
+                                                                                 "in":  "query",
+                                                                                 "name":  "q",
+                                                                                 "required":  false
+                                                                             },
+                                                                             {
+                                                                                 "schema":  {
+                                                                                                "type":  "string"
+                                                                                            },
+                                                                                 "in":  "query",
+                                                                                 "name":  "limit",
+                                                                                 "required":  false
+                                                                             },
+                                                                             {
+                                                                                 "schema":  {
+                                                                                                "type":  "string"
+                                                                                            },
+                                                                                 "in":  "query",
+                                                                                 "name":  "offset",
+                                                                                 "required":  false
+                                                                             }
+                                                                         ],
+                                                          "responses":  {
+                                                                            "200":  {
+                                                                                        "description":  "Default Response",
+                                                                                        "content":  {
+                                                                                                        "application/json":  {
+                                                                                                                                 "schema":  {
+                                                                                                                                                "type":  "object",
+                                                                                                                                                "properties":  {
+                                                                                                                                                                   "data":  {
+                                                                                                                                                                                "type":  "array",
+                                                                                                                                                                                "items":  {
+                                                                                                                                                                                              "type":  "object",
+                                                                                                                                                                                              "properties":  {
+                                                                                                                                                                                                                 "id":  {
+                                                                                                                                                                                                                            "type":  "integer"
+                                                                                                                                                                                                                        },
+                                                                                                                                                                                                                 "slug":  {
+                                                                                                                                                                                                                              "type":  "string"
+                                                                                                                                                                                                                          },
+                                                                                                                                                                                                                 "nombre":  {
+                                                                                                                                                                                                                                "type":  "string"
+                                                                                                                                                                                                                            },
+                                                                                                                                                                                                                 "descripcion":  {
+                                                                                                                                                                                                                                     "type":  [
+                                                                                                                                                                                                                                                  "null",
+                                                                                                                                                                                                                                                  "string"
+                                                                                                                                                                                                                                              ]
+                                                                                                                                                                                                                                 },
+                                                                                                                                                                                                                 "precioCentavos":  {
+                                                                                                                                                                                                                                        "type":  "integer"
+                                                                                                                                                                                                                                    },
+                                                                                                                                                                                                                 "moneda":  {
+                                                                                                                                                                                                                                "type":  "string"
+                                                                                                                                                                                                                            },
+                                                                                                                                                                                                                 "stock":  {
+                                                                                                                                                                                                                               "type":  "integer"
+                                                                                                                                                                                                                           },
+                                                                                                                                                                                                                 "urlImagen":  {
+                                                                                                                                                                                                                                   "type":  [
+                                                                                                                                                                                                                                                "null",
+                                                                                                                                                                                                                                                "string"
+                                                                                                                                                                                                                                            ]
+                                                                                                                                                                                                                               },
+                                                                                                                                                                                                                 "categoria":  {
+                                                                                                                                                                                                                                   "type":  [
+                                                                                                                                                                                                                                                "null",
+                                                                                                                                                                                                                                                "string"
+                                                                                                                                                                                                                                            ]
+                                                                                                                                                                                                                               },
+                                                                                                                                                                                                                 "precio":  {
+                                                                                                                                                                                                                                "type":  "string"
+                                                                                                                                                                                                                            }
+                                                                                                                                                                                                             }
+                                                                                                                                                                                          }
+                                                                                                                                                                            },
+                                                                                                                                                                   "meta":  {
+                                                                                                                                                                                "type":  "object",
+                                                                                                                                                                                "properties":  {
+                                                                                                                                                                                                   "limite":  {
+                                                                                                                                                                                                                  "type":  "integer"
+                                                                                                                                                                                                              },
+                                                                                                                                                                                                   "desplazamiento":  {
+                                                                                                                                                                                                                          "type":  "integer"
+                                                                                                                                                                                                                      },
+                                                                                                                                                                                                   "cantidad":  {
+                                                                                                                                                                                                                    "type":  "integer"
+                                                                                                                                                                                                                }
+                                                                                                                                                                                               }
+                                                                                                                                                                            }
+                                                                                                                                                               }
+                                                                                                                                            }
+                                                                                                                             }
+                                                                                                    }
                                                                                     }
-                                                                                ],
-                                                                 "responses":  {
-                                                                                   "200":  {
-                                                                                               "description":  "Default Response"
-                                                                                           }
-                                                                               }
+                                                                        }
+                                                      }
+                                          },
+                  "/catalogo/productos/{id}":  {
+                                                   "get":  {
+                                                               "summary":  "Consultar ficha de producto",
+                                                               "tags":  [
+                                                                            "catalogo"
+                                                                        ],
+                                                               "description":  "Ficha de producto activo por id (CU-EC-004).",
+                                                               "parameters":  [
+                                                                                  {
+                                                                                      "schema":  {
+                                                                                                     "type":  "string"
+                                                                                                 },
+                                                                                      "in":  "path",
+                                                                                      "name":  "id",
+                                                                                      "required":  true
+                                                                                  }
+                                                                              ],
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Default Response",
+                                                                                             "content":  {
+                                                                                                             "application/json":  {
+                                                                                                                                      "schema":  {
+                                                                                                                                                     "type":  "object",
+                                                                                                                                                     "properties":  {
+                                                                                                                                                                        "data":  {
+                                                                                                                                                                                     "type":  "object",
+                                                                                                                                                                                     "properties":  {
+                                                                                                                                                                                                        "id":  {
+                                                                                                                                                                                                                   "type":  "integer"
+                                                                                                                                                                                                               },
+                                                                                                                                                                                                        "slug":  {
+                                                                                                                                                                                                                     "type":  "string"
+                                                                                                                                                                                                                 },
+                                                                                                                                                                                                        "nombre":  {
+                                                                                                                                                                                                                       "type":  "string"
+                                                                                                                                                                                                                   },
+                                                                                                                                                                                                        "descripcion":  {
+                                                                                                                                                                                                                            "type":  [
+                                                                                                                                                                                                                                         "null",
+                                                                                                                                                                                                                                         "string"
+                                                                                                                                                                                                                                     ]
+                                                                                                                                                                                                                        },
+                                                                                                                                                                                                        "precioCentavos":  {
+                                                                                                                                                                                                                               "type":  "integer"
+                                                                                                                                                                                                                           },
+                                                                                                                                                                                                        "moneda":  {
+                                                                                                                                                                                                                       "type":  "string"
+                                                                                                                                                                                                                   },
+                                                                                                                                                                                                        "stock":  {
+                                                                                                                                                                                                                      "type":  "integer"
+                                                                                                                                                                                                                  },
+                                                                                                                                                                                                        "urlImagen":  {
+                                                                                                                                                                                                                          "type":  [
+                                                                                                                                                                                                                                       "null",
+                                                                                                                                                                                                                                       "string"
+                                                                                                                                                                                                                                   ]
+                                                                                                                                                                                                                      },
+                                                                                                                                                                                                        "categoria":  {
+                                                                                                                                                                                                                          "type":  [
+                                                                                                                                                                                                                                       "null",
+                                                                                                                                                                                                                                       "string"
+                                                                                                                                                                                                                                   ]
+                                                                                                                                                                                                                      },
+                                                                                                                                                                                                        "precio":  {
+                                                                                                                                                                                                                       "type":  "string"
+                                                                                                                                                                                                                   }
+                                                                                                                                                                                                    }
+                                                                                                                                                                                 }
+                                                                                                                                                                    }
+                                                                                                                                                 }
+                                                                                                                                  }
+                                                                                                         }
+                                                                                         },
+                                                                                 "404":  {
+                                                                                             "description":  "Default Response",
+                                                                                             "content":  {
+                                                                                                             "application/json":  {
+                                                                                                                                      "schema":  {
+                                                                                                                                                     "type":  "object",
+                                                                                                                                                     "properties":  {
+                                                                                                                                                                        "error":  {
+                                                                                                                                                                                      "type":  "string"
+                                                                                                                                                                                  }
+                                                                                                                                                                    }
+                                                                                                                                                 }
+                                                                                                                                  }
+                                                                                                         }
+                                                                                         }
+                                                                             }
+                                                           }
+                                               },
+                  "/carrito":  {
+                                   "get":  {
+                                               "summary":  "Consultar carrito",
+                                               "tags":  [
+                                                            "carrito"
+                                                        ],
+                                               "description":  "Contenido y total del carrito del cliente autenticado (CU-EC-007).",
+                                               "responses":  {
+                                                                 "200":  {
+                                                                             "description":  "Default Response"
+                                                                         }
                                                              }
-                                              },
-                  "/cart/checkout":  {
+                                           }
+                               },
+                  "/carrito/articulos":  {
+                                             "post":  {
+                                                          "summary":  "Agregar producto al carrito",
+                                                          "tags":  [
+                                                                       "carrito"
+                                                                   ],
+                                                          "requestBody":  {
+                                                                              "required":  true,
+                                                                              "content":  {
+                                                                                              "application/json":  {
+                                                                                                                       "schema":  {
+                                                                                                                                      "type":  "object",
+                                                                                                                                      "required":  [
+                                                                                                                                                       "productoId",
+                                                                                                                                                       "cantidad"
+                                                                                                                                                   ],
+                                                                                                                                      "properties":  {
+                                                                                                                                                         "productoId":  {
+                                                                                                                                                                            "type":  "integer"
+                                                                                                                                                                        },
+                                                                                                                                                         "cantidad":  {
+                                                                                                                                                                          "type":  "integer"
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                  }
+                                                                                                                   }
+                                                                                          }
+                                                                          },
+                                                          "responses":  {
+                                                                            "200":  {
+                                                                                        "description":  "Default Response"
+                                                                                    }
+                                                                        }
+                                                      }
+                                         },
+                  "/carrito/articulos/{productoId}":  {
+                                                          "patch":  {
+                                                                        "summary":  "Actualizar cantidad",
+                                                                        "tags":  [
+                                                                                     "carrito"
+                                                                                 ],
+                                                                        "requestBody":  {
+                                                                                            "required":  true,
+                                                                                            "content":  {
+                                                                                                            "application/json":  {
+                                                                                                                                     "schema":  {
+                                                                                                                                                    "type":  "object",
+                                                                                                                                                    "required":  [
+                                                                                                                                                                     "cantidad"
+                                                                                                                                                                 ],
+                                                                                                                                                    "properties":  {
+                                                                                                                                                                       "cantidad":  {
+                                                                                                                                                                                        "type":  "integer"
+                                                                                                                                                                                    }
+                                                                                                                                                                   }
+                                                                                                                                                }
+                                                                                                                                 }
+                                                                                                        }
+                                                                                        },
+                                                                        "parameters":  [
+                                                                                           {
+                                                                                               "schema":  {
+                                                                                                              "type":  "string"
+                                                                                                          },
+                                                                                               "in":  "path",
+                                                                                               "name":  "productoId",
+                                                                                               "required":  true
+                                                                                           }
+                                                                                       ],
+                                                                        "responses":  {
+                                                                                          "200":  {
+                                                                                                      "description":  "Default Response"
+                                                                                                  }
+                                                                                      }
+                                                                    },
+                                                          "delete":  {
+                                                                         "summary":  "Quitar producto del carrito",
+                                                                         "tags":  [
+                                                                                      "carrito"
+                                                                                  ],
+                                                                         "parameters":  [
+                                                                                            {
+                                                                                                "schema":  {
+                                                                                                               "type":  "string"
+                                                                                                           },
+                                                                                                "in":  "path",
+                                                                                                "name":  "productoId",
+                                                                                                "required":  true
+                                                                                            }
+                                                                                        ],
+                                                                         "responses":  {
+                                                                                           "200":  {
+                                                                                                       "description":  "Default Response"
+                                                                                                   }
+                                                                                       }
+                                                                     }
+                                                      },
+                  "/carrito/pagar":  {
                                          "post":  {
                                                       "summary":  "Crear pedido desde el carrito",
                                                       "tags":  [
-                                                                   "cart"
+                                                                   "carrito"
                                                                ],
                                                       "description":  "Vacia el carrito y crea el pedido (CU-EC-008).",
                                                       "responses":  {
@@ -504,91 +504,91 @@
                                                                     }
                                                   }
                                      },
-                  "/orders":  {
-                                  "post":  {
-                                               "summary":  "Crear pedido unico desde checkout",
-                                               "tags":  [
-                                                            "orders"
-                                                        ],
-                                               "description":  "Transaccion ACID + Outbox OrderCreated. Idempotency-Key opcional (BL-023).",
-                                               "requestBody":  {
-                                                                   "required":  true,
-                                                                   "content":  {
-                                                                                   "application/json":  {
-                                                                                                            "schema":  {
-                                                                                                                           "type":  "object",
-                                                                                                                           "required":  [
-                                                                                                                                            "items"
-                                                                                                                                        ],
-                                                                                                                           "properties":  {
-                                                                                                                                              "items":  {
-                                                                                                                                                            "type":  "array",
-                                                                                                                                                            "items":  {
-                                                                                                                                                                          "type":  "object",
-                                                                                                                                                                          "required":  [
-                                                                                                                                                                                           "productId",
-                                                                                                                                                                                           "quantity"
-                                                                                                                                                                                       ],
-                                                                                                                                                                          "properties":  {
-                                                                                                                                                                                             "productId":  {
-                                                                                                                                                                                                               "type":  "integer"
-                                                                                                                                                                                                           },
-                                                                                                                                                                                             "quantity":  {
-                                                                                                                                                                                                              "type":  "integer"
-                                                                                                                                                                                                          }
-                                                                                                                                                                                         }
-                                                                                                                                                                      }
-                                                                                                                                                        }
-                                                                                                                                          }
-                                                                                                                       }
-                                                                                                        }
-                                                                               }
-                                                               },
-                                               "responses":  {
-                                                                 "200":  {
-                                                                             "description":  "Default Response"
-                                                                         }
-                                                             }
-                                           }
-                              },
-                  "/orders/{orderRef}":  {
-                                             "get":  {
-                                                         "summary":  "Consultar pedido propio",
-                                                         "tags":  [
-                                                                      "orders"
-                                                                  ],
-                                                         "description":  "Pedido por orderRef del cliente autenticado (CU-EC-009).",
-                                                         "parameters":  [
-                                                                            {
-                                                                                "schema":  {
-                                                                                               "type":  "string"
-                                                                                           },
-                                                                                "in":  "path",
-                                                                                "name":  "orderRef",
-                                                                                "required":  true
-                                                                            }
-                                                                        ],
-                                                         "responses":  {
-                                                                           "200":  {
-                                                                                       "description":  "Default Response"
-                                                                                   }
-                                                                       }
-                                                     }
-                                         },
-                  "/outbox/pending":  {
-                                          "get":  {
-                                                      "summary":  "Eventos pendientes de publicacion",
-                                                      "tags":  [
-                                                                   "orders"
-                                                               ],
-                                                      "description":  "Cola Outbox pendiente (patron Transactional Outbox).",
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
+                  "/pedidos":  {
+                                   "post":  {
+                                                "summary":  "Crear pedido unico desde checkout",
+                                                "tags":  [
+                                                             "pedidos"
+                                                         ],
+                                                "description":  "Transaccion ACID + buzon OrderCreated. Idempotency-Key opcional (BL-023).",
+                                                "requestBody":  {
+                                                                    "required":  true,
+                                                                    "content":  {
+                                                                                    "application/json":  {
+                                                                                                             "schema":  {
+                                                                                                                            "type":  "object",
+                                                                                                                            "required":  [
+                                                                                                                                             "articulos"
+                                                                                                                                         ],
+                                                                                                                            "properties":  {
+                                                                                                                                               "articulos":  {
+                                                                                                                                                                 "type":  "array",
+                                                                                                                                                                 "items":  {
+                                                                                                                                                                               "type":  "object",
+                                                                                                                                                                               "required":  [
+                                                                                                                                                                                                "productoId",
+                                                                                                                                                                                                "cantidad"
+                                                                                                                                                                                            ],
+                                                                                                                                                                               "properties":  {
+                                                                                                                                                                                                  "productoId":  {
+                                                                                                                                                                                                                     "type":  "integer"
+                                                                                                                                                                                                                 },
+                                                                                                                                                                                                  "cantidad":  {
+                                                                                                                                                                                                                   "type":  "integer"
+                                                                                                                                                                                                               }
+                                                                                                                                                                                              }
+                                                                                                                                                                           }
+                                                                                                                                                             }
+                                                                                                                                           }
+                                                                                                                        }
+                                                                                                         }
                                                                                 }
-                                                                    }
-                                                  }
-                                      },
+                                                                },
+                                                "responses":  {
+                                                                  "200":  {
+                                                                              "description":  "Default Response"
+                                                                          }
+                                                              }
+                                            }
+                               },
+                  "/pedidos/{referencia}":  {
+                                                "get":  {
+                                                            "summary":  "Consultar pedido propio",
+                                                            "tags":  [
+                                                                         "pedidos"
+                                                                     ],
+                                                            "description":  "Pedido por referencia del cliente autenticado (CU-EC-009).",
+                                                            "parameters":  [
+                                                                               {
+                                                                                   "schema":  {
+                                                                                                  "type":  "string"
+                                                                                              },
+                                                                                   "in":  "path",
+                                                                                   "name":  "referencia",
+                                                                                   "required":  true
+                                                                               }
+                                                                           ],
+                                                            "responses":  {
+                                                                              "200":  {
+                                                                                          "description":  "Default Response"
+                                                                                      }
+                                                                          }
+                                                        }
+                                            },
+                  "/buzon/pendientes":  {
+                                            "get":  {
+                                                        "summary":  "Eventos pendientes de publicacion",
+                                                        "tags":  [
+                                                                     "pedidos"
+                                                                 ],
+                                                        "description":  "Cola del buzon transaccional pendiente (patron Transactional Outbox).",
+                                                        "responses":  {
+                                                                          "200":  {
+                                                                                      "description":  "Default Response"
+                                                                                  }
+                                                                      }
+                                                    }
+                                        },
                   "/":  {
                             "get":  {
                                         "responses":  {
@@ -601,27 +601,27 @@
               },
     "tags":  [
                  {
-                     "name":  "health",
+                     "name":  "salud",
                      "description":  "Salud y disponibilidad"
                  },
                  {
-                     "name":  "catalog",
+                     "name":  "catalogo",
                      "description":  "Catalogo publico (CU-EC-001..006)"
                  },
                  {
-                     "name":  "orders",
-                     "description":  "Pedidos y Outbox (CU-EC-008/009, CU-INT-001)"
+                     "name":  "autenticacion",
+                     "description":  "Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)"
                  },
                  {
-                     "name":  "cart",
+                     "name":  "carrito",
                      "description":  "Carrito de compra (CU-EC-007)"
                  },
                  {
-                     "name":  "auth",
-                     "description":  "Identidad de cliente (CU-EC-013/014)"
+                     "name":  "pedidos",
+                     "description":  "Pedidos y buzon (CU-EC-008/009, CU-INT-001)"
                  },
                  {
-                     "name":  "admin",
+                     "name":  "administracion",
                      "description":  "Consola administrativa RBAC/ABAC (CU-SEC-001..015)"
                  }
              ]

@@ -6,6 +6,8 @@ Documento vivo del codigo (docs-as-code). Linea base normativa: 04_Arquitectura_
 - ADR-0001: monolitico modular Node.js 24 + TypeScript + Fastify + Drizzle + PostgreSQL (cierra spike BL-014).
 - Microservicios solo con justificacion de dominio/escala/seguridad (CU-ARCH-007, BL-093): ADR futura.
 - Contract-First: OpenAPI vivo (/docs) + registro de eventos versionados (/contracts).
+- Nomenclatura: todo el codigo, tablas, campos y rutas en espanol (regla obligatoria del proyecto).
+- Canales: E-Commerce y ERP son sitios web independientes en dominios separados (apps/web-ecommerce y apps/web-erp), compartiendo el design system IU_CT.
 
 ## C4 - Nivel 1 (Contexto)
 | Actor/Sistema | Relacion |
@@ -19,21 +21,22 @@ Documento vivo del codigo (docs-as-code). Linea base normativa: 04_Arquitectura_
 ## C4 - Nivel 2 (Contenedores, entorno local)
 | Contenedor/Componente | Tech | Ruta en repo |
 |---|---|---|
-| apps/web | Vite + React + TS (design system IU_CT) | apps/web |
+| apps/web-ecommerce | Vite + React + TS (design system IU_CT) | apps/web (renombra a web-ecommerce) |
+| apps/web-erp | Vite + React + TS (pendiente, fase F5) | apps/web-erp |
 | apps/api | Fastify + Drizzle (monolito modular) | apps/api |
 | PostgreSQL 16 | datos transaccionales | docker-compose.yml |
 | (F3) Pub/Sub + Cloud Run | eventos y runtime GCP | infra/ (pendiente Terraform) |
 
-## Modulos del API (monolito modular)
-- auth: registro/login cliente + login interno (JWT).
-- catalog: catalogo publico y fichas de producto.
-- cart: carrito autenticado + checkout.
-- orders: Order Service + Transactional Outbox (OrderCreated).
-- admin: consola RBAC/ABAC + auditoria.
-- contracts: esquemas JSON de eventos y OpenAPI versionado.
+## Modulos del API (monolito modular, rutas en espanol)
+- autenticacion (/autenticacion/*): registro/login cliente + login interno (JWT).
+- catalogo (/catalogo/*): catalogo publico y fichas de producto.
+- carrito (/carrito/*): carrito autenticado + pago.
+- pedidos (/pedidos/*, /buzon/*): Order Service + buzon transaccional (PedidoCreado).
+- administracion (/administracion/*): consola RBAC/ABAC + auditoria.
+- salud (/salud/*): health checks.
 
 ## Datos (tablas actuales)
-categories, products, customers, carts, cart_items, orders, order_items, outbox_events, users, audit_logs.
+categorias, productos, clientes, carritos, carrito_articulos, pedidos, pedido_articulos, eventos_buzon, usuarios, auditoria_registros.
 
 ## Trazabilidad
 SRS v5.0 (RF/RN) -> CU (fichas) -> BL v6.0 (backlog) -> codigo (modulos) -> pruebas/CI.

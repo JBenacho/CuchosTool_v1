@@ -46,7 +46,7 @@ function App(): JSX.Element {
 
   useEffect(function () {
     let active = true;
-    fetch('/api/catalog/products')
+    fetch('/api/catalogo/productos')
       .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
       .then(function (json) {
         if (active && json && Array.isArray(json.data)) setProducts(json.data);

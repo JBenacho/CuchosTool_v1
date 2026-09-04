@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cuchostool.com/contracts/events/pedido-creado.schema.json",
+  "title": "PedidoCreado",
+  "description": "Evento emitido al crear un pedido empresarial unico (CU-INT-001 / BL-033). Envelope versionado + idempotencia + correlacion.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "type",
+    "version",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "const": "com.cuchostool.pedido.creado"
+    },
+    "version": {
+      "const": "1.0"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "pedidoId",
+        "clienteId",
+        "articulos",
+        "totalCentavos",
+        "moneda"
+      ],
+      "properties": {
+        "pedidoId": {
+          "type": "string"
+        },
+        "clienteId": {
+          "type": "string"
+        },
+        "articulos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "productoId",
+              "cantidad",
+              "precioUnitarioCentavos"
+            ],
+            "properties": {
+              "productoId": {
+                "type": "integer"
+              },
+              "cantidad": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "precioUnitarioCentavos": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "subtotalCentavos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "envioCentavos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalCentavos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "moneda": {
+          "const": "COP"
+        }
+      }
+    }
+  }
+}

@@ -15,10 +15,13 @@ Thumbs.db
 *.suo
 # DSH (artefactos temporales de analisis)
 _NICOLA_work/
+
+# Herramientas locales descargadas
+_tools/
 # Docker
 .docker-volumes/
 
 # Cache npm local (sandbox)
 .cache/
 # Drizzle
-apps/api/db/migrations/meta/_journal.json.bak
+apps/api/bd/migraciones/meta/_journal.json.bak
