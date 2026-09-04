@@ -13,6 +13,8 @@ export const config = {
   puerto: enteroDeEntorno('PORT', 3001),
   nivelLog: process.env.LOG_LEVEL || 'info',
   secretoJwt: process.env.JWT_SECRET || 'dev-secret-cambiar-en-produccion',
+  // Intervalo del publicador del buzon en ms (0 lo desactiva; dev: 15 s).
+  intervaloPublicadorMs: enteroDeEntorno('PUBLICADOR_INTERVALO_MS', 15000),
   urlBaseDatos:
     process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev',
 };

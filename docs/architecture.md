@@ -29,19 +29,22 @@ Documento vivo del codigo (docs-as-code). Linea base normativa: 04_Arquitectura_
 | apps/api                 | Fastify + Drizzle (monolito modular)    | apps/api                            |
 | PostgreSQL 16            | datos transaccionales                   | docker-compose.yml                  |
 | (F3) Pub/Sub + Cloud Run | eventos y runtime GCP                   | infra/ (pendiente Terraform)        |
+| publicador del buzon      | Node (intervalo dev; GCP: Scheduler)   | modulos/eventos/buzon.servicio     |
 
 ## Modulos del API (monolito modular, rutas en espanol)
 
 - autenticacion (/autenticacion/*): registro/login cliente + login interno (JWT).
 - catalogo (/catalogo/*): catalogo publico y fichas de producto.
 - carrito (/carrito/*): carrito autenticado + pago.
-- pedidos (/pedidos/_, /buzon/_): Order Service + buzon transaccional (PedidoCreado).
+- pedidos (/pedidos/*): Order Service (PedidoCreado en el buzon).
+- pagos (/pagos/*): pagos Wompi con confirmacion idempotente (PedidoPagado en el buzon).
+- eventos (/buzon/*): publicador transaccional con topicos, evidencia de publicacion y DLQ operable.
 - administracion (/administracion/*): consola RBAC/ABAC + auditoria.
 - salud (/salud/*): health checks.
 
 ## Datos (tablas actuales)
 
-categorias, productos, clientes, carritos, carrito_articulos, pedidos, pedido_articulos, eventos_buzon, usuarios, auditoria_registros.
+categorias, productos, clientes, carritos, carrito_articulos, pedidos, pedido_articulos, eventos_buzon, pagos, eventos_publicados, eventos_fallidos, usuarios, auditoria_registros.
 
 ## Trazabilidad
 

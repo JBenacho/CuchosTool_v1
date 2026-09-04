@@ -1,8 +1,8 @@
-// Rutas del Order Service (CU-EC-008/009) y del buzon transaccional (CU-INT-001).
+// Rutas del Order Service (CU-EC-008/009). El buzon de eventos vive en el modulo eventos.
 import type { FastifyInstance } from 'fastify';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { eventosBuzon, pedidoArticulos, pedidos } from '../../bd/esquema';
+import { pedidoArticulos, pedidos } from '../../bd/esquema';
 import { crearPedido, type ArticuloPedido } from './pedidos.servicio';
 import { MONEDA_COP, PEDIDO_PENDIENTE_PAGO } from '../../dominio/constantes';
 
@@ -48,13 +48,11 @@ export async function rutasPedidos(aplicacion: FastifyInstance): Promise<void> {
       });
       const resultado = await crearPedido(clienteId, claveIdempotencia, articulos);
       if (!resultado.creado)
-        return respuesta
-          .code(resultado.codigoEstado)
-          .send({
-            error: resultado.error,
-            productoId: resultado.productoId,
-            stock: resultado.stock,
-          });
+        return respuesta.code(resultado.codigoEstado).send({
+          error: resultado.error,
+          productoId: resultado.productoId,
+          stock: resultado.stock,
+        });
       return {
         data: {
           referenciaPedido: resultado.referenciaPedido,
@@ -95,26 +93,6 @@ export async function rutasPedidos(aplicacion: FastifyInstance): Promise<void> {
         .from(pedidoArticulos)
         .where(eq(pedidoArticulos.pedidoId, pedido.id));
       return { data: { ...pedido, articulos: articulos } };
-    },
-  );
-
-  // Evidencia del buzon para desarrollo local; en F3 el publicador Pub/Sub consume esta cola.
-  aplicacion.get(
-    '/buzon/pendientes',
-    {
-      schema: {
-        tags: ['pedidos'],
-        summary: 'Eventos pendientes de publicacion',
-        description: 'Cola del buzon transaccional pendiente (patron Transactional Outbox).',
-      },
-    },
-    async function () {
-      const filas = await base
-        .select()
-        .from(eventosBuzon)
-        .where(isNull(eventosBuzon.publicadoEn))
-        .orderBy(desc(eventosBuzon.id));
-      return { data: filas };
     },
   );
 }

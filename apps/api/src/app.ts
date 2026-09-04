@@ -11,6 +11,8 @@ import { rutasAutenticacion } from './modulos/autenticacion/autenticacion.rutas'
 import { rutasCarrito } from './modulos/carrito/carrito.rutas';
 import { rutasPedidos } from './modulos/pedidos/pedidos.rutas';
 import { rutasAdministracion } from './modulos/administracion/administracion.rutas';
+import { rutasPagos } from './modulos/pagos/pagos.rutas';
+import { rutasEventos } from './modulos/eventos/eventos.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -45,7 +47,9 @@ export async function construirAplicacion(opciones?: {
           description: 'Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)',
         },
         { name: 'carrito', description: 'Carrito de compra (CU-EC-007)' },
-        { name: 'pedidos', description: 'Pedidos y buzon (CU-EC-008/009, CU-INT-001)' },
+        { name: 'pedidos', description: 'Pedidos (CU-EC-008/009)' },
+        { name: 'pagos', description: 'Pagos Wompi (CU-EC-010, BL-035/101)' },
+        { name: 'eventos', description: 'Buzon y publicador de eventos (CU-INT-001/002, BL-091)' },
         {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
@@ -99,6 +103,8 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasCatalogo);
   await aplicacion.register(rutasCarrito);
   await aplicacion.register(rutasPedidos);
+  await aplicacion.register(rutasPagos);
+  await aplicacion.register(rutasEventos);
 
   aplicacion.get('/', async function () {
     return {

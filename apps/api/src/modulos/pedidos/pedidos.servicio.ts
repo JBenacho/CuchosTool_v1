@@ -4,7 +4,7 @@
 import { randomUUID } from 'crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { eventosBuzon, pedidoArticulos, pedidos, productos } from '../../bd/esquema';
+import { pedidoArticulos, pedidos, productos } from '../../bd/esquema';
 import {
   COSTO_ENVIO_CENTAVOS,
   ESTADO_ACTIVO,
@@ -12,6 +12,7 @@ import {
   MONEDA_COP,
   PEDIDO_PENDIENTE_PAGO,
 } from '../../dominio/constantes';
+import { encolarEvento } from '../eventos/buzon.servicio';
 
 export interface ArticuloPedido {
   productoId: number;
@@ -160,28 +161,20 @@ export async function crearPedido(
     );
 
     // Buzon transaccional: el evento se publica en la misma transaccion (sin perdida).
-    await transaccion.insert(eventosBuzon).values({
+    await encolarEvento(transaccion, {
       tipoAgregado: 'Pedido',
       idAgregado: referenciaPedido,
       tipoEvento: EVENTO_PEDIDO_CREADO,
       correlacionId: correlacionId,
-      claveIdempotencia: claveIdempotencia || null,
-      carga: {
-        eventId: randomUUID(),
-        type: EVENTO_PEDIDO_CREADO,
-        version: '1.0',
-        occurredAt: new Date().toISOString(),
-        correlationId: correlacionId,
-        idempotencyKey: claveIdempotencia || null,
-        data: {
-          pedidoId: referenciaPedido,
-          clienteId: clienteId,
-          articulos: articulos,
-          subtotalCentavos: totales.subtotalCentavos,
-          envioCentavos: totales.envioCentavos,
-          totalCentavos: totales.totalCentavos,
-          moneda: MONEDA_COP,
-        },
+      claveIdempotencia: claveIdempotencia,
+      datos: {
+        pedidoId: referenciaPedido,
+        clienteId: clienteId,
+        articulos: articulos,
+        subtotalCentavos: totales.subtotalCentavos,
+        envioCentavos: totales.envioCentavos,
+        totalCentavos: totales.totalCentavos,
+        moneda: MONEDA_COP,
       },
     });
   });
