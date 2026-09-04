@@ -35,4 +35,6 @@ Node.js 24 + TypeScript + Fastify + Drizzle ORM + PostgreSQL (Docker) + Vite/Rea
 main protegida; develop rama de integracion; PR revisado por otro integrante; nadie aprueba su propio PR; cambios pequenos, compatibles, reversibles y observables.
 
 ## Estado de avance
-F0 (fundacion): en curso - repositorio, Docker Compose, servicios base, design tokens, CI.
+- F0 (fundacion): COMPLETADA - repo, Docker Compose (db+api), servicios base, design tokens IU_CT, CI.
+- F2 (catalogo publico): EN CURSO - esquema Postgres + migraciones Drizzle + API /catalog/products + UI conectada (BL-027/028).
+- F1 (modelo/seguridad/contratos) y resto de F2 (carrito, checkout, Order): pendientes.

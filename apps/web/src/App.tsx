@@ -1,5 +1,10 @@
-// Shell F0 (Backlog v6 BL-002/BL-003): patrones IU_CT - header + sidebar oscuro,
-// tarjetas KPI, tabla densa y tarjetas de catalogo. Contenido de demostracion.
+// Shell CuchosTool: patrones IU_CT (header + sidebar oscuro, KPI, tabla, catalogo).
+// F2: catalogo publico conectado a la API (/api/catalog/products).
+import { useEffect, useState } from 'react';
+import './App.css';
+
+type Product = { id: number; name: string; price: string; category?: string | null };
+
 const kpis = [
   { label: 'Pedidos hoy', value: '128', delta: '+12%', tone: 'ok' },
   { label: 'Ingresos (COP)', value: '$ 8.4M', delta: '+4%', tone: 'ok' },
@@ -14,15 +19,11 @@ const orders = [
   { id: 'ORD-10418', client: 'Pedro Gil', total: '$ 312.700', state: 'DELIVERED', tone: 'ok' },
 ] as const;
 
-const products = [
-  { name: 'Aretes artesanales', empre: 'Bogota Craft', price: '$ 38.000' },
-  { name: 'Mochila Wayuu', empre: 'Guajira Tejidos', price: '$ 145.000' },
-  { name: 'Cafe organico 500g', empre: 'Cafe del Huila', price: '$ 28.500' },
-] as const;
+const fallbackProducts: Product[] = [
+  { id: 0, name: 'Cargando catalogo...', price: '', category: 'sin conexion a la API' },
+];
 
 const nav = ['Dashboard', 'Catalogo', 'Pedidos', 'Emprendedores', 'Soporte / Garantias', 'ERP', 'Gerencia', 'Seguridad'] as const;
-
-import './App.css';
 
 function Header(): JSX.Element {
   return (
@@ -32,7 +33,7 @@ function Header(): JSX.Element {
         <span className="brand-name">CuchosTool</span>
       </div>
       <div className="header-meta">
-        <span className="chip chip--ok">Dev F0</span>
+        <span className="chip chip--ok">Dev F2</span>
         <span className="header-user">Jose</span>
       </div>
     </header>
@@ -40,6 +41,20 @@ function Header(): JSX.Element {
 }
 
 function App(): JSX.Element {
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [catalogError, setCatalogError] = useState(false);
+
+  useEffect(function () {
+    let active = true;
+    fetch('/api/catalog/products')
+      .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
+      .then(function (json) {
+        if (active && json && Array.isArray(json.data)) setProducts(json.data);
+      })
+      .catch(function () { if (active) setCatalogError(true); });
+    return function () { active = false; };
+  }, []);
+
   return (
     <div className="app-shell">
       <Header />
@@ -54,8 +69,8 @@ function App(): JSX.Element {
         <main className="app-main">
           <section className="page-head">
             <div>
-              <h1>Dashboard</h1>
-              <p className="muted">F0 - Fundacion local (Docker + API + UI). Catalogo real: fase F2.</p>
+              <h1>Catalogo</h1>
+              <p className="muted">F2 - Catalogo publico desde la API (Docker + Postgres).</p>
             </div>
             <button className="btn btn--primary">Nuevo pedido</button>
           </section>
@@ -67,6 +82,19 @@ function App(): JSX.Element {
                   <span className="muted">{k.label}</span>
                   <strong>{k.value}</strong>
                   <span className={'chip chip--' + k.tone}>{k.delta}</span>
+                </article>
+              );
+            })}
+          </section>
+
+          <section className="catalog-grid">
+            {products.map(function (p) {
+              return (
+                <article className="product-card" key={p.id}>
+                  <div className="product-thumb">{p.name.charAt(0)}</div>
+                  <h3>{p.name}</h3>
+                  <span className="muted">{p.category || 'CuchosTool'}</span>
+                  <strong>{p.price}</strong>
                 </article>
               );
             })}
@@ -89,18 +117,7 @@ function App(): JSX.Element {
             </table>
           </section>
 
-          <section className="catalog-grid">
-            {products.map(function (p) {
-              return (
-                <article className="product-card" key={p.name}>
-                  <div className="product-thumb">{p.name.charAt(0)}</div>
-                  <h3>{p.name}</h3>
-                  <span className="muted">{p.empre}</span>
-                  <strong>{p.price}</strong>
-                </article>
-              );
-            })}
-          </section>
+          {catalogError && <p className="muted">No se pudo conectar con la API (/api/catalog/products).</p>}
 
           <footer className="app-footer">
             CuchosTool.com - SRS v5.0 / ARQ v6.0 / Backlog v6.0 - Design System IU_CT

@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { healthRoutes } from './modules/health/health.routes';
+import { catalogRoutes } from './modules/catalog/catalog.routes';
 import { config } from './config';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
@@ -12,6 +13,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
 
   // Registro de modulos. F0: salud. F1/F2: core, ecommerce, etc.
   await app.register(healthRoutes);
+  await app.register(catalogRoutes, { prefix: '/catalog' });
 
   app.get('/', async () => ({
     name: 'CuchosTool API',

@@ -14,6 +14,13 @@ Trazabilidad de cada tarea con su ID de backlog (BL-xxx).
 | BL-014 | Cierre spike runtime contractual (Node+TS+Fastify+Drizzle) | Decidido |
 | RN-GOB-011 / ARQ v6 | Design tokens IU_CT y patrones UI | Documentado (docs/design) |
 
+## Fase F2 - Catalogo publico (en curso)
+| Backlog | Tarea | Estado |
+|---|---|---|
+| BL-027 | Conservar catalogo publico y busqueda sin autenticacion | Hecho (GET /catalog/products, q=) |
+| BL-028 | Ficha de producto y disponibilidad desde Inventory | Parcial (GET /catalog/products/:id; stock como entero) |
+| CU-EC-001..006 | Esquema categories/products + migraciones Drizzle + seed | Hecho |
+
 ## Proximas fases
 - F1: modelo/seguridad/contratos (RBAC/ABAC base, OpenAPI, eventos) - BL-015..026.
 - F2: ciclo critico E-Commerce (catalogo, carrito, checkout, Order) - BL-027..034.
