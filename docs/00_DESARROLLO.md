@@ -28,6 +28,9 @@ Trazabilidad de cada tarea con su ID de backlog (BL-xxx).
 | BL-027 | Conservar catalogo publico y busqueda sin autenticacion | Hecho (GET /catalog/products, q=) |
 | BL-028 | Ficha de producto y disponibilidad desde Inventory | Parcial (GET /catalog/products/:id; stock como entero) |
 | CU-EC-001..006 | Esquema categories/products + migraciones Drizzle + seed | Hecho |
+| BL-030 / CU-EC-008 | POST /orders (transaccion ACID, idempotencia, validacion stock) | Hecho |
+| BL-033 / CU-INT-001 | Outbox OrderCreated (evento transaccional versionado) | Hecho |
+| CU-EC-009 | GET /orders/:orderRef (pedido propio) | Hecho |
 
 ## Proximas fases
 - F1: modelo/seguridad/contratos (RBAC/ABAC base, OpenAPI, eventos) - BL-015..026.

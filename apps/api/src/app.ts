@@ -4,6 +4,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { healthRoutes } from './modules/health/health.routes';
 import { catalogRoutes } from './modules/catalog/catalog.routes';
+import { ordersRoutes } from './modules/orders/orders.routes';
 import { config } from './config';
 
 // Contrato OpenAPI (BL-015 / CU-INT-010): documentado y expuesto en /docs y /docs/json.
@@ -26,6 +27,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       tags: [
         { name: 'health', description: 'Salud y disponibilidad' },
         { name: 'catalog', description: 'Catalogo publico (CU-EC-001..006)' },
+        { name: 'orders', description: 'Pedidos y Outbox (CU-EC-008/009, CU-INT-001)' },
       ],
     },
   });
@@ -35,12 +37,13 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   // Registro de modulos.
   await app.register(healthRoutes);
   await app.register(catalogRoutes, { prefix: '/catalog' });
+  await app.register(ordersRoutes);
 
   app.get('/', async () => ({
     name: 'CuchosTool API',
     version: '0.1.0',
     baseline: 'SRS v5.0 / ARQ v6.0 / BL v6.0',
-    status: 'f2-catalogo',
+    status: 'f2-orders',
     docs: '/docs',
   }));
 

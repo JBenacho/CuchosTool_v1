@@ -8,6 +8,13 @@
       "when": 1788480138875,
       "tag": "0000_aspiring_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788480869392,
+      "tag": "0001_lonely_malice",
+      "breakpoints": true
     }
   ]
 }

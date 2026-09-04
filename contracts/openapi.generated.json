@@ -231,6 +231,91 @@
                                                                            }
                                                          }
                                              },
+                  "/orders":  {
+                                  "post":  {
+                                               "summary":  "Crear pedido unico desde checkout",
+                                               "tags":  [
+                                                            "orders"
+                                                        ],
+                                               "description":  "Crea el pedido y reserva conceptual de stock; publica OrderCreated via Outbox (CU-EC-008, BL-030/033).",
+                                               "requestBody":  {
+                                                                   "required":  true,
+                                                                   "content":  {
+                                                                                   "application/json":  {
+                                                                                                            "schema":  {
+                                                                                                                           "type":  "object",
+                                                                                                                           "required":  [
+                                                                                                                                            "items"
+                                                                                                                                        ],
+                                                                                                                           "properties":  {
+                                                                                                                                              "items":  {
+                                                                                                                                                            "type":  "array",
+                                                                                                                                                            "items":  {
+                                                                                                                                                                          "type":  "object",
+                                                                                                                                                                          "required":  [
+                                                                                                                                                                                           "productId",
+                                                                                                                                                                                           "quantity"
+                                                                                                                                                                                       ],
+                                                                                                                                                                          "properties":  {
+                                                                                                                                                                                             "productId":  {
+                                                                                                                                                                                                               "type":  "integer"
+                                                                                                                                                                                                           },
+                                                                                                                                                                                             "quantity":  {
+                                                                                                                                                                                                              "type":  "integer"
+                                                                                                                                                                                                          }
+                                                                                                                                                                                         }
+                                                                                                                                                                      }
+                                                                                                                                                        }
+                                                                                                                                          }
+                                                                                                                       }
+                                                                                                        }
+                                                                               }
+                                                               },
+                                               "responses":  {
+                                                                 "200":  {
+                                                                             "description":  "Default Response"
+                                                                         }
+                                                             }
+                                           }
+                              },
+                  "/orders/{orderRef}":  {
+                                             "get":  {
+                                                         "summary":  "Consultar pedido propio",
+                                                         "tags":  [
+                                                                      "orders"
+                                                                  ],
+                                                         "description":  "Consulta un pedido por orderRef (CU-EC-009).",
+                                                         "parameters":  [
+                                                                            {
+                                                                                "schema":  {
+                                                                                               "type":  "string"
+                                                                                           },
+                                                                                "in":  "path",
+                                                                                "name":  "orderRef",
+                                                                                "required":  true
+                                                                            }
+                                                                        ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Default Response"
+                                                                                   }
+                                                                       }
+                                                     }
+                                         },
+                  "/outbox/pending":  {
+                                          "get":  {
+                                                      "summary":  "Eventos pendientes de publicacion",
+                                                      "tags":  [
+                                                                   "orders"
+                                                               ],
+                                                      "description":  "Cola Outbox pendiente (patron Transactional Outbox).",
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Default Response"
+                                                                                }
+                                                                    }
+                                                  }
+                                      },
                   "/":  {
                             "get":  {
                                         "responses":  {
@@ -249,6 +334,10 @@
                  {
                      "name":  "catalog",
                      "description":  "Catalogo publico (CU-EC-001..006)"
+                 },
+                 {
+                     "name":  "orders",
+                     "description":  "Pedidos y Outbox (CU-EC-008/009, CU-INT-001)"
                  }
              ]
 }
