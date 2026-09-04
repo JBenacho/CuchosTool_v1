@@ -11,6 +11,11 @@ Plataforma web empresarial: E-Commerce + ERP + Core + dominios modulares (Empren
 - Fichas de CU (HTML/PNG): Carpeta 'Casos de Uso CuchosTool'
 - Guia visual UI: IU_CT.png (design system: modo oscuro azul-noche, acentos verde #0B9F68 y naranja #D16014, tipografia Inter/Space Grotesk)
 
+## Documentacion tecnica
+- docs/architecture.md (C4 + decisiones, mapeado al codigo).
+- docs/adr/ (decisiones registradas, ADR-0001 stack).
+- scripts/setup.ps1 (bootstrap reproducible desde cero).
+
 ## Stack de desarrollo local (spike BL-014 cerrado)
 Node.js 24 + TypeScript + Fastify + Drizzle ORM + PostgreSQL (Docker) + Vite/React (web).
 
