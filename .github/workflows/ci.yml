@@ -53,5 +53,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t cuchostool-api:ci ./apps/api
-      - run: docker build -t cuchostool-web-ecommerce:ci ./apps/web-ecommerce
-      - run: docker build -t cuchostool-web-erp:ci ./apps/web-erp
+      - run: docker build -f apps/web-ecommerce/Dockerfile -t cuchostool-web-ecommerce:ci .
+      - run: docker build -f apps/web-erp/Dockerfile -t cuchostool-web-erp:ci .
