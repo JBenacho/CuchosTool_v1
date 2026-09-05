@@ -3,9 +3,10 @@ name: CI
 # Politica Git Backlog v6: main protegida, develop integra. CI sobre PR y develop.
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'feature/**']
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   quality:
