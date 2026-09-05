@@ -653,20 +653,6 @@
                                                                                      }
                                                                    }
                                                       },
-                  "/pagos/notificacion-wompi":  {
-                                                    "post":  {
-                                                                 "summary":  "Webhook firmado de Wompi",
-                                                                 "tags":  [
-                                                                              "pagos"
-                                                                          ],
-                                                                 "description":  "Notificacion de transacciones verificada con X-Event-Checksum (F3-GCP).",
-                                                                 "responses":  {
-                                                                                   "200":  {
-                                                                                               "description":  "Default Response"
-                                                                                           }
-                                                                               }
-                                                             }
-                                                },
                   "/buzon/pendientes":  {
                                             "get":  {
                                                         "summary":  "Eventos pendientes de publicacion",

@@ -55,5 +55,5 @@ main protegida; develop rama de integracion; PR revisado por otro integrante; na
 - F2: COMPLETADA - catalogo, identidad JWT, carrito, checkout, Order Service con idempotencia y buzon PedidoCreado (BL-027..034, CU-EC-001..017, CU-INT-001).
 - Refactor de calidad: COMPLETADO - nomenclatura 100% en espanol (codigo, tablas, rutas, contratos), capas separadas, constantes de negocio, pruebas (BL-002/013).
 - Sitios web: E-Commerce (apps/web-ecommerce) operativo; ERP (apps/web-erp) shell listo para F5.
-- F3 (pagos y eventos): Pagos Wompi simulados + webhook real firmado (X-Event-Checksum) listo para activar con claves; publicador del buzon con DLQ operable; adaptador GCP Pub/Sub y Terraform (infra/gcp) para Cloud Scheduler (BL-035/036/091/101, CU-EC-010, CU-INT-002).
+- F3 (pagos y eventos): EN CURSO - Pagos Wompi (iniciar/simular/consultar), confirmacion idempotente, pedido -> pagado, publicador del buzon con topicos y DLQ operable (BL-035/036/091/101, CU-EC-010, CU-INT-002).
 - Pruebas: suite Vitest (7 tests: salud, contrato OpenAPI, totales, topicos) ejecutandose en CI.

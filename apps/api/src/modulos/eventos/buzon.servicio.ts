@@ -6,8 +6,6 @@ import { asc, eq, isNull } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { eventosBuzon, eventosFallidos, eventosPublicados } from '../../bd/esquema';
 import { TOPICO_GENERAL, TOPICO_PEDIDOS } from '../../dominio/constantes';
-import { config } from '../../config';
-import { publicadorGcpActivo, publicarEnPubSub } from '../../infraestructura/pubsub';
 
 export interface DatosEvento {
   tipoAgregado: string;
@@ -91,20 +89,12 @@ export async function procesarBuzonPendiente(
     const topico = topicoDeEvento(evento.tipoEvento);
     const eventId = String((evento.carga as any).eventId || evento.id);
     try {
-      if (publicadorGcpActivo()) {
-        // F3-GCP: publicacion real en Pub/Sub (el topico local se traduce al nombre configurado).
-        const nombreTopico =
-          topico === TOPICO_PEDIDOS ? config.pubsubTopicoPedidos : config.pubsubTopicoGeneral;
-        await publicarEnPubSub(nombreTopico, eventId, evento.carga);
-      } else {
-        // Evidencia local de publicacion (desarrollo sin GCP).
-        await base.insert(eventosPublicados).values({
-          topico: topico,
-          eventId: eventId,
-          tipoEvento: evento.tipoEvento,
-          carga: evento.carga,
-        });
-      }
+      await base.insert(eventosPublicados).values({
+        topico: topico,
+        eventId: eventId,
+        tipoEvento: evento.tipoEvento,
+        carga: evento.carga,
+      });
       await base
         .update(eventosBuzon)
         .set({ publicadoEn: new Date() })

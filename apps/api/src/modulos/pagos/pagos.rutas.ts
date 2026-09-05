@@ -5,8 +5,6 @@ import { eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { pagos } from '../../bd/esquema';
 import { iniciarPago, registrarNotificacionPago } from './pagos.servicio';
-import { verificarFirmaWompi, type EstadoWompi } from '../../proveedores/wompi';
-import { config } from '../../config';
 
 type CuerpoIniciarPago = { referenciaPedido: string };
 
@@ -85,48 +83,6 @@ export async function rutasPagos(aplicacion: FastifyInstance): Promise<void> {
       if (resultado.codigoEstado)
         return respuesta.code(resultado.codigoEstado).send({ error: resultado.error });
       return { data: resultado };
-    },
-  );
-
-  // Webhook real de Wompi (F3-GCP): verifica la firma X-Event-Checksum antes de actuar.
-  // rawBody: se requiere el cuerpo crudo para validar el HMAC (no el JSON parseado).
-  aplicacion.post(
-    '/pagos/notificacion-wompi',
-    {
-      config: { rawBody: true },
-      schema: {
-        tags: ['pagos'],
-        summary: 'Webhook firmado de Wompi',
-        description: 'Notificacion de transacciones verificada con X-Event-Checksum (F3-GCP).',
-      },
-    },
-    async function (solicitud, respuesta) {
-      if (!config.wompiClaveEventos)
-        return respuesta.code(503).send({ error: 'proveedor_no_configurado' });
-      const cuerpoCrudo = String((solicitud as any).rawBody || '');
-      const firma =
-        typeof solicitud.headers['x-event-checksum'] === 'string'
-          ? solicitud.headers['x-event-checksum']
-          : '';
-      if (!verificarFirmaWompi(cuerpoCrudo, firma, config.wompiClaveEventos))
-        return respuesta.code(401).send({ error: 'firma_invalida' });
-      const evento = JSON.parse(cuerpoCrudo) as {
-        event?: string;
-        data?: { transaction?: { id?: string; reference?: string; status?: string } };
-      };
-      if (evento.event !== 'transaction.updated')
-        return { data: { recibido: true, ignorado: true } };
-      const transaccion = evento.data && evento.data.transaction ? evento.data.transaction : null;
-      if (!transaccion || !transaccion.reference)
-        return respuesta.code(400).send({ error: 'evento_sin_referencia' });
-      const resultado = await registrarNotificacionPago(
-        transaccion.reference,
-        transaccion.id || 'wompi-desconocido',
-        (transaccion.status || 'PENDING') as EstadoWompi,
-      );
-      if (resultado.codigoEstado)
-        return respuesta.code(resultado.codigoEstado).send({ error: resultado.error });
-      return { data: { recibido: true, ...resultado } };
     },
   );
 }
