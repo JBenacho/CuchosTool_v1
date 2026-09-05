@@ -10,11 +10,14 @@ import {
   MONEDA_COP,
   PAGO_APROBADO,
   PAGO_PENDIENTE,
+  PAGO_RECHAZADO,
   PEDIDO_PAGADO,
   PEDIDO_PENDIENTE_PAGO,
   PROVEEDOR_PAGOS,
 } from '../../dominio/constantes';
 import { encolarEvento } from '../eventos/buzon.servicio';
+import { config } from '../../config';
+import { crearSesionPagoWompi, mapearEstadoWompi, type EstadoWompi } from '../../proveedores/wompi';
 
 export interface ResultadoIniciarPago {
   creado: boolean;
@@ -60,11 +63,15 @@ export async function iniciarPago(
     .where(and(eq(pagos.pedidoId, pedido.id), eq(pagos.estado, PAGO_PENDIENTE)))
     .limit(1);
   if (existentes[0]) {
+    const urlExistente =
+      config.proveedorPagosActivo === 'wompi'
+        ? undefined // con Wompi real la URL se regenera en el checkout del proveedor
+        : '/pagos/simular/' + existentes[0].referenciaPago;
     return {
       creado: false,
       referenciaPago: existentes[0].referenciaPago,
       estado: existentes[0].estado,
-      urlPagoSimulada: '/pagos/simular/' + existentes[0].referenciaPago,
+      urlPagoSimulada: urlExistente,
       montoCentavos: existentes[0].montoCentavos,
     };
   }
@@ -86,11 +93,32 @@ export async function iniciarPago(
       estado: pagos.estado,
       montoCentavos: pagos.montoCentavos,
     });
+
+  // Con el proveedor real se crea la sesion Wompi; en dev se devuelve la URL simulada.
+  let urlPagoSimulada: string | undefined;
+  if (config.proveedorPagosActivo === 'wompi') {
+    if (!config.wompiClavePublica || !config.wompiClavePrivada || !config.wompiClaveIntegridad) {
+      return { creado: false, codigoEstado: 503, error: 'proveedor_no_configurado' };
+    }
+    const sesion = await crearSesionPagoWompi(
+      config.wompiUrlBase,
+      config.wompiClavePublica,
+      config.wompiClavePrivada,
+      config.wompiClaveIntegridad,
+      referenciaPago,
+      pago.montoCentavos,
+      MONEDA_COP,
+    );
+    urlPagoSimulada = sesion.urlPago;
+  } else {
+    urlPagoSimulada = '/pagos/simular/' + pago.referenciaPago;
+  }
+
   return {
     creado: true,
     referenciaPago: pago.referenciaPago,
     estado: pago.estado,
-    urlPagoSimulada: '/pagos/simular/' + pago.referenciaPago,
+    urlPagoSimulada: urlPagoSimulada,
     montoCentavos: pago.montoCentavos,
   };
 }
@@ -103,6 +131,7 @@ export async function iniciarPago(
 export async function registrarNotificacionPago(
   referenciaPago: string,
   idTransaccionProveedor: string,
+  estadoProveedor: EstadoWompi = 'APPROVED',
 ): Promise<{
   ok: boolean;
   yaProcesado?: boolean;
@@ -127,6 +156,33 @@ export async function registrarNotificacionPago(
     };
   if (pago.estado !== PAGO_PENDIENTE)
     return { ok: false, codigoEstado: 409, error: 'pago_no_pendiente' };
+
+  // Estados del proveedor: PENDING no cambia nada; RECHAZADO marca el pago y deja el
+  // pedido pendiente para que el cliente pueda reintentar (decision de negocio F3).
+  const estadoInterno = mapearEstadoWompi(estadoProveedor);
+  if (estadoInterno === PAGO_PENDIENTE)
+    return {
+      ok: true,
+      yaProcesado: true,
+      referenciaPago: pago.referenciaPago,
+      estado: pago.estado,
+    };
+  if (estadoInterno === PAGO_RECHAZADO) {
+    await base
+      .update(pagos)
+      .set({
+        estado: PAGO_RECHAZADO,
+        idTransaccionProveedor: idTransaccionProveedor,
+        actualizadoEn: new Date(),
+      })
+      .where(eq(pagos.id, pago.id));
+    return {
+      ok: true,
+      yaProcesado: false,
+      referenciaPago: pago.referenciaPago,
+      estado: PAGO_RECHAZADO,
+    };
+  }
 
   const filasPedido = await base
     .select()

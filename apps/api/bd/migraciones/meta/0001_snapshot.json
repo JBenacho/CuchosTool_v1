@@ -142,12 +142,8 @@
           "name": "carrito_articulos_carrito_id_carritos_id_fk",
           "tableFrom": "carrito_articulos",
           "tableTo": "carritos",
-          "columnsFrom": [
-            "carrito_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["carrito_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -196,9 +192,7 @@
         "carritos_cliente_id_unique": {
           "name": "carritos_cliente_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cliente_id"
-          ]
+          "columns": ["cliente_id"]
         }
       },
       "policies": {},
@@ -242,9 +236,7 @@
         "categorias_slug_unique": {
           "name": "categorias_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -308,9 +300,7 @@
         "clientes_correo_unique": {
           "name": "clientes_correo_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "correo"
-          ]
+          "columns": ["correo"]
         }
       },
       "policies": {},
@@ -504,9 +494,7 @@
         "eventos_publicados_event_id_unique": {
           "name": "eventos_publicados_event_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "event_id"
-          ]
+          "columns": ["event_id"]
         }
       },
       "policies": {},
@@ -595,12 +583,8 @@
           "name": "pagos_pedido_id_pedidos_id_fk",
           "tableFrom": "pagos",
           "tableTo": "pedidos",
-          "columnsFrom": [
-            "pedido_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pedido_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -610,9 +594,7 @@
         "pagos_referencia_pago_unique": {
           "name": "pagos_referencia_pago_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "referencia_pago"
-          ]
+          "columns": ["referencia_pago"]
         }
       },
       "policies": {},
@@ -660,12 +642,8 @@
           "name": "pedido_articulos_pedido_id_pedidos_id_fk",
           "tableFrom": "pedido_articulos",
           "tableTo": "pedidos",
-          "columnsFrom": [
-            "pedido_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pedido_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -759,16 +737,12 @@
         "pedidos_referencia_pedido_unique": {
           "name": "pedidos_referencia_pedido_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "referencia_pedido"
-          ]
+          "columns": ["referencia_pedido"]
         },
         "pedidos_clave_idempotencia_unique": {
           "name": "pedidos_clave_idempotencia_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "clave_idempotencia"
-          ]
+          "columns": ["clave_idempotencia"]
         }
       },
       "policies": {},
@@ -894,12 +868,8 @@
           "name": "productos_categoria_id_categorias_id_fk",
           "tableFrom": "productos",
           "tableTo": "categorias",
-          "columnsFrom": [
-            "categoria_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["categoria_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -909,9 +879,7 @@
         "productos_slug_unique": {
           "name": "productos_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -987,9 +955,7 @@
         "usuarios_correo_unique": {
           "name": "usuarios_correo_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "correo"
-          ]
+          "columns": ["correo"]
         }
       },
       "policies": {},
