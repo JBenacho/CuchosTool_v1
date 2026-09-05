@@ -116,6 +116,44 @@ export const eventosBuzon = pgTable('eventos_buzon', {
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   publicadoEn: timestamp('publicado_en', { withTimezone: true }),
 });
+// Pagos (CU-EC-010, BL-035). Wompi es el proveedor definido; Payments conserva el dinero (RN-GOB-005).
+export const pagos = pgTable('pagos', {
+  id: serial('id').primaryKey(),
+  referenciaPago: text('referencia_pago').notNull().unique(),
+  pedidoId: integer('pedido_id')
+    .notNull()
+    .references(() => pedidos.id),
+  clienteId: text('cliente_id').notNull(),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  moneda: text('moneda').notNull().default('COP'),
+  proveedor: text('proveedor').notNull().default('wompi'),
+  estado: text('estado').notNull().default('pendiente'),
+  idTransaccionProveedor: text('id_transaccion_proveedor'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Eventos ya publicados por el publicador del buzon (evidencia local del Pub/Sub).
+export const eventosPublicados = pgTable('eventos_publicados', {
+  id: serial('id').primaryKey(),
+  topico: text('topico').notNull(),
+  eventId: text('event_id').notNull().unique(),
+  tipoEvento: text('tipo_evento').notNull(),
+  carga: jsonb('carga').$type<Record<string, unknown>>().notNull(),
+  publicadoEn: timestamp('publicado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Cola de eventos fallidos (DLQ operable, BL-091).
+export const eventosFallidos = pgTable('eventos_fallidos', {
+  id: serial('id').primaryKey(),
+  topico: text('topico').notNull(),
+  eventId: text('event_id').notNull(),
+  tipoEvento: text('tipo_evento').notNull(),
+  carga: jsonb('carga').$type<Record<string, unknown>>().notNull(),
+  motivo: text('motivo').notNull(),
+  reintentos: integer('reintentos').notNull().default(0),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {

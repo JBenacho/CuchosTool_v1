@@ -128,13 +128,11 @@ export async function rutasCarrito(aplicacion: FastifyInstance): Promise<void> {
       if (articulos.length === 0) return respuesta.code(400).send({ error: 'carrito_vacio' });
       const resultado = await crearPedido(clienteId, claveIdempotencia, articulos);
       if (!resultado.creado)
-        return respuesta
-          .code(resultado.codigoEstado)
-          .send({
-            error: resultado.error,
-            productoId: resultado.productoId,
-            stock: resultado.stock,
-          });
+        return respuesta.code(resultado.codigoEstado).send({
+          error: resultado.error,
+          productoId: resultado.productoId,
+          stock: resultado.stock,
+        });
       await vaciarCarrito(clienteId);
       return {
         data: {

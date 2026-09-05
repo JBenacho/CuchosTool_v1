@@ -33,3 +33,17 @@ export const COSTO_ENVIO_CENTAVOS = 0;
 
 // Tipo de evento de dominio del buzon transaccional (CU-INT-001, contrato en /contracts).
 export const EVENTO_PEDIDO_CREADO = 'com.cuchostool.pedido.creado';
+// Estados de pedido ampliados en F3 (tras confirmacion del pago, CU-EC-010 / CU-INT-002).
+export const PEDIDO_PAGADO = 'pagado';
+export const PEDIDO_RECHAZADO = 'rechazado';
+
+// Pagos (CU-EC-010, BL-035). Proveedor definido por el proyecto: Wompi.
+export const PROVEEDOR_PAGOS = 'wompi';
+export const PAGO_PENDIENTE = 'pendiente';
+export const PAGO_APROBADO = 'aprobado';
+export const PAGO_RECHAZADO = 'rechazado';
+
+// Eventos del buzon y topicos de publicacion (CU-INT-001/002, BL-101).
+export const EVENTO_PEDIDO_PAGADO = 'com.cuchostool.pedido.pagado';
+export const TOPICO_PEDIDOS = 'pedidos';
+export const TOPICO_GENERAL = 'general';
