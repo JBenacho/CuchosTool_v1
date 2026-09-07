@@ -19,6 +19,15 @@ interface Resumen {
   ultimosClientes: { id: number; correo: string; nombre: string }[];
 }
 
+interface Proveedor {
+  id: number;
+  nit: string;
+  nombre: string;
+  contacto: string | null;
+  telefono: string | null;
+  estado: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -67,6 +76,11 @@ function Aplicacion(): JSX.Element {
     ultimosPedidos: [],
     ultimosClientes: [],
   });
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [nitNuevo, setNitNuevo] = useState('');
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [contactoNuevo, setContactoNuevo] = useState('');
+  const [telefonoNuevo, setTelefonoNuevo] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -99,6 +113,57 @@ function Aplicacion(): JSX.Element {
     }
   }
 
+  async function cargarProveedores(tokenActivo: string): Promise<void> {
+    const respuesta = await peticion('/erp/proveedores', tokenActivo);
+    if (!respuesta.ok) {
+      setMensaje('Sin permisos o modulo no disponible');
+      setProveedores([]);
+      return;
+    }
+    const json = await respuesta.json();
+    setProveedores(json.data as Proveedor[]);
+  }
+
+  async function crearProveedorNuevo(): Promise<void> {
+    if (!token) return;
+    // Guard clause: nit y nombre son obligatorios (CU-ERP-001).
+    if (!nitNuevo.trim() || !nombreNuevo.trim()) {
+      setMensaje('NIT y nombre son obligatorios');
+      return;
+    }
+    const cuerpo = {
+      nit: nitNuevo.trim(),
+      nombre: nombreNuevo.trim(),
+      contacto: contactoNuevo.trim() || undefined,
+      telefono: telefonoNuevo.trim() || undefined,
+    };
+    const respuesta = await peticion('/erp/proveedores', token, 'POST', cuerpo);
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        json.error === 'nit_ya_existe' ? 'El NIT ya existe' : 'No se pudo crear el proveedor',
+      );
+      return;
+    }
+    setNitNuevo('');
+    setNombreNuevo('');
+    setContactoNuevo('');
+    setTelefonoNuevo('');
+    await cargarProveedores(token);
+  }
+
+  async function inactivarProveedorUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/erp/proveedores/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el proveedor');
+      return;
+    }
+    await cargarProveedores(token);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -119,7 +184,17 @@ function Aplicacion(): JSX.Element {
     if (token) cargarResumen(token);
   }, []);
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Compras') {
+        cargarProveedores(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
+  const esCompras = moduloActivo === 'Compras';
 
   return (
     <div className="app-shell">
@@ -161,7 +236,8 @@ function Aplicacion(): JSX.Element {
               <button className="btn btn--primary" onClick={ingresar}>
                 Entrar
               </button>
-              <p className="muted">Dev: admin@cuchostool.com / admin1234</p>
+              <p className="muted">Admin: admin@cuchostool.com / admin1234</p>
+              <p className="muted">Compras: compras@cuchostool.com / admin1234</p>
               {mensaje && <p className="muted">{mensaje}</p>}
             </div>
           )}
@@ -241,14 +317,109 @@ function Aplicacion(): JSX.Element {
               </section>
             </>
           )}
-          {!esDashboard && (
+          {esCompras && (
+            <>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Nuevo proveedor (CU-ERP-001)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="NIT"
+                    value={nitNuevo}
+                    onChange={function (e) {
+                      setNitNuevo(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Nombre"
+                    value={nombreNuevo}
+                    onChange={function (e) {
+                      setNombreNuevo(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Contacto"
+                    value={contactoNuevo}
+                    onChange={function (e) {
+                      setContactoNuevo(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Telefono"
+                    value={telefonoNuevo}
+                    onChange={function (e) {
+                      setTelefonoNuevo(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearProveedorNuevo}>
+                    Crear
+                  </button>
+                </div>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Proveedores activos</h2>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>NIT</th>
+                      <th>Nombre</th>
+                      <th>Contacto</th>
+                      <th>Telefono</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proveedores.map(function (proveedor) {
+                      return (
+                        <tr key={proveedor.id}>
+                          <td>{proveedor.nit}</td>
+                          <td>{proveedor.nombre}</td>
+                          <td>{proveedor.contacto || '-'}</td>
+                          <td>{proveedor.telefono || '-'}</td>
+                          <td>
+                            <span className="badge badge--ok">{proveedor.estado}</span>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn--warm"
+                              onClick={function () {
+                                inactivarProveedorUI(proveedor.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {proveedores.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin proveedores registrados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+          {!esDashboard && !esCompras && (
             <section className="panel">
               <div className="panel-head">
                 <h2>{moduloActivo}</h2>
               </div>
               <p className="muted" style={{ padding: '12px 16px' }}>
-                Modulo de la fase F5 (ERP) en desarrollo sobre la API modular; el Dashboard ya
-                consume datos reales.
+                Modulo de la fase F5 (ERP) en desarrollo sobre la API modular; el Dashboard y
+                Compras ya consumen datos reales.
               </p>
             </section>
           )}
