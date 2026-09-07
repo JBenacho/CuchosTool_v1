@@ -1,9 +1,139 @@
 {
-  "id": "cb8adeda-f372-4b3b-92f9-a9998c586088",
-  "prevId": "ade8fc9d-8bda-4687-bf18-4b63dd619fbd",
+  "id": "dc8057d7-31a5-4f94-ad49-e22903313543",
+  "prevId": "cb8adeda-f372-4b3b-92f9-a9998c586088",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.acciones_correctivas": {
+      "name": "acciones_correctivas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "referencia_accion": {
+          "name": "referencia_accion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origen_caso_id": {
+          "name": "origen_caso_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'abierta'"
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "cerrada_en": {
+          "name": "cerrada_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "acciones_correctivas_origen_caso_id_casos_id_fk": {
+          "name": "acciones_correctivas_origen_caso_id_casos_id_fk",
+          "tableFrom": "acciones_correctivas",
+          "tableTo": "casos",
+          "columnsFrom": ["origen_caso_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "acciones_correctivas_referencia_accion_unique": {
+          "name": "acciones_correctivas_referencia_accion_unique",
+          "nullsNotDistinct": false,
+          "columns": ["referencia_accion"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.alertas_calidad": {
+      "name": "alertas_calidad",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mensaje": {
+          "name": "mensaje",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valores": {
+          "name": "valores",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activa'"
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atendida_en": {
+          "name": "atendida_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.auditoria_registros": {
       "name": "auditoria_registros",
       "schema": "",
@@ -744,6 +874,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "documentos_completos": {
+          "name": "documentos_completos",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "creado_por": {
           "name": "creado_por",
           "type": "text",
@@ -1327,6 +1464,13 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false
+        },
+        "multimedia_validada": {
+          "name": "multimedia_validada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "nombre": {
           "name": "nombre",

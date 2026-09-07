@@ -19,6 +19,8 @@ export const config = {
   tasaComisionBps: enteroDeEntorno('TASA_COMISION_BPS', 0),
   // SLA de primera respuesta en horas (CU-SGC-011); el valor de negocio final se cierra con el spike BL-058.
   slaHorasRespuesta: enteroDeEntorno('SLA_HORAS_RESPUESTA', 24),
+  // Umbral de casos abiertos que dispara alerta de calidad (CU-SGC-021).
+  umbralCasosAbiertosAlerta: enteroDeEntorno('UMBRAL_CASOS_ABIERTOS_ALERTA', 10),
   urlBaseDatos:
     process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev',
   // Proveedor de pagos activo: 'simulado' (dev) o 'wompi' (real). BL-035.

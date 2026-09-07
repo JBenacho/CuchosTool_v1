@@ -7,6 +7,7 @@ import {
   text,
   integer,
   bigint,
+  boolean,
   timestamp,
   index,
   jsonb,
@@ -26,6 +27,8 @@ export const emprendedores = pgTable('emprendedores', {
   medioEnvio: text('medio_envio'),
   medioPagoElectronico: text('medio_pago_electronico'),
   proveedorLogistico: text('proveedor_logistico'),
+  // Paquete documental de validacion (CU-EM-003).
+  documentosCompletos: boolean('documentos_completos').notNull().default(false),
   creadoPor: text('creado_por'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
@@ -46,6 +49,8 @@ export const productos = pgTable(
     categoriaId: integer('categoria_id').references(() => categorias.id),
     // Productos de emprendedores (F4): pasan por aval antes de ser publicos.
     emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
+    // Validacion de requisitos multimedia (CU-EM-009).
+    multimediaValidada: boolean('multimedia_validada').notNull().default(false),
     nombre: text('nombre').notNull(),
     slug: text('slug').notNull().unique(),
     descripcion: text('descripcion'),
@@ -267,6 +272,26 @@ export const ofertas = pgTable('ofertas', {
   estado: text('estado').notNull().default('activa'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+// Calidad (CU-SGC-020..023): alertas por umbral y acciones correctivas.
+export const alertasCalidad = pgTable('alertas_calidad', {
+  id: serial('id').primaryKey(),
+  tipo: text('tipo').notNull(),
+  mensaje: text('mensaje').notNull(),
+  valores: jsonb('valores').$type<Record<string, unknown>>(),
+  estado: text('estado').notNull().default('activa'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  atendidaEn: timestamp('atendida_en', { withTimezone: true }),
+});
+
+export const accionesCorrectivas = pgTable('acciones_correctivas', {
+  id: serial('id').primaryKey(),
+  referenciaAccion: text('referencia_accion').notNull().unique(),
+  descripcion: text('descripcion').notNull(),
+  origenCasoId: integer('origen_caso_id').references(() => casos.id),
+  estado: text('estado').notNull().default('abierta'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  cerradaEn: timestamp('cerrada_en', { withTimezone: true }),
 });
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {

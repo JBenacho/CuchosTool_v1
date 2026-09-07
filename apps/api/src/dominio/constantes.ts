@@ -115,3 +115,10 @@ export const ESTADOS_PEDIDO_VENTA_EFECTIVA = ['pagado', 'entregado'] as const;
 
 // Tipos de evidencia validos en casos (CU-SGC-006).
 export const TIPOS_EVIDENCIA = ['foto', 'video', 'documento', 'otro'] as const;
+
+// Calidad (CU-SGC-020..023): rol, alertas y acciones correctivas.
+export const ROL_RESPONSABLE_CALIDAD = 'RESPONSABLE_CALIDAD';
+export const ALERTA_ACTIVA = 'activa';
+export const ALERTA_ATENDIDA = 'atendida';
+export const ACCION_ABIERTA = 'abierta';
+export const ACCION_CERRADA = 'cerrada';
