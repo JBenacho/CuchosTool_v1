@@ -191,3 +191,38 @@
   font-size: var(--ct-text-xs);
   text-align: center;
 }
+/* Formularios y carrito del checkout (F4). */
+.input {
+  width: 100%;
+  margin-bottom: var(--ct-space-2);
+  padding: var(--ct-space-2) var(--ct-space-3);
+  border-radius: var(--ct-radius-sm);
+  border: 1px solid var(--ct-line-strong);
+  background: var(--ct-bg-3);
+  color: var(--ct-text);
+  font-size: var(--ct-text-sm);
+}
+.app-sidebar h2 {
+  font-size: var(--ct-text-lg);
+  margin-bottom: var(--ct-space-2);
+}
+.mt {
+  margin-top: var(--ct-space-3);
+}
+.cart-total {
+  color: var(--ct-text-strong);
+  font-weight: 700;
+  margin-top: var(--ct-space-2);
+}
+.btn--warm {
+  background: var(--ct-warm);
+  color: #1a0c02;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: var(--ct-accent);
+  color: #03110b;
+}

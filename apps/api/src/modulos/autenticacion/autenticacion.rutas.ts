@@ -132,6 +132,7 @@ export async function rutasAutenticacion(aplicacion: FastifyInstance): Promise<v
         rol: usuario.rol,
         zonaId: usuario.zonaId,
         vendedorId: usuario.vendedorId,
+        emprendedorId: usuario.emprendedorId,
       });
       return {
         data: {
@@ -141,6 +142,7 @@ export async function rutasAutenticacion(aplicacion: FastifyInstance): Promise<v
             rol: usuario.rol,
             zonaId: usuario.zonaId,
             vendedorId: usuario.vendedorId,
+            emprendedorId: usuario.emprendedorId,
           },
           token: token,
         },

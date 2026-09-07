@@ -3,8 +3,17 @@
 // y nunca deben usarse en produccion (CU-SEC-011 / RNF-MAN).
 import bcrypt from 'bcryptjs';
 import { base } from './base';
-import { categorias, productos, usuarios } from './esquema';
-import { ROL_ADMIN, ROL_GERENTE_ZONA, RONDAS_BCRYPT } from '../dominio/constantes';
+import { categorias, emprendedores, productos, usuarios } from './esquema';
+import {
+  EMPRENDEDOR_ACTIVO,
+  ROL_ADMIN,
+  ROL_AGENTE,
+  ROL_EMPRENDEDOR,
+  ROL_GERENTE_ZONA,
+  ROL_RESPONSABLE_CALIDAD,
+  ROL_RESPONSABLE_GARANTIAS,
+  RONDAS_BCRYPT,
+} from '../dominio/constantes';
 
 async function principal(): Promise<void> {
   // Categorias del catalogo (CU-EC-001..003).
@@ -67,6 +76,24 @@ async function principal(): Promise<void> {
     ])
     .onConflictDoNothing();
 
+  // Emprendedor de demostracion (F4, CU-EM-001/004).
+  await base
+    .insert(emprendedores)
+    .values([
+      {
+        documentoIdentidad: '1000000001',
+        nombre: 'Emprendedor Demo',
+        correo: 'emprendedor@cuchostool.com',
+        telefono: '3000000000',
+        zonaId: 'ZON-BOG',
+        estado: EMPRENDEDOR_ACTIVO,
+        creadoPor: 'seed',
+      },
+    ])
+    .onConflictDoNothing();
+  const filasEmprendedores = await base.select().from(emprendedores).limit(1);
+  const emprendedorDemoId = filasEmprendedores[0] ? filasEmprendedores[0].id : null;
+
   // Usuarios internos de desarrollo para probar RBAC/ABAC (CU-SEC-001/009).
   const hashContrasena = await bcrypt.hash('admin1234', RONDAS_BCRYPT);
   await base
@@ -84,6 +111,35 @@ async function principal(): Promise<void> {
         hashContrasena: hashContrasena,
         rol: ROL_GERENTE_ZONA,
         zonaId: 'ZON-BOG',
+        vendedorId: null,
+      },
+      {
+        correo: 'emprendedor@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_EMPRENDEDOR,
+        zonaId: null,
+        vendedorId: null,
+        emprendedorId: emprendedorDemoId,
+      },
+      {
+        correo: 'agente@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_AGENTE,
+        zonaId: null,
+        vendedorId: null,
+      },
+      {
+        correo: 'garantias@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_RESPONSABLE_GARANTIAS,
+        zonaId: null,
+        vendedorId: null,
+      },
+      {
+        correo: 'calidad@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_RESPONSABLE_CALIDAD,
+        zonaId: null,
         vendedorId: null,
       },
     ])

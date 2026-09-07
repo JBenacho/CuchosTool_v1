@@ -7,11 +7,32 @@ import {
   text,
   integer,
   bigint,
+  boolean,
   timestamp,
   index,
   jsonb,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+
+// Emprendedores de la plataforma (CU-EM-001..004). Aislados por emprendedorId (RN-SEC-005).
+export const emprendedores = pgTable('emprendedores', {
+  id: serial('id').primaryKey(),
+  documentoIdentidad: text('documento_identidad').notNull().unique(),
+  nombre: text('nombre').notNull(),
+  correo: text('correo').notNull().unique(),
+  telefono: text('telefono'),
+  zonaId: text('zona_id'),
+  estado: text('estado').notNull().default('enrolado'),
+  // Medios configurados por el emprendedor (CU-EM-005/006) y logistica (CU-EM-019).
+  medioEnvio: text('medio_envio'),
+  medioPagoElectronico: text('medio_pago_electronico'),
+  proveedorLogistico: text('proveedor_logistico'),
+  // Paquete documental de validacion (CU-EM-003).
+  documentosCompletos: boolean('documentos_completos').notNull().default(false),
+  creadoPor: text('creado_por'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Catalogo publico (CU-EC-001..006).
 export const categorias = pgTable('categorias', {
@@ -26,6 +47,10 @@ export const productos = pgTable(
   {
     id: serial('id').primaryKey(),
     categoriaId: integer('categoria_id').references(() => categorias.id),
+    // Productos de emprendedores (F4): pasan por aval antes de ser publicos.
+    emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
+    // Validacion de requisitos multimedia (CU-EM-009).
+    multimediaValidada: boolean('multimedia_validada').notNull().default(false),
     nombre: text('nombre').notNull(),
     slug: text('slug').notNull().unique(),
     descripcion: text('descripcion'),
@@ -154,7 +179,120 @@ export const eventosFallidos = pgTable('eventos_fallidos', {
   reintentos: integer('reintentos').notNull().default(0),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 });
+// Casos de Soporte, Garantias y Calidad (CU-SGC-002..017). Caso unico y trazable.
+export const casos = pgTable('casos', {
+  id: serial('id').primaryKey(),
+  referenciaCaso: text('referencia_caso').notNull().unique(),
+  tipo: text('tipo').notNull(), // soporte | garantia | queja | reclamo | peticion
+  estado: text('estado').notNull().default('abierto'),
+  prioridad: text('prioridad').notNull().default('media'),
+  clienteId: text('cliente_id'),
+  emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
+  pedidoId: integer('pedido_id').references(() => pedidos.id),
+  asunto: text('asunto').notNull(),
+  descripcion: text('descripcion'),
+  // Garantias (CU-SGC-013/014) y coordinacion logistica (CU-SGC-015).
+  garantiaEstado: text('garantia_estado').notNull().default('solicitada'),
+  garantiaDecididaEn: timestamp('garantia_decidida_en', { withTimezone: true }),
+  logisticaAccion: text('logistica_accion'),
+  // SLA de primera respuesta (CU-SGC-011) y satisfaccion (CU-SGC-018/019).
+  slaVenceEn: timestamp('sla_vence_en', { withTimezone: true }),
+  calificacion: integer('calificacion'),
+  // Agente asignado al caso (CU-SGC-007).
+  asignadoA: text('asignado_a'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 
+// Evidencias seguras del caso (CU-SGC-006). En GCP la URL apunta a Cloud Storage privado.
+export const casoEvidencias = pgTable('caso_evidencias', {
+  id: serial('id').primaryKey(),
+  casoId: integer('caso_id')
+    .notNull()
+    .references(() => casos.id),
+  tipo: text('tipo').notNull(), // foto | video | documento | otro
+  url: text('url').notNull(),
+  descripcion: text('descripcion'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+export const casoMensajes = pgTable('caso_mensajes', {
+  id: serial('id').primaryKey(),
+  casoId: integer('caso_id')
+    .notNull()
+    .references(() => casos.id),
+  autorTipo: text('autor_tipo').notNull(), // cliente | agente | sistema
+  autorId: text('autor_id'),
+  contenido: text('contenido').notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Dispersiones al emprendedor (CU-EM-015..018). Payments ejecuta el dinero;
+// Emprendedor solo coordina (RN-GOB-005). La comision es configurable (TBD de negocio).
+export const dispersiones = pgTable('dispersiones', {
+  id: serial('id').primaryKey(),
+  referenciaDispersion: text('referencia_dispersion').notNull().unique(),
+  pedidoId: integer('pedido_id')
+    .notNull()
+    .references(() => pedidos.id),
+  emprendedorId: integer('emprendedor_id')
+    .notNull()
+    .references(() => emprendedores.id),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  comisionCentavos: bigint('comision_centavos', { mode: 'number' }),
+  estado: text('estado').notNull().default('pendiente'),
+  ejecutadoEn: timestamp('ejecutado_en', { withTimezone: true }),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Reembolsos coordinados por SGC y ejecutados por Payments (CU-SGC-016, BL-062).
+export const reembolsos = pgTable('reembolsos', {
+  id: serial('id').primaryKey(),
+  referenciaReembolso: text('referencia_reembolso').notNull().unique(),
+  pagoId: integer('pago_id')
+    .notNull()
+    .references(() => pagos.id),
+  casoId: integer('caso_id').references(() => casos.id),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  estado: text('estado').notNull().default('pendiente'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Ofertas del emprendedor (CU-EM-013): descuento en puntos basicos con vigencia.
+export const ofertas = pgTable('ofertas', {
+  id: serial('id').primaryKey(),
+  emprendedorId: integer('emprendedor_id')
+    .notNull()
+    .references(() => emprendedores.id),
+  nombre: text('nombre').notNull(),
+  descuentoBps: integer('descuento_bps').notNull(),
+  iniciaEn: timestamp('inicia_en', { withTimezone: true }).notNull(),
+  finalizaEn: timestamp('finaliza_en', { withTimezone: true }).notNull(),
+  estado: text('estado').notNull().default('activa'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+// Calidad (CU-SGC-020..023): alertas por umbral y acciones correctivas.
+export const alertasCalidad = pgTable('alertas_calidad', {
+  id: serial('id').primaryKey(),
+  tipo: text('tipo').notNull(),
+  mensaje: text('mensaje').notNull(),
+  valores: jsonb('valores').$type<Record<string, unknown>>(),
+  estado: text('estado').notNull().default('activa'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  atendidaEn: timestamp('atendida_en', { withTimezone: true }),
+});
+
+export const accionesCorrectivas = pgTable('acciones_correctivas', {
+  id: serial('id').primaryKey(),
+  referenciaAccion: text('referencia_accion').notNull().unique(),
+  descripcion: text('descripcion').notNull(),
+  origenCasoId: integer('origen_caso_id').references(() => casos.id),
+  estado: text('estado').notNull().default('abierta'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  cerradaEn: timestamp('cerrada_en', { withTimezone: true }),
+});
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
@@ -163,6 +301,8 @@ export const usuarios = pgTable('usuarios', {
   rol: text('rol').notNull(),
   zonaId: text('zona_id'),
   vendedorId: text('vendedor_id'),
+  // Vinculo del usuario interno con su emprendedor (rol EMPRENDEDOR).
+  emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
   estado: text('estado').notNull().default('ACTIVO'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),

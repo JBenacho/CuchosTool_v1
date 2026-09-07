@@ -47,3 +47,78 @@ export const PAGO_RECHAZADO = 'rechazado';
 export const EVENTO_PEDIDO_PAGADO = 'com.cuchostool.pedido.pagado';
 export const TOPICO_PEDIDOS = 'pedidos';
 export const TOPICO_GENERAL = 'general';
+// Roles adicionales de F4 (CU-SEC-001/002, CU-EM, CU-SGC).
+export const ROL_EMPRENDEDOR = 'EMPRENDEDOR';
+export const ROL_AGENTE = 'AGENTE_SOPORTE';
+export const ROL_SUPERVISOR = 'SUPERVISOR_SOPORTE';
+
+// Estados del ciclo del emprendedor (CU-EM-002/004).
+export const EMPRENDEDOR_ENROLADO = 'enrolado';
+export const EMPRENDEDOR_ACTIVO = 'activo';
+export const EMPRENDEDOR_SUSPENDIDO = 'suspendido';
+
+// Estados de producto de emprendedor (CU-EM-007/010/011/012):
+// pendiente_aval -> avalado (publico) o rechazado; avalado -> inactivo (CU-EM-012).
+export const PRODUCTO_PENDIENTE_AVAL = 'pendiente_aval';
+export const PRODUCTO_RECHAZADO = 'rechazado';
+export const PRODUCTO_ACTIVO = 'ACTIVO';
+export const PRODUCTO_INACTIVO = 'INACTIVO';
+
+// Casos SGC (CU-SGC-002..017): estados y tipos validos.
+export const CASO_ABIERTO = 'abierto';
+export const CASO_EN_PROCESO = 'en_proceso';
+export const CASO_CERRADO = 'cerrado';
+export const CASO_CANCELADO = 'cancelado';
+export const TIPOS_CASO = ['soporte', 'garantia', 'queja', 'reclamo', 'peticion'] as const;
+export const PRIORIDAD_CASO_MEDIA = 'media';
+
+// Transiciones validas de estado de caso (CU-SGC-009). Cualquier otra transicion se rechaza.
+export const TRANSICIONES_CASO: Record<string, string[]> = {
+  [CASO_ABIERTO]: [CASO_EN_PROCESO, CASO_CANCELADO],
+  [CASO_EN_PROCESO]: [CASO_CERRADO, CASO_ABIERTO],
+  [CASO_CERRADO]: [],
+  [CASO_CANCELADO]: [],
+};
+// Entrega fisica y dispersion (CU-EM-015..018, BL-049/050/051).
+export const PEDIDO_ENTREGADO = 'entregado';
+export const DISPERSION_PENDIENTE = 'pendiente';
+export const DISPERSION_COMPLETADA = 'completada';
+export const DISPERSION_FALLIDA = 'fallida';
+
+// Garantias SGC (CU-SGC-013..016): decision con evidencia; SGC no mueve dinero ni mercancia.
+export const ROL_RESPONSABLE_GARANTIAS = 'RESPONSABLE_GARANTIAS';
+export const GARANTIA_SOLICITADA = 'solicitada';
+export const GARANTIA_PROCEDENTE = 'procedente';
+export const GARANTIA_IMPROCEDENTE = 'improcedente';
+export const REEMBOLSO_PENDIENTE = 'pendiente';
+export const REEMBOLSO_COMPLETADO = 'completado';
+
+// Prioridades de caso (CU-SGC-008) y SLA (CU-SGC-011): el vencimiento se calcula
+// con la hora de respuesta configurada (SLA_HORAS_RESPUESTA en config).
+export const PRIORIDAD_BAJA = 'baja';
+export const PRIORIDAD_MEDIA = 'media';
+export const PRIORIDAD_ALTA = 'alta';
+export const PRIORIDAD_URGENTE = 'urgente';
+export const PRIORIDADES_CASO = [
+  PRIORIDAD_BAJA,
+  PRIORIDAD_MEDIA,
+  PRIORIDAD_ALTA,
+  PRIORIDAD_URGENTE,
+] as const;
+
+// Ofertas del emprendedor (CU-EM-013).
+export const OFERTA_ACTIVA = 'activa';
+export const OFERTA_INACTIVA = 'inactiva';
+
+// Estados de pedido considerados venta efectiva para reportes del emprendedor (CU-EM-014).
+export const ESTADOS_PEDIDO_VENTA_EFECTIVA = ['pagado', 'entregado'] as const;
+
+// Tipos de evidencia validos en casos (CU-SGC-006).
+export const TIPOS_EVIDENCIA = ['foto', 'video', 'documento', 'otro'] as const;
+
+// Calidad (CU-SGC-020..023): rol, alertas y acciones correctivas.
+export const ROL_RESPONSABLE_CALIDAD = 'RESPONSABLE_CALIDAD';
+export const ALERTA_ACTIVA = 'activa';
+export const ALERTA_ATENDIDA = 'atendida';
+export const ACCION_ABIERTA = 'abierta';
+export const ACCION_CERRADA = 'cerrada';
