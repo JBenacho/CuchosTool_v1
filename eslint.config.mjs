@@ -14,6 +14,7 @@ export default tseslint.config(
       '_NICOLA_work/**',
       '_tools/**',
       'coverage/**',
+      'Documentos Consulta/**',
     ],
   },
   js.configs.recommended,
