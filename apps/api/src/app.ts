@@ -17,6 +17,7 @@ import { rutasEmprendedores } from './modulos/emprendedores/emprendedores.rutas'
 import { rutasDispersiones } from './modulos/emprendedores/dispersiones.rutas';
 import { rutasCasos } from './modulos/casos/casos.rutas';
 import { rutasCalidad } from './modulos/calidad/calidad.rutas';
+import { rutasErp } from './modulos/erp/erp.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -60,6 +61,7 @@ export async function construirAplicacion(opciones?: {
           name: 'calidad',
           description: 'Patrones, alertas, acciones correctivas y dashboard (CU-SGC-020..023)',
         },
+        { name: 'erp', description: 'Modulos ERP (F5): proveedores (CU-ERP-001)' },
         {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
@@ -121,6 +123,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasDispersiones);
   await aplicacion.register(rutasCasos);
   await aplicacion.register(rutasCalidad);
+  await aplicacion.register(rutasErp);
 
   aplicacion.get('/', async function () {
     return {

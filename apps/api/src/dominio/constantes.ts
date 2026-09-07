@@ -122,6 +122,9 @@ export const ALERTA_ACTIVA = 'activa';
 export const ALERTA_ATENDIDA = 'atendida';
 export const ACCION_ABIERTA = 'abierta';
 export const ACCION_CERRADA = 'cerrada';
+
+// Roles ERP (F5): compras (CU-ERP-001).
+export const ROL_COMPRAS = 'COMPRAS';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;
