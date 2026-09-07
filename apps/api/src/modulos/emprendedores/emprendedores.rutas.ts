@@ -6,6 +6,7 @@ import {
   activarEmprendedor,
   avalarProducto,
   cambiarEstadoOferta,
+  configurarLogisticaEmprendedor,
   configurarMediosEmprendedor,
   crearOferta,
   crearProductoEmprendedor,
@@ -14,6 +15,7 @@ import {
   listarOfertasEmprendedor,
   listarProductosEmprendedor,
   reportesEmprendedor,
+  suspenderEmprendedor,
 } from './emprendedores.servicio';
 
 type CuerpoEnrolamiento = {
@@ -239,4 +241,27 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
       return { data: await reportesEmprendedor(emprendedorId) };
     },
   );
+
+  aplicacion.patch<{ Params: { id: string } }>('/emprendedores/:id/suspender', {
+    preHandler: requerirRol([ROL_GERENTE_ZONA, ROL_ADMIN]),
+    schema: { tags: ['emprendedores'], summary: 'Suspender emprendedor (CU-EM-002)' },
+  }, async function (solicitud, respuesta) {
+    const resultado = await suspenderEmprendedor(Number(solicitud.params.id));
+    if (!resultado.ok) return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+    await registrarAuditoria(solicitud, 'emprendedores.suspender', 'emprendedores', solicitud.params.id, 'ok');
+    return { data: resultado.datos };
+  });
+
+  aplicacion.patch<{ Params: { id: string }; Body: { proveedorLogistico: string } }>('/emprendedores/:id/logistica', {
+    preHandler: autenticar,
+    schema: { tags: ['emprendedores'], summary: 'Configurar servicio logistico (CU-EM-019)' },
+  }, async function (solicitud, respuesta) {
+    const usuario = (solicitud as any).usuario || {};
+    const esPropietario = Number(usuario.emprendedorId) === Number(solicitud.params.id);
+    const esGestor = usuario.rol === ROL_GERENTE_ZONA || usuario.rol === ROL_ADMIN;
+    if (!esPropietario && !esGestor) return respuesta.code(403).send({ error: 'prohibido' });
+    const resultado = await configurarLogisticaEmprendedor(Number(solicitud.params.id), String(solicitud.body?.proveedorLogistico || ''));
+    if (!resultado.ok) return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+    return { data: resultado.datos };
+  });
 }

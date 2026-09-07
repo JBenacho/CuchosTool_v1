@@ -4,7 +4,7 @@
 import { randomUUID } from 'crypto';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { casoMensajes, casos, pagos, reembolsos } from '../../bd/esquema';
+import { casoEvidencias, casoMensajes, casos, pagos, reembolsos } from '../../bd/esquema';
 import { config } from '../../config';
 import {
   CASO_ABIERTO,
@@ -19,6 +19,7 @@ import {
   PRIORIDADES_CASO,
   REEMBOLSO_PENDIENTE,
   TIPOS_CASO,
+  TIPOS_EVIDENCIA,
   TRANSICIONES_CASO,
 } from '../../dominio/constantes';
 
@@ -353,3 +354,41 @@ export async function registrarSatisfaccion(
     .where(eq(casos.id, caso.id));
   return { ok: true, datos: { referenciaCaso: referencia, calificacion: calificacion } };
 }
+
+/**
+ * Valida un tipo de evidencia (pura, CU-SGC-006).
+ */
+export function esTipoEvidenciaValido(tipo: string): boolean {
+  return TIPOS_EVIDENCIA.includes(tipo as (typeof TIPOS_EVIDENCIA)[number]);
+}
+
+/**
+ * Asigna un agente al caso (CU-SGC-007). Solo casos abiertos o en proceso.
+ */
+export async function asignarCaso(referencia: string, usuarioId: string): Promise<ResultadoCaso> {
+  const filas = await base.select().from(casos).where(eq(casos.referenciaCaso, referencia)).limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  if (caso.estado !== CASO_ABIERTO && caso.estado !== CASO_EN_PROCESO) return { ok: false, codigoEstado: 409, error: 'caso_no_asignable' };
+  await base.update(casos).set({ asignadoA: usuarioId, actualizadoEn: new Date() }).where(eq(casos.id, caso.id));
+  await base.insert(casoMensajes).values({ casoId: caso.id, autorTipo: 'sistema', autorId: null, contenido: 'Caso asignado al agente ' + usuarioId + ' (CU-SGC-007).' });
+  return { ok: true, datos: { referenciaCaso: referencia, asignadoA: usuarioId } };
+}
+
+/**
+ * Registra una evidencia del caso (CU-SGC-006). URL privada; aqui solo se referencia.
+ */
+export async function registrarEvidencia(referencia: string, datos: { tipo: string; url: string; descripcion?: string }): Promise<ResultadoCaso> {
+  if (!esTipoEvidenciaValido(datos.tipo)) return { ok: false, codigoEstado: 400, error: 'tipo_evidencia_invalido' };
+  const url = String(datos.url || '').trim();
+  if (!url) return { ok: false, codigoEstado: 400, error: 'url_requerida' };
+  const filas = await base.select().from(casos).where(eq(casos.referenciaCaso, referencia)).limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  const [creada] = await base
+    .insert(casoEvidencias)
+    .values({ casoId: caso.id, tipo: datos.tipo, url: url, descripcion: String(datos.descripcion || '').trim() || null })
+    .returning({ id: casoEvidencias.id, tipo: casoEvidencias.tipo, url: casoEvidencias.url });
+  return { ok: true, datos: creada };
+}
+
