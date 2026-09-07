@@ -47,3 +47,35 @@ export const PAGO_RECHAZADO = 'rechazado';
 export const EVENTO_PEDIDO_PAGADO = 'com.cuchostool.pedido.pagado';
 export const TOPICO_PEDIDOS = 'pedidos';
 export const TOPICO_GENERAL = 'general';
+// Roles adicionales de F4 (CU-SEC-001/002, CU-EM, CU-SGC).
+export const ROL_EMPRENDEDOR = 'EMPRENDEDOR';
+export const ROL_AGENTE = 'AGENTE_SOPORTE';
+export const ROL_SUPERVISOR = 'SUPERVISOR_SOPORTE';
+
+// Estados del ciclo del emprendedor (CU-EM-002/004).
+export const EMPRENDEDOR_ENROLADO = 'enrolado';
+export const EMPRENDEDOR_ACTIVO = 'activo';
+export const EMPRENDEDOR_SUSPENDIDO = 'suspendido';
+
+// Estados de producto de emprendedor (CU-EM-007/010/011/012):
+// pendiente_aval -> avalado (publico) o rechazado; avalado -> inactivo (CU-EM-012).
+export const PRODUCTO_PENDIENTE_AVAL = 'pendiente_aval';
+export const PRODUCTO_RECHAZADO = 'rechazado';
+export const PRODUCTO_ACTIVO = 'ACTIVO';
+export const PRODUCTO_INACTIVO = 'INACTIVO';
+
+// Casos SGC (CU-SGC-002..017): estados y tipos validos.
+export const CASO_ABIERTO = 'abierto';
+export const CASO_EN_PROCESO = 'en_proceso';
+export const CASO_CERRADO = 'cerrado';
+export const CASO_CANCELADO = 'cancelado';
+export const TIPOS_CASO = ['soporte', 'garantia', 'queja', 'reclamo', 'peticion'] as const;
+export const PRIORIDAD_CASO_MEDIA = 'media';
+
+// Transiciones validas de estado de caso (CU-SGC-009). Cualquier otra transicion se rechaza.
+export const TRANSICIONES_CASO: Record<string, string[]> = {
+  [CASO_ABIERTO]: [CASO_EN_PROCESO, CASO_CANCELADO],
+  [CASO_EN_PROCESO]: [CASO_CERRADO, CASO_ABIERTO],
+  [CASO_CERRADO]: [],
+  [CASO_CANCELADO]: [],
+};

@@ -709,6 +709,193 @@
                                                                     }
                                                   }
                                       },
+                  "/emprendedores":  {
+                                         "post":  {
+                                                      "summary":  "Enrolar emprendedor (CU-EM-001)",
+                                                      "tags":  [
+                                                                   "emprendedores"
+                                                               ],
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Default Response"
+                                                                                }
+                                                                    }
+                                                  },
+                                         "get":  {
+                                                     "summary":  "Listar emprendedores (CU-EM-002)",
+                                                     "tags":  [
+                                                                  "emprendedores"
+                                                              ],
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "Default Response"
+                                                                               }
+                                                                   }
+                                                 }
+                                     },
+                  "/emprendedores/{id}/activar":  {
+                                                      "patch":  {
+                                                                    "summary":  "Validar y activar emprendedor (CU-EM-004)",
+                                                                    "tags":  [
+                                                                                 "emprendedores"
+                                                                             ],
+                                                                    "parameters":  [
+                                                                                       {
+                                                                                           "schema":  {
+                                                                                                          "type":  "string"
+                                                                                                      },
+                                                                                           "in":  "path",
+                                                                                           "name":  "id",
+                                                                                           "required":  true
+                                                                                       }
+                                                                                   ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Default Response"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                  },
+                  "/emprendedores/productos":  {
+                                                   "post":  {
+                                                                "summary":  "Crear producto del emprendedor (CU-EM-007)",
+                                                                "tags":  [
+                                                                             "emprendedores"
+                                                                         ],
+                                                                "responses":  {
+                                                                                  "200":  {
+                                                                                              "description":  "Default Response"
+                                                                                          }
+                                                                              }
+                                                            },
+                                                   "get":  {
+                                                               "summary":  "Listar productos propios (CU-EM-008)",
+                                                               "tags":  [
+                                                                            "emprendedores"
+                                                                        ],
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Default Response"
+                                                                                         }
+                                                                             }
+                                                           }
+                                               },
+                  "/emprendedores/productos/{id}/aval":  {
+                                                             "post":  {
+                                                                          "summary":  "Avalar o rechazar producto (CU-EM-011)",
+                                                                          "tags":  [
+                                                                                       "emprendedores"
+                                                                                   ],
+                                                                          "parameters":  [
+                                                                                             {
+                                                                                                 "schema":  {
+                                                                                                                "type":  "string"
+                                                                                                            },
+                                                                                                 "in":  "path",
+                                                                                                 "name":  "id",
+                                                                                                 "required":  true
+                                                                                             }
+                                                                                         ],
+                                                                          "responses":  {
+                                                                                            "200":  {
+                                                                                                        "description":  "Default Response"
+                                                                                                    }
+                                                                                        }
+                                                                      }
+                                                         },
+                  "/casos":  {
+                                 "post":  {
+                                              "summary":  "Crear caso (CU-SGC-002)",
+                                              "tags":  [
+                                                           "casos"
+                                                       ],
+                                              "responses":  {
+                                                                "200":  {
+                                                                            "description":  "Default Response"
+                                                                        }
+                                                            }
+                                          },
+                                 "get":  {
+                                             "summary":  "Listar casos propios (CU-SGC-004)",
+                                             "tags":  [
+                                                          "casos"
+                                                      ],
+                                             "responses":  {
+                                                               "200":  {
+                                                                           "description":  "Default Response"
+                                                                       }
+                                                           }
+                                         }
+                             },
+                  "/casos/{referencia}":  {
+                                              "get":  {
+                                                          "summary":  "Consultar caso propio (CU-SGC-004)",
+                                                          "tags":  [
+                                                                       "casos"
+                                                                   ],
+                                                          "parameters":  [
+                                                                             {
+                                                                                 "schema":  {
+                                                                                                "type":  "string"
+                                                                                            },
+                                                                                 "in":  "path",
+                                                                                 "name":  "referencia",
+                                                                                 "required":  true
+                                                                             }
+                                                                         ],
+                                                          "responses":  {
+                                                                            "200":  {
+                                                                                        "description":  "Default Response"
+                                                                                    }
+                                                                        }
+                                                      }
+                                          },
+                  "/casos/{referencia}/estado":  {
+                                                     "patch":  {
+                                                                   "summary":  "Cambiar estado del caso (CU-SGC-009)",
+                                                                   "tags":  [
+                                                                                "casos"
+                                                                            ],
+                                                                   "parameters":  [
+                                                                                      {
+                                                                                          "schema":  {
+                                                                                                         "type":  "string"
+                                                                                                     },
+                                                                                          "in":  "path",
+                                                                                          "name":  "referencia",
+                                                                                          "required":  true
+                                                                                      }
+                                                                                  ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Default Response"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                 },
+                  "/casos/{referencia}/mensajes":  {
+                                                       "post":  {
+                                                                    "summary":  "Agregar mensaje al caso (CU-SGC-005)",
+                                                                    "tags":  [
+                                                                                 "casos"
+                                                                             ],
+                                                                    "parameters":  [
+                                                                                       {
+                                                                                           "schema":  {
+                                                                                                          "type":  "string"
+                                                                                                      },
+                                                                                           "in":  "path",
+                                                                                           "name":  "referencia",
+                                                                                           "required":  true
+                                                                                       }
+                                                                                   ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Default Response"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                   },
                   "/":  {
                             "get":  {
                                         "responses":  {
@@ -747,6 +934,14 @@
                  {
                      "name":  "eventos",
                      "description":  "Buzon y publicador de eventos (CU-INT-001/002, BL-091)"
+                 },
+                 {
+                     "name":  "emprendedores",
+                     "description":  "Enrolamiento, productos y aval (CU-EM-001..012)"
+                 },
+                 {
+                     "name":  "casos",
+                     "description":  "Soporte, garantias y calidad (CU-SGC-002..017)"
                  },
                  {
                      "name":  "administracion",

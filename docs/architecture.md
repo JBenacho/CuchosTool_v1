@@ -29,7 +29,7 @@ Documento vivo del codigo (docs-as-code). Linea base normativa: 04_Arquitectura_
 | apps/api                 | Fastify + Drizzle (monolito modular)    | apps/api                            |
 | PostgreSQL 16            | datos transaccionales                   | docker-compose.yml                  |
 | (F3) Pub/Sub + Cloud Run | eventos y runtime GCP                   | infra/ (pendiente Terraform)        |
-| publicador del buzon      | Node (intervalo dev; GCP: Scheduler)   | modulos/eventos/buzon.servicio     |
+| publicador del buzon     | Node (intervalo dev; GCP: Scheduler)    | modulos/eventos/buzon.servicio      |
 
 ## Modulos del API (monolito modular, rutas en espanol)
 

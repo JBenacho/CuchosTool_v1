@@ -13,6 +13,20 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
+// Emprendedores de la plataforma (CU-EM-001..004). Aislados por emprendedorId (RN-SEC-005).
+export const emprendedores = pgTable('emprendedores', {
+  id: serial('id').primaryKey(),
+  documentoIdentidad: text('documento_identidad').notNull().unique(),
+  nombre: text('nombre').notNull(),
+  correo: text('correo').notNull().unique(),
+  telefono: text('telefono'),
+  zonaId: text('zona_id'),
+  estado: text('estado').notNull().default('enrolado'),
+  creadoPor: text('creado_por'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Catalogo publico (CU-EC-001..006).
 export const categorias = pgTable('categorias', {
   id: serial('id').primaryKey(),
@@ -26,6 +40,8 @@ export const productos = pgTable(
   {
     id: serial('id').primaryKey(),
     categoriaId: integer('categoria_id').references(() => categorias.id),
+    // Productos de emprendedores (F4): pasan por aval antes de ser publicos.
+    emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
     nombre: text('nombre').notNull(),
     slug: text('slug').notNull().unique(),
     descripcion: text('descripcion'),
@@ -154,6 +170,32 @@ export const eventosFallidos = pgTable('eventos_fallidos', {
   reintentos: integer('reintentos').notNull().default(0),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 });
+// Casos de Soporte, Garantias y Calidad (CU-SGC-002..017). Caso unico y trazable.
+export const casos = pgTable('casos', {
+  id: serial('id').primaryKey(),
+  referenciaCaso: text('referencia_caso').notNull().unique(),
+  tipo: text('tipo').notNull(), // soporte | garantia | queja | reclamo | peticion
+  estado: text('estado').notNull().default('abierto'),
+  prioridad: text('prioridad').notNull().default('media'),
+  clienteId: text('cliente_id'),
+  emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
+  pedidoId: integer('pedido_id').references(() => pedidos.id),
+  asunto: text('asunto').notNull(),
+  descripcion: text('descripcion'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const casoMensajes = pgTable('caso_mensajes', {
+  id: serial('id').primaryKey(),
+  casoId: integer('caso_id')
+    .notNull()
+    .references(() => casos.id),
+  autorTipo: text('autor_tipo').notNull(), // cliente | agente | sistema
+  autorId: text('autor_id'),
+  contenido: text('contenido').notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
@@ -163,6 +205,8 @@ export const usuarios = pgTable('usuarios', {
   rol: text('rol').notNull(),
   zonaId: text('zona_id'),
   vendedorId: text('vendedor_id'),
+  // Vinculo del usuario interno con su emprendedor (rol EMPRENDEDOR).
+  emprendedorId: integer('emprendedor_id').references(() => emprendedores.id),
   estado: text('estado').notNull().default('ACTIVO'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
