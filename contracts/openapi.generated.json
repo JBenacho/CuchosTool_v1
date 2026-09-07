@@ -886,6 +886,52 @@
                                                                             }
                                                           }
                                               },
+                  "/emprendedores/{id}/suspender":  {
+                                                        "patch":  {
+                                                                      "summary":  "Suspender emprendedor (CU-EM-002)",
+                                                                      "tags":  [
+                                                                                   "emprendedores"
+                                                                               ],
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "schema":  {
+                                                                                                            "type":  "string"
+                                                                                                        },
+                                                                                             "in":  "path",
+                                                                                             "name":  "id",
+                                                                                             "required":  true
+                                                                                         }
+                                                                                     ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Default Response"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                    },
+                  "/emprendedores/{id}/logistica":  {
+                                                        "patch":  {
+                                                                      "summary":  "Configurar servicio logistico (CU-EM-019)",
+                                                                      "tags":  [
+                                                                                   "emprendedores"
+                                                                               ],
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "schema":  {
+                                                                                                            "type":  "string"
+                                                                                                        },
+                                                                                             "in":  "path",
+                                                                                             "name":  "id",
+                                                                                             "required":  true
+                                                                                         }
+                                                                                     ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Default Response"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                    },
                   "/dispersiones/entregas":  {
                                                  "post":  {
                                                               "summary":  "Confirmar entrega fisica (CU-EM-015)",
@@ -1179,6 +1225,52 @@
                                                                                   }
                                                                 }
                                                    },
+                  "/casos/{referencia}/asignar":  {
+                                                      "post":  {
+                                                                   "summary":  "Asignar caso a agente (CU-SGC-007)",
+                                                                   "tags":  [
+                                                                                "casos"
+                                                                            ],
+                                                                   "parameters":  [
+                                                                                      {
+                                                                                          "schema":  {
+                                                                                                         "type":  "string"
+                                                                                                     },
+                                                                                          "in":  "path",
+                                                                                          "name":  "referencia",
+                                                                                          "required":  true
+                                                                                      }
+                                                                                  ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Default Response"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                  },
+                  "/casos/{referencia}/evidencias":  {
+                                                         "post":  {
+                                                                      "summary":  "Registrar evidencia del caso (CU-SGC-006)",
+                                                                      "tags":  [
+                                                                                   "casos"
+                                                                               ],
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "schema":  {
+                                                                                                            "type":  "string"
+                                                                                                        },
+                                                                                             "in":  "path",
+                                                                                             "name":  "referencia",
+                                                                                             "required":  true
+                                                                                         }
+                                                                                     ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Default Response"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                     },
                   "/reembolsos/{referencia}/completar":  {
                                                              "post":  {
                                                                           "summary":  "Completar reembolso (Payments)",

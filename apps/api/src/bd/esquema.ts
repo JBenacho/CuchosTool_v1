@@ -22,9 +22,10 @@ export const emprendedores = pgTable('emprendedores', {
   telefono: text('telefono'),
   zonaId: text('zona_id'),
   estado: text('estado').notNull().default('enrolado'),
-  // Medios configurados por el emprendedor (CU-EM-005/006).
+  // Medios configurados por el emprendedor (CU-EM-005/006) y logistica (CU-EM-019).
   medioEnvio: text('medio_envio'),
   medioPagoElectronico: text('medio_pago_electronico'),
+  proveedorLogistico: text('proveedor_logistico'),
   creadoPor: text('creado_por'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
@@ -192,10 +193,23 @@ export const casos = pgTable('casos', {
   // SLA de primera respuesta (CU-SGC-011) y satisfaccion (CU-SGC-018/019).
   slaVenceEn: timestamp('sla_vence_en', { withTimezone: true }),
   calificacion: integer('calificacion'),
+  // Agente asignado al caso (CU-SGC-007).
+  asignadoA: text('asignado_a'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Evidencias seguras del caso (CU-SGC-006). En GCP la URL apunta a Cloud Storage privado.
+export const casoEvidencias = pgTable('caso_evidencias', {
+  id: serial('id').primaryKey(),
+  casoId: integer('caso_id')
+    .notNull()
+    .references(() => casos.id),
+  tipo: text('tipo').notNull(), // foto | video | documento | otro
+  url: text('url').notNull(),
+  descripcion: text('descripcion'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 export const casoMensajes = pgTable('caso_mensajes', {
   id: serial('id').primaryKey(),
   casoId: integer('caso_id')

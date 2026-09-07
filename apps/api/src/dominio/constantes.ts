@@ -112,3 +112,6 @@ export const OFERTA_INACTIVA = 'inactiva';
 
 // Estados de pedido considerados venta efectiva para reportes del emprendedor (CU-EM-014).
 export const ESTADOS_PEDIDO_VENTA_EFECTIVA = ['pagado', 'entregado'] as const;
+
+// Tipos de evidencia validos en casos (CU-SGC-006).
+export const TIPOS_EVIDENCIA = ['foto', 'video', 'documento', 'otro'] as const;
