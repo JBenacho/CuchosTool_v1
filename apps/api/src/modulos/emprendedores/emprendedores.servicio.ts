@@ -330,22 +330,71 @@ export async function reportesEmprendedor(emprendedorId: number) {
  * Suspende un emprendedor (CU-EM-002). Solo emprendedores activos.
  */
 export async function suspenderEmprendedor(id: number): Promise<ResultadoOperacion> {
-  const existente = await base.select().from(emprendedores).where(eq(emprendedores.id, id)).limit(1);
+  const existente = await base
+    .select()
+    .from(emprendedores)
+    .where(eq(emprendedores.id, id))
+    .limit(1);
   if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'emprendedor_no_encontrado' };
-  if (existente[0].estado !== EMPRENDEDOR_ACTIVO) return { ok: false, codigoEstado: 409, error: 'emprendedor_no_suspendible' };
-  await base.update(emprendedores).set({ estado: EMPRENDEDOR_SUSPENDIDO, actualizadoEn: new Date() }).where(eq(emprendedores.id, id));
+  if (existente[0].estado !== EMPRENDEDOR_ACTIVO)
+    return { ok: false, codigoEstado: 409, error: 'emprendedor_no_suspendible' };
+  await base
+    .update(emprendedores)
+    .set({ estado: EMPRENDEDOR_SUSPENDIDO, actualizadoEn: new Date() })
+    .where(eq(emprendedores.id, id));
   return { ok: true, datos: { id: id, estado: EMPRENDEDOR_SUSPENDIDO } };
 }
 
 /**
  * Configura el servicio logistico del emprendedor (CU-EM-019).
  */
-export async function configurarLogisticaEmprendedor(id: number, proveedorLogistico: string): Promise<ResultadoOperacion> {
-  const existente = await base.select().from(emprendedores).where(eq(emprendedores.id, id)).limit(1);
+export async function configurarLogisticaEmprendedor(
+  id: number,
+  proveedorLogistico: string,
+): Promise<ResultadoOperacion> {
+  const existente = await base
+    .select()
+    .from(emprendedores)
+    .where(eq(emprendedores.id, id))
+    .limit(1);
   if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'emprendedor_no_encontrado' };
   const proveedor = String(proveedorLogistico || '').trim();
   if (!proveedor) return { ok: false, codigoEstado: 400, error: 'proveedor_requerido' };
-  await base.update(emprendedores).set({ proveedorLogistico: proveedor, actualizadoEn: new Date() }).where(eq(emprendedores.id, id));
+  await base
+    .update(emprendedores)
+    .set({ proveedorLogistico: proveedor, actualizadoEn: new Date() })
+    .where(eq(emprendedores.id, id));
   return { ok: true, datos: { id: id, proveedorLogistico: proveedor } };
 }
 
+/**
+ * Marca el paquete documental del emprendedor como completo (CU-EM-003).
+ */
+export async function marcarDocumentosCompletos(id: number): Promise<ResultadoOperacion> {
+  const existente = await base
+    .select()
+    .from(emprendedores)
+    .where(eq(emprendedores.id, id))
+    .limit(1);
+  if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'emprendedor_no_encontrado' };
+  await base
+    .update(emprendedores)
+    .set({ documentosCompletos: true, actualizadoEn: new Date() })
+    .where(eq(emprendedores.id, id));
+  return { ok: true, datos: { id: id, documentosCompletos: true } };
+}
+
+/**
+ * Valida los requisitos multimedia de un producto de emprendedor (CU-EM-009).
+ */
+export async function validarMultimediaProducto(productoId: number): Promise<ResultadoOperacion> {
+  const producto = await base.select().from(productos).where(eq(productos.id, productoId)).limit(1);
+  if (!producto[0]) return { ok: false, codigoEstado: 404, error: 'producto_no_encontrado' };
+  if (!producto[0].emprendedorId)
+    return { ok: false, codigoEstado: 409, error: 'producto_no_emprendedor' };
+  await base
+    .update(productos)
+    .set({ multimediaValidada: true, actualizadoEn: new Date() })
+    .where(eq(productos.id, productoId));
+  return { ok: true, datos: { id: productoId, multimediaValidada: true } };
+}

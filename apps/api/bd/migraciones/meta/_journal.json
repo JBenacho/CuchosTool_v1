@@ -43,6 +43,13 @@
       "when": 1788816195067,
       "tag": "0005_normal_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788816873174,
+      "tag": "0006_cheerful_maggott",
+      "breakpoints": true
     }
   ]
 }

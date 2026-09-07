@@ -16,6 +16,7 @@ import { rutasEventos } from './modulos/eventos/eventos.rutas';
 import { rutasEmprendedores } from './modulos/emprendedores/emprendedores.rutas';
 import { rutasDispersiones } from './modulos/emprendedores/dispersiones.rutas';
 import { rutasCasos } from './modulos/casos/casos.rutas';
+import { rutasCalidad } from './modulos/calidad/calidad.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -55,6 +56,10 @@ export async function construirAplicacion(opciones?: {
         { name: 'eventos', description: 'Buzon y publicador de eventos (CU-INT-001/002, BL-091)' },
         { name: 'emprendedores', description: 'Enrolamiento, productos y aval (CU-EM-001..012)' },
         { name: 'casos', description: 'Soporte, garantias y calidad (CU-SGC-002..017)' },
+        {
+          name: 'calidad',
+          description: 'Patrones, alertas, acciones correctivas y dashboard (CU-SGC-020..023)',
+        },
         {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
@@ -115,6 +120,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasEmprendedores);
   await aplicacion.register(rutasDispersiones);
   await aplicacion.register(rutasCasos);
+  await aplicacion.register(rutasCalidad);
 
   aplicacion.get('/', async function () {
     return {

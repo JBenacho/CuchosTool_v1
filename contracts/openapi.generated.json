@@ -932,6 +932,52 @@
                                                                                     }
                                                                   }
                                                     },
+                  "/emprendedores/{id}/documentos":  {
+                                                         "patch":  {
+                                                                       "summary":  "Marcar paquete documental completo (CU-EM-003)",
+                                                                       "tags":  [
+                                                                                    "emprendedores"
+                                                                                ],
+                                                                       "parameters":  [
+                                                                                          {
+                                                                                              "schema":  {
+                                                                                                             "type":  "string"
+                                                                                                         },
+                                                                                              "in":  "path",
+                                                                                              "name":  "id",
+                                                                                              "required":  true
+                                                                                          }
+                                                                                      ],
+                                                                       "responses":  {
+                                                                                         "200":  {
+                                                                                                     "description":  "Default Response"
+                                                                                                 }
+                                                                                     }
+                                                                   }
+                                                     },
+                  "/emprendedores/productos/{id}/multimedia-validar":  {
+                                                                           "post":  {
+                                                                                        "summary":  "Validar requisitos multimedia del producto (CU-EM-009)",
+                                                                                        "tags":  [
+                                                                                                     "emprendedores"
+                                                                                                 ],
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "schema":  {
+                                                                                                                              "type":  "string"
+                                                                                                                          },
+                                                                                                               "in":  "path",
+                                                                                                               "name":  "id",
+                                                                                                               "required":  true
+                                                                                                           }
+                                                                                                       ],
+                                                                                        "responses":  {
+                                                                                                          "200":  {
+                                                                                                                      "description":  "Default Response"
+                                                                                                                  }
+                                                                                                      }
+                                                                                    }
+                                                                       },
                   "/dispersiones/entregas":  {
                                                  "post":  {
                                                               "summary":  "Confirmar entrega fisica (CU-EM-015)",
@@ -1294,6 +1340,81 @@
                                                                                         }
                                                                       }
                                                          },
+                  "/calidad/dashboard":  {
+                                             "get":  {
+                                                         "summary":  "Dashboard de calidad (CU-SGC-023)",
+                                                         "tags":  [
+                                                                      "calidad"
+                                                                  ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Default Response"
+                                                                                   }
+                                                                       }
+                                                     }
+                                         },
+                  "/calidad/detectar":  {
+                                            "post":  {
+                                                         "summary":  "Detectar patrones de calidad (CU-SGC-020)",
+                                                         "tags":  [
+                                                                      "calidad"
+                                                                  ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Default Response"
+                                                                                   }
+                                                                       }
+                                                     }
+                                        },
+                  "/calidad/alertas/generar":  {
+                                                   "post":  {
+                                                                "summary":  "Generar alerta por umbral (CU-SGC-021)",
+                                                                "tags":  [
+                                                                             "calidad"
+                                                                         ],
+                                                                "responses":  {
+                                                                                  "200":  {
+                                                                                              "description":  "Default Response"
+                                                                                          }
+                                                                              }
+                                                            }
+                                               },
+                  "/calidad/acciones":  {
+                                            "post":  {
+                                                         "summary":  "Crear accion correctiva (CU-SGC-022)",
+                                                         "tags":  [
+                                                                      "calidad"
+                                                                  ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Default Response"
+                                                                                   }
+                                                                       }
+                                                     }
+                                        },
+                  "/calidad/acciones/{referencia}/cerrar":  {
+                                                                "patch":  {
+                                                                              "summary":  "Cerrar accion correctiva (CU-SGC-022)",
+                                                                              "tags":  [
+                                                                                           "calidad"
+                                                                                       ],
+                                                                              "parameters":  [
+                                                                                                 {
+                                                                                                     "schema":  {
+                                                                                                                    "type":  "string"
+                                                                                                                },
+                                                                                                     "in":  "path",
+                                                                                                     "name":  "referencia",
+                                                                                                     "required":  true
+                                                                                                 }
+                                                                                             ],
+                                                                              "responses":  {
+                                                                                                "200":  {
+                                                                                                            "description":  "Default Response"
+                                                                                                        }
+                                                                                            }
+                                                                          }
+                                                            },
                   "/":  {
                             "get":  {
                                         "responses":  {
@@ -1340,6 +1461,10 @@
                  {
                      "name":  "casos",
                      "description":  "Soporte, garantias y calidad (CU-SGC-002..017)"
+                 },
+                 {
+                     "name":  "calidad",
+                     "description":  "Patrones, alertas, acciones correctivas y dashboard (CU-SGC-020..023)"
                  },
                  {
                      "name":  "administracion",

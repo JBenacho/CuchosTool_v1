@@ -258,24 +258,49 @@ export async function rutasCasos(aplicacion: FastifyInstance): Promise<void> {
     },
   );
 
-aplicacion.post<{ Params: { referencia: string }; Body: { usuarioId: string } }>('/casos/:referencia/asignar', {
-    preHandler: requerirRol([ROL_SUPERVISOR, ROL_ADMIN]),
-    schema: { tags: ['casos'], summary: 'Asignar caso a agente (CU-SGC-007)' },
-  }, async function (solicitud, respuesta) {
-    const resultado = await asignarCaso(solicitud.params.referencia, String(solicitud.body?.usuarioId || ''));
-    if (!resultado.ok) return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
-    await registrarAuditoria(solicitud, 'casos.asignar', 'casos', solicitud.params.referencia, 'ok');
-    return { data: resultado.datos };
-  });
+  aplicacion.post<{ Params: { referencia: string }; Body: { usuarioId: string } }>(
+    '/casos/:referencia/asignar',
+    {
+      preHandler: requerirRol([ROL_SUPERVISOR, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Asignar caso a agente (CU-SGC-007)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await asignarCaso(
+        solicitud.params.referencia,
+        String(solicitud.body?.usuarioId || ''),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'casos.asignar',
+        'casos',
+        solicitud.params.referencia,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
 
-  aplicacion.post<{ Params: { referencia: string }; Body: { tipo: string; url: string; descripcion?: string } }>('/casos/:referencia/evidencias', {
-    preHandler: autenticar,
-    schema: { tags: ['casos'], summary: 'Registrar evidencia del caso (CU-SGC-006)' },
-  }, async function (solicitud, respuesta) {
-    const resultado = await registrarEvidencia(solicitud.params.referencia, solicitud.body || ({} as any));
-    if (!resultado.ok) return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
-    return { data: resultado.datos };
-  });
+  aplicacion.post<{
+    Params: { referencia: string };
+    Body: { tipo: string; url: string; descripcion?: string };
+  }>(
+    '/casos/:referencia/evidencias',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['casos'], summary: 'Registrar evidencia del caso (CU-SGC-006)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await registrarEvidencia(
+        solicitud.params.referencia,
+        solicitud.body || ({} as any),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return { data: resultado.datos };
+    },
+  );
 
   // Payments completa el reembolso; en local se marca completado (F3-GCP lo ejecuta).
   aplicacion.post<{ Params: { referencia: string } }>(
