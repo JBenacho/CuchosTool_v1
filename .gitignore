@@ -18,6 +18,9 @@ _NICOLA_work/
 
 # Herramientas locales descargadas
 _tools/
+
+# Documentacion y archivos de consulta (fuera del codigo migrable)
+Documentos Consulta/
 # Docker
 .docker-volumes/
 
