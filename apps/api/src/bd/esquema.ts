@@ -22,6 +22,9 @@ export const emprendedores = pgTable('emprendedores', {
   telefono: text('telefono'),
   zonaId: text('zona_id'),
   estado: text('estado').notNull().default('enrolado'),
+  // Medios configurados por el emprendedor (CU-EM-005/006).
+  medioEnvio: text('medio_envio'),
+  medioPagoElectronico: text('medio_pago_electronico'),
   creadoPor: text('creado_por'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
@@ -186,6 +189,9 @@ export const casos = pgTable('casos', {
   garantiaEstado: text('garantia_estado').notNull().default('solicitada'),
   garantiaDecididaEn: timestamp('garantia_decidida_en', { withTimezone: true }),
   logisticaAccion: text('logistica_accion'),
+  // SLA de primera respuesta (CU-SGC-011) y satisfaccion (CU-SGC-018/019).
+  slaVenceEn: timestamp('sla_vence_en', { withTimezone: true }),
+  calificacion: integer('calificacion'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -234,6 +240,20 @@ export const reembolsos = pgTable('reembolsos', {
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Ofertas del emprendedor (CU-EM-013): descuento en puntos basicos con vigencia.
+export const ofertas = pgTable('ofertas', {
+  id: serial('id').primaryKey(),
+  emprendedorId: integer('emprendedor_id')
+    .notNull()
+    .references(() => emprendedores.id),
+  nombre: text('nombre').notNull(),
+  descuentoBps: integer('descuento_bps').notNull(),
+  iniciaEn: timestamp('inicia_en', { withTimezone: true }).notNull(),
+  finalizaEn: timestamp('finaliza_en', { withTimezone: true }).notNull(),
+  estado: text('estado').notNull().default('activa'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),

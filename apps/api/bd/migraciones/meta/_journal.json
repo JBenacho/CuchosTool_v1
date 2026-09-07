@@ -29,6 +29,13 @@
       "when": 1788815188512,
       "tag": "0003_awesome_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788815721098,
+      "tag": "0004_yielding_zaladane",
+      "breakpoints": true
     }
   ]
 }

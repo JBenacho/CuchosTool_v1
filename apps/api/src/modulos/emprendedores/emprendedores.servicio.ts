@@ -1,9 +1,14 @@
 // Servicio de emprendedores (CU-EM-001..004, CU-EM-007/010..012).
 // Reglas: el Gerente de Zona enrola y avala; el emprendedor gestiona sus productos;
 // cada producto de emprendedor pasa por aval antes de ser publico (Default Deny comercial).
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, sql, sum } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { emprendedores, productos } from '../../bd/esquema';
+import { emprendedores, ofertas, pedidoArticulos, pedidos, productos } from '../../bd/esquema';
+import {
+  ESTADOS_PEDIDO_VENTA_EFECTIVA,
+  OFERTA_ACTIVA,
+  OFERTA_INACTIVA,
+} from '../../dominio/constantes';
 import {
   EMPRENDEDOR_ACTIVO,
   EMPRENDEDOR_ENROLADO,
@@ -177,4 +182,145 @@ export async function listarProductosEmprendedor(emprendedorId: number) {
     .from(productos)
     .where(and(eq(productos.emprendedorId, emprendedorId)))
     .orderBy(asc(productos.id));
+}
+
+/**
+ * Configura los medios de envio y pago del emprendedor (CU-EM-005/006).
+ * @param id id del emprendedor.
+ * @param medios campos opcionales a actualizar.
+ */
+export async function configurarMediosEmprendedor(
+  id: number,
+  medios: { medioEnvio?: string; medioPagoElectronico?: string },
+): Promise<ResultadoOperacion> {
+  const existente = await base
+    .select()
+    .from(emprendedores)
+    .where(eq(emprendedores.id, id))
+    .limit(1);
+  if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'emprendedor_no_encontrado' };
+  const cambios: {
+    medioEnvio?: string | null;
+    medioPagoElectronico?: string | null;
+    actualizadoEn: Date;
+  } = {
+    actualizadoEn: new Date(),
+  };
+  if (medios.medioEnvio !== undefined)
+    cambios.medioEnvio = String(medios.medioEnvio).trim() || null;
+  if (medios.medioPagoElectronico !== undefined)
+    cambios.medioPagoElectronico = String(medios.medioPagoElectronico).trim() || null;
+  await base.update(emprendedores).set(cambios).where(eq(emprendedores.id, id));
+  return {
+    ok: true,
+    datos: {
+      id: id,
+      medioEnvio: cambios.medioEnvio,
+      medioPagoElectronico: cambios.medioPagoElectronico,
+    },
+  };
+}
+
+/**
+ * Crea una oferta del emprendedor (CU-EM-013).
+ * Reglas: descuento entre 0 y 10000 bps; la vigencia debe ser valida.
+ */
+export async function crearOferta(
+  emprendedorId: number,
+  datos: { nombre: string; descuentoBps: number; iniciaEn: string; finalizaEn: string },
+): Promise<ResultadoOperacion> {
+  const nombre = String(datos.nombre || '').trim();
+  const descuentoBps = Number(datos.descuentoBps);
+  const iniciaEn = new Date(datos.iniciaEn);
+  const finalizaEn = new Date(datos.finalizaEn);
+  if (!nombre) return { ok: false, codigoEstado: 400, error: 'nombre_requerido' };
+  if (!(descuentoBps >= 0 && descuentoBps <= 10000))
+    return { ok: false, codigoEstado: 400, error: 'descuento_invalido' };
+  if (
+    Number.isNaN(iniciaEn.getTime()) ||
+    Number.isNaN(finalizaEn.getTime()) ||
+    iniciaEn >= finalizaEn
+  )
+    return { ok: false, codigoEstado: 400, error: 'vigencia_invalida' };
+  const [creada] = await base
+    .insert(ofertas)
+    .values({
+      emprendedorId: emprendedorId,
+      nombre: nombre,
+      descuentoBps: descuentoBps,
+      iniciaEn: iniciaEn,
+      finalizaEn: finalizaEn,
+      estado: OFERTA_ACTIVA,
+    })
+    .returning({
+      id: ofertas.id,
+      nombre: ofertas.nombre,
+      descuentoBps: ofertas.descuentoBps,
+      estado: ofertas.estado,
+    });
+  return { ok: true, datos: creada };
+}
+
+/**
+ * Lista las ofertas del emprendedor (CU-EM-013).
+ */
+export async function listarOfertasEmprendedor(emprendedorId: number) {
+  return base
+    .select()
+    .from(ofertas)
+    .where(eq(ofertas.emprendedorId, emprendedorId))
+    .orderBy(asc(ofertas.id));
+}
+
+/**
+ * Activa o inactiva una oferta propia (CU-EM-013).
+ */
+export async function cambiarEstadoOferta(
+  ofertaId: number,
+  emprendedorId: number,
+  estado: string,
+): Promise<ResultadoOperacion> {
+  if (estado !== OFERTA_ACTIVA && estado !== OFERTA_INACTIVA)
+    return { ok: false, codigoEstado: 400, error: 'estado_invalido' };
+  const filas = await base
+    .select()
+    .from(ofertas)
+    .where(and(eq(ofertas.id, ofertaId), eq(ofertas.emprendedorId, emprendedorId)))
+    .limit(1);
+  if (!filas[0]) return { ok: false, codigoEstado: 404, error: 'oferta_no_encontrada' };
+  await base
+    .update(ofertas)
+    .set({ estado: estado, actualizadoEn: new Date() })
+    .where(eq(ofertas.id, ofertaId));
+  return { ok: true, datos: { id: ofertaId, estado: estado } };
+}
+
+/**
+ * Reporte de ventas del emprendedor (CU-EM-014): articulos vendidos y monto total
+ * sobre pedidos con venta efectiva (pagados o entregados).
+ */
+export async function reportesEmprendedor(emprendedorId: number) {
+  const filas = await base
+    .select({
+      articulosVendidos: sum(pedidoArticulos.cantidad),
+      montoTotalCentavos: sum(
+        sql`${pedidoArticulos.cantidad} * ${pedidoArticulos.precioUnitarioCentavos}`,
+      ),
+      pedidos: count(),
+    })
+    .from(pedidoArticulos)
+    .innerJoin(productos, eq(pedidoArticulos.productoId, productos.id))
+    .innerJoin(pedidos, eq(pedidoArticulos.pedidoId, pedidos.id))
+    .where(
+      and(
+        eq(productos.emprendedorId, emprendedorId),
+        inArray(pedidos.estado, [...ESTADOS_PEDIDO_VENTA_EFECTIVA]),
+      ),
+    );
+  const fila = filas[0];
+  return {
+    articulosVendidos: Number(fila && fila.articulosVendidos ? fila.articulosVendidos : 0),
+    montoTotalCentavos: Number(fila && fila.montoTotalCentavos ? fila.montoTotalCentavos : 0),
+    pedidos: Number(fila && fila.pedidos ? fila.pedidos : 0),
+  };
 }

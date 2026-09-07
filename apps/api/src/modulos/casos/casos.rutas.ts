@@ -13,12 +13,16 @@ import {
 import { registrarAuditoria } from '../administracion/auditoria';
 import {
   agregarMensajeCaso,
+  bandejaSoporte,
   cambiarEstadoCaso,
+  cambiarPrioridadCaso,
   crearCaso,
   crearReembolso,
   decidirGarantia,
+  escalarCaso,
   listarCasosCliente,
   obtenerCaso,
+  registrarSatisfaccion,
   solicitarLogistica,
 } from './casos.servicio';
 
@@ -180,6 +184,74 @@ export async function rutasCasos(aplicacion: FastifyInstance): Promise<void> {
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
       await registrarAuditoria(solicitud, 'casos.solicitar_reembolso', 'reembolsos', 'nuevo', 'ok');
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.get(
+    '/casos/bandeja',
+    {
+      preHandler: requerirRol([ROL_AGENTE, ROL_SUPERVISOR, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Bandeja operativa de soporte (CU-SGC-026)' },
+    },
+    async function () {
+      return { data: await bandejaSoporte() };
+    },
+  );
+
+  aplicacion.patch<{ Params: { referencia: string }; Body: { prioridad: string } }>(
+    '/casos/:referencia/prioridad',
+    {
+      preHandler: requerirRol([ROL_SUPERVISOR, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Cambiar prioridad del caso (CU-SGC-008)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await cambiarPrioridadCaso(
+        solicitud.params.referencia,
+        String(solicitud.body?.prioridad || ''),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.post<{ Params: { referencia: string } }>(
+    '/casos/:referencia/escalar',
+    {
+      preHandler: requerirRol([ROL_AGENTE, ROL_SUPERVISOR, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Escalar caso (CU-SGC-010)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await escalarCaso(solicitud.params.referencia);
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'casos.escalar',
+        'casos',
+        solicitud.params.referencia,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.post<{ Params: { referencia: string }; Body: { calificacion: number } }>(
+    '/casos/:referencia/encuesta',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['casos'], summary: 'Calificar atencion (CU-SGC-018/019)' },
+    },
+    async function (solicitud, respuesta) {
+      const clienteId = String((solicitud as any).usuario?.sub || '');
+      const resultado = await registrarSatisfaccion(
+        solicitud.params.referencia,
+        clienteId,
+        Number(solicitud.body?.calificacion),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
       return { data: resultado.datos };
     },
   );

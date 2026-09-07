@@ -803,6 +803,89 @@
                                                                                         }
                                                                       }
                                                          },
+                  "/emprendedores/{id}/medios":  {
+                                                     "patch":  {
+                                                                   "summary":  "Configurar medios de envio y pago (CU-EM-005/006)",
+                                                                   "tags":  [
+                                                                                "emprendedores"
+                                                                            ],
+                                                                   "parameters":  [
+                                                                                      {
+                                                                                          "schema":  {
+                                                                                                         "type":  "string"
+                                                                                                     },
+                                                                                          "in":  "path",
+                                                                                          "name":  "id",
+                                                                                          "required":  true
+                                                                                      }
+                                                                                  ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Default Response"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                 },
+                  "/emprendedores/ofertas":  {
+                                                 "post":  {
+                                                              "summary":  "Crear oferta (CU-EM-013)",
+                                                              "tags":  [
+                                                                           "emprendedores"
+                                                                       ],
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Default Response"
+                                                                                        }
+                                                                            }
+                                                          },
+                                                 "get":  {
+                                                             "summary":  "Listar ofertas propias (CU-EM-013)",
+                                                             "tags":  [
+                                                                          "emprendedores"
+                                                                      ],
+                                                             "responses":  {
+                                                                               "200":  {
+                                                                                           "description":  "Default Response"
+                                                                                       }
+                                                                           }
+                                                         }
+                                             },
+                  "/emprendedores/ofertas/{id}/estado":  {
+                                                             "patch":  {
+                                                                           "summary":  "Activar o inactivar oferta (CU-EM-013)",
+                                                                           "tags":  [
+                                                                                        "emprendedores"
+                                                                                    ],
+                                                                           "parameters":  [
+                                                                                              {
+                                                                                                  "schema":  {
+                                                                                                                 "type":  "string"
+                                                                                                             },
+                                                                                                  "in":  "path",
+                                                                                                  "name":  "id",
+                                                                                                  "required":  true
+                                                                                              }
+                                                                                          ],
+                                                                           "responses":  {
+                                                                                             "200":  {
+                                                                                                         "description":  "Default Response"
+                                                                                                     }
+                                                                                         }
+                                                                       }
+                                                         },
+                  "/emprendedores/reportes":  {
+                                                  "get":  {
+                                                              "summary":  "Reportes de ventas propias (CU-EM-014)",
+                                                              "tags":  [
+                                                                           "emprendedores"
+                                                                       ],
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Default Response"
+                                                                                        }
+                                                                            }
+                                                          }
+                                              },
                   "/dispersiones/entregas":  {
                                                  "post":  {
                                                               "summary":  "Confirmar entrega fisica (CU-EM-015)",
@@ -1014,6 +1097,88 @@
                                                                                    }
                                                                  }
                                                     },
+                  "/casos/bandeja":  {
+                                         "get":  {
+                                                     "summary":  "Bandeja operativa de soporte (CU-SGC-026)",
+                                                     "tags":  [
+                                                                  "casos"
+                                                              ],
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "Default Response"
+                                                                               }
+                                                                   }
+                                                 }
+                                     },
+                  "/casos/{referencia}/prioridad":  {
+                                                        "patch":  {
+                                                                      "summary":  "Cambiar prioridad del caso (CU-SGC-008)",
+                                                                      "tags":  [
+                                                                                   "casos"
+                                                                               ],
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "schema":  {
+                                                                                                            "type":  "string"
+                                                                                                        },
+                                                                                             "in":  "path",
+                                                                                             "name":  "referencia",
+                                                                                             "required":  true
+                                                                                         }
+                                                                                     ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Default Response"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                    },
+                  "/casos/{referencia}/escalar":  {
+                                                      "post":  {
+                                                                   "summary":  "Escalar caso (CU-SGC-010)",
+                                                                   "tags":  [
+                                                                                "casos"
+                                                                            ],
+                                                                   "parameters":  [
+                                                                                      {
+                                                                                          "schema":  {
+                                                                                                         "type":  "string"
+                                                                                                     },
+                                                                                          "in":  "path",
+                                                                                          "name":  "referencia",
+                                                                                          "required":  true
+                                                                                      }
+                                                                                  ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Default Response"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                  },
+                  "/casos/{referencia}/encuesta":  {
+                                                       "post":  {
+                                                                    "summary":  "Calificar atencion (CU-SGC-018/019)",
+                                                                    "tags":  [
+                                                                                 "casos"
+                                                                             ],
+                                                                    "parameters":  [
+                                                                                       {
+                                                                                           "schema":  {
+                                                                                                          "type":  "string"
+                                                                                                      },
+                                                                                           "in":  "path",
+                                                                                           "name":  "referencia",
+                                                                                           "required":  true
+                                                                                       }
+                                                                                   ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Default Response"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                   },
                   "/reembolsos/{referencia}/completar":  {
                                                              "post":  {
                                                                           "summary":  "Completar reembolso (Payments)",
