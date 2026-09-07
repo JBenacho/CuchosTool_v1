@@ -4,10 +4,15 @@
 import { randomUUID } from 'crypto';
 import { and, desc, eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { casoMensajes, casos } from '../../bd/esquema';
+import { casoMensajes, casos, pagos, reembolsos } from '../../bd/esquema';
 import {
   CASO_ABIERTO,
+  GARANTIA_IMPROCEDENTE,
+  GARANTIA_PROCEDENTE,
+  GARANTIA_SOLICITADA,
+  PAGO_APROBADO,
   PRIORIDAD_CASO_MEDIA,
+  REEMBOLSO_PENDIENTE,
   TIPOS_CASO,
   TRANSICIONES_CASO,
 } from '../../dominio/constantes';
@@ -135,6 +140,104 @@ export async function agregarMensajeCaso(
       id: casoMensajes.id,
       autorTipo: casoMensajes.autorTipo,
       contenido: casoMensajes.contenido,
+    });
+  return { ok: true, datos: creado };
+}
+
+/**
+ * Decide una garantia con evidencia (CU-SGC-014). Solo casos en estado garantia solicitada.
+ * @param decision 'procedente' o 'improcedente'.
+ */
+export async function decidirGarantia(
+  referenciaCaso: string,
+  decision: 'procedente' | 'improcedente',
+): Promise<ResultadoCaso> {
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(eq(casos.referenciaCaso, referenciaCaso))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  if (caso.garantiaEstado !== GARANTIA_SOLICITADA)
+    return { ok: false, codigoEstado: 409, error: 'garantia_ya_decidida' };
+  const estadoNuevo = decision === 'procedente' ? GARANTIA_PROCEDENTE : GARANTIA_IMPROCEDENTE;
+  await base
+    .update(casos)
+    .set({ garantiaEstado: estadoNuevo, garantiaDecididaEn: new Date(), actualizadoEn: new Date() })
+    .where(eq(casos.id, caso.id));
+  return { ok: true, datos: { referenciaCaso: referenciaCaso, garantiaEstado: estadoNuevo } };
+}
+
+/**
+ * Registra la coordinacion logistica del caso (CU-SGC-015): SGC coordina, Logistica mueve.
+ */
+export async function solicitarLogistica(
+  referenciaCaso: string,
+  accion: string,
+): Promise<ResultadoCaso> {
+  const accionesValidas = ['devolucion', 'cambio', 'recogida', 'reemplazo'] as const;
+  if (!accionesValidas.includes(accion as (typeof accionesValidas)[number]))
+    return { ok: false, codigoEstado: 400, error: 'accion_invalida' };
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(eq(casos.referenciaCaso, referenciaCaso))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  if (caso.garantiaEstado !== GARANTIA_PROCEDENTE)
+    return { ok: false, codigoEstado: 409, error: 'garantia_no_procedente' };
+  await base
+    .update(casos)
+    .set({ logisticaAccion: accion, actualizadoEn: new Date() })
+    .where(eq(casos.id, caso.id));
+  return { ok: true, datos: { referenciaCaso: referenciaCaso, logisticaAccion: accion } };
+}
+
+/**
+ * Crea un reembolso coordinado (CU-SGC-016). Requiere garantia procedente y un pago aprobado.
+ * Payments ejecuta el dinero posteriormente (BL-062).
+ */
+export async function crearReembolso(referenciaCaso: string): Promise<ResultadoCaso> {
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(eq(casos.referenciaCaso, referenciaCaso))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  if (caso.garantiaEstado !== GARANTIA_PROCEDENTE)
+    return { ok: false, codigoEstado: 409, error: 'garantia_no_procedente' };
+  if (!caso.pedidoId) return { ok: false, codigoEstado: 409, error: 'caso_sin_pedido' };
+  const filasPago = await base
+    .select()
+    .from(pagos)
+    .where(eq(pagos.pedidoId, caso.pedidoId))
+    .limit(1);
+  const pago = filasPago[0];
+  if (!pago || pago.estado !== PAGO_APROBADO)
+    return { ok: false, codigoEstado: 409, error: 'pago_no_aprobado' };
+  const existente = await base
+    .select()
+    .from(reembolsos)
+    .where(eq(reembolsos.casoId, caso.id))
+    .limit(1);
+  if (existente[0]) return { ok: false, codigoEstado: 409, error: 'reembolso_ya_creado' };
+  const [creado] = await base
+    .insert(reembolsos)
+    .values({
+      referenciaReembolso: 'RMB-' + randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase(),
+      pagoId: pago.id,
+      casoId: caso.id,
+      montoCentavos: pago.montoCentavos,
+      estado: REEMBOLSO_PENDIENTE,
+    })
+    .returning({
+      id: reembolsos.id,
+      referenciaReembolso: reembolsos.referenciaReembolso,
+      estado: reembolsos.estado,
+      montoCentavos: reembolsos.montoCentavos,
     });
   return { ok: true, datos: creado };
 }

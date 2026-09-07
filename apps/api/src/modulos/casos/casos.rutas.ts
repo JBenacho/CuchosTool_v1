@@ -1,13 +1,25 @@
 // Rutas de casos SGC (CU-SGC-002..009). Cliente crea/consulta lo propio; agentes gestionan.
 import type { FastifyInstance } from 'fastify';
-import { ROL_ADMIN, ROL_AGENTE, ROL_SUPERVISOR } from '../../dominio/constantes';
+import { eq } from 'drizzle-orm';
+import { base } from '../../bd/base';
+import { reembolsos } from '../../bd/esquema';
+import {
+  REEMBOLSO_COMPLETADO,
+  ROL_ADMIN,
+  ROL_AGENTE,
+  ROL_RESPONSABLE_GARANTIAS,
+  ROL_SUPERVISOR,
+} from '../../dominio/constantes';
 import { registrarAuditoria } from '../administracion/auditoria';
 import {
   agregarMensajeCaso,
   cambiarEstadoCaso,
   crearCaso,
+  crearReembolso,
+  decidirGarantia,
   listarCasosCliente,
   obtenerCaso,
+  solicitarLogistica,
 } from './casos.servicio';
 
 type CuerpoCaso = { tipo: string; asunto: string; descripcion?: string; pedidoId?: number };
@@ -108,6 +120,98 @@ export async function rutasCasos(aplicacion: FastifyInstance): Promise<void> {
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
       return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.patch<{ Params: { referencia: string }; Body: { decision: string } }>(
+    '/casos/:referencia/garantia',
+    {
+      preHandler: requerirRol([ROL_RESPONSABLE_GARANTIAS, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Decidir garantia (CU-SGC-014)' },
+    },
+    async function (solicitud, respuesta) {
+      const decision = solicitud.body?.decision === 'procedente' ? 'procedente' : 'improcedente';
+      const resultado = await decidirGarantia(solicitud.params.referencia, decision);
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'casos.decidir_garantia',
+        'casos',
+        solicitud.params.referencia,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.post<{ Params: { referencia: string }; Body: { accion: string } }>(
+    '/casos/:referencia/logistica',
+    {
+      preHandler: requerirRol([ROL_RESPONSABLE_GARANTIAS, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Coordinar logistica del caso (CU-SGC-015)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await solicitarLogistica(
+        solicitud.params.referencia,
+        String(solicitud.body?.accion || ''),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'casos.solicitar_logistica',
+        'casos',
+        solicitud.params.referencia,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.post<{ Params: { referencia: string } }>(
+    '/casos/:referencia/reembolso',
+    {
+      preHandler: requerirRol([ROL_RESPONSABLE_GARANTIAS, ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Solicitar reembolso a pagos (CU-SGC-016)' },
+    },
+    async function (solicitud, respuesta) {
+      const resultado = await crearReembolso(solicitud.params.referencia);
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(solicitud, 'casos.solicitar_reembolso', 'reembolsos', 'nuevo', 'ok');
+      return { data: resultado.datos };
+    },
+  );
+
+  // Payments completa el reembolso; en local se marca completado (F3-GCP lo ejecuta).
+  aplicacion.post<{ Params: { referencia: string } }>(
+    '/reembolsos/:referencia/completar',
+    {
+      preHandler: requerirRol([ROL_ADMIN]),
+      schema: { tags: ['casos'], summary: 'Completar reembolso (Payments)' },
+    },
+    async function (solicitud, respuesta) {
+      const filas = await base
+        .select()
+        .from(reembolsos)
+        .where(eq(reembolsos.referenciaReembolso, solicitud.params.referencia))
+        .limit(1);
+      if (!filas[0]) return respuesta.code(404).send({ error: 'reembolso_no_encontrado' });
+      await base
+        .update(reembolsos)
+        .set({ estado: REEMBOLSO_COMPLETADO, actualizadoEn: new Date() })
+        .where(eq(reembolsos.id, filas[0].id));
+      await registrarAuditoria(
+        solicitud,
+        'reembolsos.completar',
+        'reembolsos',
+        solicitud.params.referencia,
+        'ok',
+      );
+      return {
+        data: { referenciaReembolso: solicitud.params.referencia, estado: REEMBOLSO_COMPLETADO },
+      };
     },
   );
 }

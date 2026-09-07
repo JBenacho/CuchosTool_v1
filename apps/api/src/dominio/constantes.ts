@@ -79,3 +79,16 @@ export const TRANSICIONES_CASO: Record<string, string[]> = {
   [CASO_CERRADO]: [],
   [CASO_CANCELADO]: [],
 };
+// Entrega fisica y dispersion (CU-EM-015..018, BL-049/050/051).
+export const PEDIDO_ENTREGADO = 'entregado';
+export const DISPERSION_PENDIENTE = 'pendiente';
+export const DISPERSION_COMPLETADA = 'completada';
+export const DISPERSION_FALLIDA = 'fallida';
+
+// Garantias SGC (CU-SGC-013..016): decision con evidencia; SGC no mueve dinero ni mercancia.
+export const ROL_RESPONSABLE_GARANTIAS = 'RESPONSABLE_GARANTIAS';
+export const GARANTIA_SOLICITADA = 'solicitada';
+export const GARANTIA_PROCEDENTE = 'procedente';
+export const GARANTIA_IMPROCEDENTE = 'improcedente';
+export const REEMBOLSO_PENDIENTE = 'pendiente';
+export const REEMBOLSO_COMPLETADO = 'completado';
