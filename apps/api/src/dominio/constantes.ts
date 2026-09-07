@@ -122,3 +122,13 @@ export const ALERTA_ACTIVA = 'activa';
 export const ALERTA_ATENDIDA = 'atendida';
 export const ACCION_ABIERTA = 'abierta';
 export const ACCION_CERRADA = 'cerrada';
+// SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
+// Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
+export const SLA_HORAS_DEFECTO = 24;
+export const SLA_HORAS_POR_TIPO: Record<string, number> = {
+  soporte: 24,
+  garantia: 48,
+  queja: 24,
+  reclamo: 24,
+  peticion: 48,
+};

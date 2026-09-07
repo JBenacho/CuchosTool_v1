@@ -5,7 +5,6 @@ import { randomUUID } from 'crypto';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { casoEvidencias, casoMensajes, casos, pagos, reembolsos } from '../../bd/esquema';
-import { config } from '../../config';
 import {
   CASO_ABIERTO,
   CASO_EN_PROCESO,
@@ -18,6 +17,8 @@ import {
   PRIORIDAD_URGENTE,
   PRIORIDADES_CASO,
   REEMBOLSO_PENDIENTE,
+  SLA_HORAS_DEFECTO,
+  SLA_HORAS_POR_TIPO,
   TIPOS_CASO,
   TIPOS_EVIDENCIA,
   TRANSICIONES_CASO,
@@ -48,6 +49,14 @@ function generarReferenciaCaso(): string {
 export function esTransicionCasoValida(estadoActual: string, estadoNuevo: string): boolean {
   const permitidas = TRANSICIONES_CASO[estadoActual] || [];
   return permitidas.includes(estadoNuevo);
+}
+
+/**
+ * Devuelve las horas de SLA de primera respuesta para un tipo de caso (CU-SGC-011).
+ * Pura y testeable: usa la tabla de dominio con respaldo al valor por defecto.
+ */
+export function slaHorasParaTipo(tipo: string): number {
+  return SLA_HORAS_POR_TIPO[tipo] || SLA_HORAS_DEFECTO;
 }
 
 /**
@@ -82,8 +91,8 @@ export async function crearCaso(datos: DatosCaso): Promise<ResultadoCaso> {
       tipo: tipo,
       estado: CASO_ABIERTO,
       prioridad: PRIORIDAD_CASO_MEDIA,
-      // SLA de primera respuesta: vence segun las horas configuradas (CU-SGC-011).
-      slaVenceEn: calcularVencimientoSla(new Date(), config.slaHorasRespuesta),
+      // SLA de primera respuesta por tipo de caso (CU-SGC-011).
+      slaVenceEn: calcularVencimientoSla(new Date(), slaHorasParaTipo(tipo)),
       clienteId: datos.clienteId || null,
       pedidoId: datos.pedidoId || null,
       emprendedorId: datos.emprendedorId || null,
@@ -379,14 +388,12 @@ export async function asignarCaso(referencia: string, usuarioId: string): Promis
     .update(casos)
     .set({ asignadoA: usuarioId, actualizadoEn: new Date() })
     .where(eq(casos.id, caso.id));
-  await base
-    .insert(casoMensajes)
-    .values({
-      casoId: caso.id,
-      autorTipo: 'sistema',
-      autorId: null,
-      contenido: 'Caso asignado al agente ' + usuarioId + ' (CU-SGC-007).',
-    });
+  await base.insert(casoMensajes).values({
+    casoId: caso.id,
+    autorTipo: 'sistema',
+    autorId: null,
+    contenido: 'Caso asignado al agente ' + usuarioId + ' (CU-SGC-007).',
+  });
   return { ok: true, datos: { referenciaCaso: referencia, asignadoA: usuarioId } };
 }
 
