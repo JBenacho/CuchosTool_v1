@@ -90,10 +90,25 @@ export async function enrolarEmprendedor(
 }
 
 /**
- * Lista emprendedores (consola del Gerente de Zona, CU-EM-002).
+ * Lista emprendedores (CU-EM-002). Aislamiento por zona (EM-020/ABAC):
+ * si se pasa zonaId, solo se devuelven los emprendedores de esa zona.
  */
-export async function listarEmprendedores() {
+export async function listarEmprendedores(zonaId?: string) {
+  if (zonaId) {
+    return base
+      .select()
+      .from(emprendedores)
+      .where(eq(emprendedores.zonaId, zonaId))
+      .orderBy(asc(emprendedores.id));
+  }
   return base.select().from(emprendedores).orderBy(asc(emprendedores.id));
+}
+
+/**
+ * Obtiene un emprendedor por id (para validar alcance de zona en acciones administrativas).
+ */
+export async function obtenerEmprendedor(id: number) {
+  return base.select().from(emprendedores).where(eq(emprendedores.id, id)).limit(1);
 }
 
 /**

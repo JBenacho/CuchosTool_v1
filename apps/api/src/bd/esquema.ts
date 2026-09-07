@@ -293,6 +293,17 @@ export const accionesCorrectivas = pgTable('acciones_correctivas', {
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   cerradaEn: timestamp('cerrada_en', { withTimezone: true }),
 });
+// Proveedores del ERP (F5, CU-ERP-001).
+export const proveedores = pgTable('proveedores', {
+  id: serial('id').primaryKey(),
+  nit: text('nit').notNull().unique(),
+  nombre: text('nombre').notNull(),
+  contacto: text('contacto'),
+  telefono: text('telefono'),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
