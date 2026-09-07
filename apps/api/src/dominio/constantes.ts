@@ -92,3 +92,23 @@ export const GARANTIA_PROCEDENTE = 'procedente';
 export const GARANTIA_IMPROCEDENTE = 'improcedente';
 export const REEMBOLSO_PENDIENTE = 'pendiente';
 export const REEMBOLSO_COMPLETADO = 'completado';
+
+// Prioridades de caso (CU-SGC-008) y SLA (CU-SGC-011): el vencimiento se calcula
+// con la hora de respuesta configurada (SLA_HORAS_RESPUESTA en config).
+export const PRIORIDAD_BAJA = 'baja';
+export const PRIORIDAD_MEDIA = 'media';
+export const PRIORIDAD_ALTA = 'alta';
+export const PRIORIDAD_URGENTE = 'urgente';
+export const PRIORIDADES_CASO = [
+  PRIORIDAD_BAJA,
+  PRIORIDAD_MEDIA,
+  PRIORIDAD_ALTA,
+  PRIORIDAD_URGENTE,
+] as const;
+
+// Ofertas del emprendedor (CU-EM-013).
+export const OFERTA_ACTIVA = 'activa';
+export const OFERTA_INACTIVA = 'inactiva';
+
+// Estados de pedido considerados venta efectiva para reportes del emprendedor (CU-EM-014).
+export const ESTADOS_PEDIDO_VENTA_EFECTIVA = ['pagado', 'entregado'] as const;

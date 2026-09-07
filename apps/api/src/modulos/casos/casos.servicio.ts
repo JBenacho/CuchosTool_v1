@@ -2,16 +2,21 @@
 // Reglas: caso unico y trazable; transiciones de estado restringidas;
 // SGC no mueve dinero ni mercancia (RN-GOB): solo coordina.
 import { randomUUID } from 'crypto';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { casoMensajes, casos, pagos, reembolsos } from '../../bd/esquema';
+import { config } from '../../config';
 import {
   CASO_ABIERTO,
+  CASO_EN_PROCESO,
   GARANTIA_IMPROCEDENTE,
   GARANTIA_PROCEDENTE,
   GARANTIA_SOLICITADA,
   PAGO_APROBADO,
+  PRIORIDAD_ALTA,
   PRIORIDAD_CASO_MEDIA,
+  PRIORIDAD_URGENTE,
+  PRIORIDADES_CASO,
   REEMBOLSO_PENDIENTE,
   TIPOS_CASO,
   TRANSICIONES_CASO,
@@ -45,6 +50,22 @@ export function esTransicionCasoValida(estadoActual: string, estadoNuevo: string
 }
 
 /**
+ * Calcula el vencimiento del SLA de primera respuesta (pura y testeable).
+ * @param ahora instante de creacion del caso.
+ * @param horas horas de respuesta configuradas (SLA_HORAS_RESPUESTA).
+ */
+export function calcularVencimientoSla(ahora: Date, horas: number): Date {
+  return new Date(ahora.getTime() + horas * 3600 * 1000);
+}
+
+/**
+ * Valida una prioridad de caso (pura, CU-SGC-008).
+ */
+export function esPrioridadValida(prioridad: string): boolean {
+  return PRIORIDADES_CASO.includes(prioridad as (typeof PRIORIDADES_CASO)[number]);
+}
+
+/**
  * Crea un caso (CU-SGC-002) con tipo valido y estado abierto.
  */
 export async function crearCaso(datos: DatosCaso): Promise<ResultadoCaso> {
@@ -60,6 +81,8 @@ export async function crearCaso(datos: DatosCaso): Promise<ResultadoCaso> {
       tipo: tipo,
       estado: CASO_ABIERTO,
       prioridad: PRIORIDAD_CASO_MEDIA,
+      // SLA de primera respuesta: vence segun las horas configuradas (CU-SGC-011).
+      slaVenceEn: calcularVencimientoSla(new Date(), config.slaHorasRespuesta),
       clienteId: datos.clienteId || null,
       pedidoId: datos.pedidoId || null,
       emprendedorId: datos.emprendedorId || null,
@@ -240,4 +263,93 @@ export async function crearReembolso(referenciaCaso: string): Promise<ResultadoC
       montoCentavos: reembolsos.montoCentavos,
     });
   return { ok: true, datos: creado };
+}
+
+/**
+ * Cambia la prioridad de un caso (CU-SGC-008). Solo prioridades validas.
+ */
+export async function cambiarPrioridadCaso(
+  referencia: string,
+  prioridad: string,
+): Promise<ResultadoCaso> {
+  if (!esPrioridadValida(prioridad))
+    return { ok: false, codigoEstado: 400, error: 'prioridad_invalida' };
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(eq(casos.referenciaCaso, referencia))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  await base
+    .update(casos)
+    .set({ prioridad: prioridad, actualizadoEn: new Date() })
+    .where(eq(casos.id, caso.id));
+  return { ok: true, datos: { referenciaCaso: referencia, prioridad: prioridad } };
+}
+
+/**
+ * Escala un caso (CU-SGC-010): sube la prioridad un nivel y deja mensaje de sistema.
+ */
+export async function escalarCaso(referencia: string): Promise<ResultadoCaso> {
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(eq(casos.referenciaCaso, referencia))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  const prioridadNueva =
+    caso.prioridad === PRIORIDAD_ALTA || caso.prioridad === PRIORIDAD_URGENTE
+      ? PRIORIDAD_URGENTE
+      : PRIORIDAD_ALTA;
+  await base
+    .update(casos)
+    .set({ prioridad: prioridadNueva, actualizadoEn: new Date() })
+    .where(eq(casos.id, caso.id));
+  await base.insert(casoMensajes).values({
+    casoId: caso.id,
+    autorTipo: 'sistema',
+    autorId: null,
+    contenido: 'Caso escalado a prioridad ' + prioridadNueva + ' (CU-SGC-010).',
+  });
+  return { ok: true, datos: { referenciaCaso: referencia, prioridad: prioridadNueva } };
+}
+
+/**
+ * Bandeja operativa del equipo de soporte (CU-SGC-026): casos abiertos/en proceso
+ * ordenados por vencimiento de SLA (los que vencen primero, primero).
+ */
+export async function bandejaSoporte() {
+  return base
+    .select()
+    .from(casos)
+    .where(inArray(casos.estado, [CASO_ABIERTO, CASO_EN_PROCESO]))
+    .orderBy(asc(casos.slaVenceEn), asc(casos.id));
+}
+
+/**
+ * Registra la calificacion de satisfaccion del cliente (CU-SGC-018/019).
+ * Reglas: calificacion 1..5; solo el cliente dueno; una sola vez.
+ */
+export async function registrarSatisfaccion(
+  referencia: string,
+  clienteId: string,
+  calificacion: number,
+): Promise<ResultadoCaso> {
+  if (!(calificacion >= 1 && calificacion <= 5))
+    return { ok: false, codigoEstado: 400, error: 'calificacion_invalida' };
+  const filas = await base
+    .select()
+    .from(casos)
+    .where(and(eq(casos.referenciaCaso, referencia), eq(casos.clienteId, clienteId)))
+    .limit(1);
+  const caso = filas[0];
+  if (!caso) return { ok: false, codigoEstado: 404, error: 'caso_no_encontrado' };
+  if (caso.calificacion !== null) return { ok: false, codigoEstado: 409, error: 'ya_calificado' };
+  await base
+    .update(casos)
+    .set({ calificacion: calificacion, actualizadoEn: new Date() })
+    .where(eq(casos.id, caso.id));
+  return { ok: true, datos: { referenciaCaso: referencia, calificacion: calificacion } };
 }

@@ -5,10 +5,15 @@ import { registrarAuditoria } from '../administracion/auditoria';
 import {
   activarEmprendedor,
   avalarProducto,
+  cambiarEstadoOferta,
+  configurarMediosEmprendedor,
+  crearOferta,
   crearProductoEmprendedor,
   enrolarEmprendedor,
   listarEmprendedores,
+  listarOfertasEmprendedor,
   listarProductosEmprendedor,
+  reportesEmprendedor,
 } from './emprendedores.servicio';
 
 type CuerpoEnrolamiento = {
@@ -137,6 +142,101 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
         'ok',
       );
       return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.patch<{
+    Params: { id: string };
+    Body: { medioEnvio?: string; medioPagoElectronico?: string };
+  }>(
+    '/emprendedores/:id/medios',
+    {
+      preHandler: autenticar,
+      schema: {
+        tags: ['emprendedores'],
+        summary: 'Configurar medios de envio y pago (CU-EM-005/006)',
+      },
+    },
+    async function (solicitud, respuesta) {
+      const usuario = (solicitud as any).usuario || {};
+      const esPropietario = Number(usuario.emprendedorId) === Number(solicitud.params.id);
+      const esGestor = usuario.rol === ROL_GERENTE_ZONA || usuario.rol === ROL_ADMIN;
+      if (!esPropietario && !esGestor) return respuesta.code(403).send({ error: 'prohibido' });
+      const resultado = await configurarMediosEmprendedor(
+        Number(solicitud.params.id),
+        solicitud.body || {},
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.post<{
+    Body: { nombre: string; descuentoBps: number; iniciaEn: string; finalizaEn: string };
+  }>(
+    '/emprendedores/ofertas',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['emprendedores'], summary: 'Crear oferta (CU-EM-013)' },
+    },
+    async function (solicitud, respuesta) {
+      const emprendedorId = Number((solicitud as any).usuario?.emprendedorId || 0);
+      if (!(emprendedorId > 0))
+        return respuesta.code(403).send({ error: 'sin_emprendedor_vinculado' });
+      const resultado = await crearOferta(emprendedorId, solicitud.body || ({} as any));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.get(
+    '/emprendedores/ofertas',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['emprendedores'], summary: 'Listar ofertas propias (CU-EM-013)' },
+    },
+    async function (solicitud, respuesta) {
+      const emprendedorId = Number((solicitud as any).usuario?.emprendedorId || 0);
+      if (!(emprendedorId > 0))
+        return respuesta.code(403).send({ error: 'sin_emprendedor_vinculado' });
+      return { data: await listarOfertasEmprendedor(emprendedorId) };
+    },
+  );
+
+  aplicacion.patch<{ Params: { id: string }; Body: { estado: string } }>(
+    '/emprendedores/ofertas/:id/estado',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['emprendedores'], summary: 'Activar o inactivar oferta (CU-EM-013)' },
+    },
+    async function (solicitud, respuesta) {
+      const emprendedorId = Number((solicitud as any).usuario?.emprendedorId || 0);
+      if (!(emprendedorId > 0))
+        return respuesta.code(403).send({ error: 'sin_emprendedor_vinculado' });
+      const resultado = await cambiarEstadoOferta(
+        Number(solicitud.params.id),
+        emprendedorId,
+        String(solicitud.body?.estado || ''),
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return { data: resultado.datos };
+    },
+  );
+
+  aplicacion.get(
+    '/emprendedores/reportes',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['emprendedores'], summary: 'Reportes de ventas propias (CU-EM-014)' },
+    },
+    async function (solicitud, respuesta) {
+      const emprendedorId = Number((solicitud as any).usuario?.emprendedorId || 0);
+      if (!(emprendedorId > 0))
+        return respuesta.code(403).send({ error: 'sin_emprendedor_vinculado' });
+      return { data: await reportesEmprendedor(emprendedorId) };
     },
   );
 }
