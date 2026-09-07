@@ -113,6 +113,39 @@
 .panel-head h2 {
   font-size: var(--ct-text-lg);
 }
+/* Login y layout del ERP (F5). */
+.login-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-space-2);
+}
+.login-box h2 {
+  font-size: var(--ct-text-lg);
+}
+.side-nav a {
+  cursor: pointer;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--ct-space-4);
+  margin-bottom: var(--ct-space-5);
+}
+.kpi-card {
+  background: var(--ct-bg-2);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-lg);
+  padding: var(--ct-space-4);
+  box-shadow: var(--ct-shadow-sm);
+}
+.kpi-card strong {
+  display: block;
+  font-size: var(--ct-text-2xl);
+  color: var(--ct-text-strong);
+  font-family: var(--ct-font-display);
+  margin-top: var(--ct-space-1);
+}
+
 .app-footer {
   padding: var(--ct-space-4);
   color: var(--ct-text-faint);
