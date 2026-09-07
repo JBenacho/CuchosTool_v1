@@ -53,8 +53,9 @@ async function peticion(
 ): Promise<Response> {
   return fetch(API + ruta, {
     method: metodo,
+    // Content-Type solo cuando hay cuerpo: evita rechazo por cuerpo vacio (PATCH inactivar).
     headers: {
-      'Content-Type': 'application/json',
+      ...(cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: 'Bearer ' + token } : {}),
     },
     body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
