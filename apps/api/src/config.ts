@@ -17,8 +17,6 @@ export const config = {
   intervaloPublicadorMs: enteroDeEntorno('PUBLICADOR_INTERVALO_MS', 15000),
   // Comision por producto vendido en puntos basicos (0 = sin comision; valor de negocio TBD, BL-051).
   tasaComisionBps: enteroDeEntorno('TASA_COMISION_BPS', 0),
-  // SLA de primera respuesta en horas (CU-SGC-011); el valor de negocio final se cierra con el spike BL-058.
-  slaHorasRespuesta: enteroDeEntorno('SLA_HORAS_RESPUESTA', 24),
   // Umbral de casos abiertos que dispara alerta de calidad (CU-SGC-021).
   umbralCasosAbiertosAlerta: enteroDeEntorno('UMBRAL_CASOS_ABIERTOS_ALERTA', 10),
   urlBaseDatos:

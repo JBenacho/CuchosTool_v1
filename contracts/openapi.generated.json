@@ -1,1474 +1,1312 @@
 ﻿{
-    "openapi":  "3.0.3",
-    "info":  {
-                 "title":  "CuchosTool API",
-                 "description":  "Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.",
-                 "version":  "0.2.0"
-             },
-    "components":  {
-                       "schemas":  {
-
-                                   }
-                   },
-    "paths":  {
-                  "/salud/estado":  {
-                                        "get":  {
-                                                    "responses":  {
-                                                                      "200":  {
-                                                                                  "description":  "Default Response"
-                                                                              }
-                                                                  }
-                                                }
-                                    },
-                  "/salud/listo":  {
-                                       "get":  {
-                                                   "responses":  {
-                                                                     "200":  {
-                                                                                 "description":  "Default Response"
-                                                                             }
-                                                                 }
-                                               }
-                                   },
-                  "/autenticacion/registro":  {
-                                                  "post":  {
-                                                               "summary":  "Registrar cliente E-Commerce",
-                                                               "tags":  [
-                                                                            "autenticacion"
-                                                                        ],
-                                                               "requestBody":  {
-                                                                                   "required":  true,
-                                                                                   "content":  {
-                                                                                                   "application/json":  {
-                                                                                                                            "schema":  {
-                                                                                                                                           "type":  "object",
-                                                                                                                                           "required":  [
-                                                                                                                                                            "correo",
-                                                                                                                                                            "contrasena",
-                                                                                                                                                            "nombre"
-                                                                                                                                                        ],
-                                                                                                                                           "properties":  {
-                                                                                                                                                              "correo":  {
-                                                                                                                                                                             "type":  "string"
-                                                                                                                                                                         },
-                                                                                                                                                              "contrasena":  {
-                                                                                                                                                                                 "type":  "string"
-                                                                                                                                                                             },
-                                                                                                                                                              "nombre":  {
-                                                                                                                                                                             "type":  "string"
-                                                                                                                                                                         }
-                                                                                                                                                          }
-                                                                                                                                       }
-                                                                                                                        }
-                                                                                               }
-                                                                               },
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Default Response"
-                                                                                         }
-                                                                             }
-                                                           }
-                                              },
-                  "/autenticacion/ingreso":  {
-                                                 "post":  {
-                                                              "summary":  "Iniciar sesion de cliente",
-                                                              "tags":  [
-                                                                           "autenticacion"
-                                                                       ],
-                                                              "requestBody":  {
-                                                                                  "required":  true,
-                                                                                  "content":  {
-                                                                                                  "application/json":  {
-                                                                                                                           "schema":  {
-                                                                                                                                          "type":  "object",
-                                                                                                                                          "required":  [
-                                                                                                                                                           "correo",
-                                                                                                                                                           "contrasena"
-                                                                                                                                                       ],
-                                                                                                                                          "properties":  {
-                                                                                                                                                             "correo":  {
-                                                                                                                                                                            "type":  "string"
-                                                                                                                                                                        },
-                                                                                                                                                             "contrasena":  {
-                                                                                                                                                                                "type":  "string"
-                                                                                                                                                                            }
-                                                                                                                                                         }
-                                                                                                                                      }
-                                                                                                                       }
-                                                                                              }
-                                                                              },
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          }
-                                             },
-                  "/autenticacion/ingreso-interno":  {
-                                                         "post":  {
-                                                                      "summary":  "Iniciar sesion de usuario interno",
-                                                                      "tags":  [
-                                                                                   "autenticacion"
-                                                                               ],
-                                                                      "requestBody":  {
-                                                                                          "required":  true,
-                                                                                          "content":  {
-                                                                                                          "application/json":  {
-                                                                                                                                   "schema":  {
-                                                                                                                                                  "type":  "object",
-                                                                                                                                                  "required":  [
-                                                                                                                                                                   "correo",
-                                                                                                                                                                   "contrasena"
-                                                                                                                                                               ],
-                                                                                                                                                  "properties":  {
-                                                                                                                                                                     "correo":  {
-                                                                                                                                                                                    "type":  "string"
-                                                                                                                                                                                },
-                                                                                                                                                                     "contrasena":  {
-                                                                                                                                                                                        "type":  "string"
-                                                                                                                                                                                    }
-                                                                                                                                                                 }
-                                                                                                                                              }
-                                                                                                                               }
-                                                                                                      }
-                                                                                      },
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Default Response"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                     },
-                  "/administracion/clientes":  {
-                                                   "get":  {
-                                                               "summary":  "Listar clientes (ADMIN)",
-                                                               "tags":  [
-                                                                            "administracion"
-                                                                        ],
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Default Response"
-                                                                                         }
-                                                                             }
-                                                           }
-                                               },
-                  "/administracion/pedidos":  {
-                                                  "get":  {
-                                                              "summary":  "Listar pedidos (ADMIN / GERENTE_ZONA)",
-                                                              "tags":  [
-                                                                           "administracion"
-                                                                       ],
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          }
-                                              },
-                  "/administracion/auditoria":  {
-                                                    "get":  {
-                                                                "summary":  "Consultar auditoria de operaciones (ADMIN / AUDITOR)",
-                                                                "tags":  [
-                                                                             "administracion"
-                                                                         ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Default Response"
-                                                                                          }
-                                                                              }
-                                                            }
-                                                },
-                  "/catalogo/productos":  {
-                                              "get":  {
-                                                          "summary":  "Listar productos activos del catalogo",
-                                                          "tags":  [
-                                                                       "catalogo"
-                                                                   ],
-                                                          "description":  "Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.",
-                                                          "parameters":  [
-                                                                             {
-                                                                                 "schema":  {
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                                 "in":  "query",
-                                                                                 "name":  "q",
-                                                                                 "required":  false
-                                                                             },
-                                                                             {
-                                                                                 "schema":  {
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                                 "in":  "query",
-                                                                                 "name":  "limit",
-                                                                                 "required":  false
-                                                                             },
-                                                                             {
-                                                                                 "schema":  {
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                                 "in":  "query",
-                                                                                 "name":  "offset",
-                                                                                 "required":  false
-                                                                             }
-                                                                         ],
-                                                          "responses":  {
-                                                                            "200":  {
-                                                                                        "description":  "Default Response",
-                                                                                        "content":  {
-                                                                                                        "application/json":  {
-                                                                                                                                 "schema":  {
-                                                                                                                                                "type":  "object",
-                                                                                                                                                "properties":  {
-                                                                                                                                                                   "data":  {
-                                                                                                                                                                                "type":  "array",
-                                                                                                                                                                                "items":  {
-                                                                                                                                                                                              "type":  "object",
-                                                                                                                                                                                              "properties":  {
-                                                                                                                                                                                                                 "id":  {
-                                                                                                                                                                                                                            "type":  "integer"
-                                                                                                                                                                                                                        },
-                                                                                                                                                                                                                 "slug":  {
-                                                                                                                                                                                                                              "type":  "string"
-                                                                                                                                                                                                                          },
-                                                                                                                                                                                                                 "nombre":  {
-                                                                                                                                                                                                                                "type":  "string"
-                                                                                                                                                                                                                            },
-                                                                                                                                                                                                                 "descripcion":  {
-                                                                                                                                                                                                                                     "type":  [
-                                                                                                                                                                                                                                                  "null",
-                                                                                                                                                                                                                                                  "string"
-                                                                                                                                                                                                                                              ]
-                                                                                                                                                                                                                                 },
-                                                                                                                                                                                                                 "precioCentavos":  {
-                                                                                                                                                                                                                                        "type":  "integer"
-                                                                                                                                                                                                                                    },
-                                                                                                                                                                                                                 "moneda":  {
-                                                                                                                                                                                                                                "type":  "string"
-                                                                                                                                                                                                                            },
-                                                                                                                                                                                                                 "stock":  {
-                                                                                                                                                                                                                               "type":  "integer"
-                                                                                                                                                                                                                           },
-                                                                                                                                                                                                                 "urlImagen":  {
-                                                                                                                                                                                                                                   "type":  [
-                                                                                                                                                                                                                                                "null",
-                                                                                                                                                                                                                                                "string"
-                                                                                                                                                                                                                                            ]
-                                                                                                                                                                                                                               },
-                                                                                                                                                                                                                 "categoria":  {
-                                                                                                                                                                                                                                   "type":  [
-                                                                                                                                                                                                                                                "null",
-                                                                                                                                                                                                                                                "string"
-                                                                                                                                                                                                                                            ]
-                                                                                                                                                                                                                               },
-                                                                                                                                                                                                                 "precio":  {
-                                                                                                                                                                                                                                "type":  "string"
-                                                                                                                                                                                                                            }
-                                                                                                                                                                                                             }
-                                                                                                                                                                                          }
-                                                                                                                                                                            },
-                                                                                                                                                                   "meta":  {
-                                                                                                                                                                                "type":  "object",
-                                                                                                                                                                                "properties":  {
-                                                                                                                                                                                                   "limite":  {
-                                                                                                                                                                                                                  "type":  "integer"
-                                                                                                                                                                                                              },
-                                                                                                                                                                                                   "desplazamiento":  {
-                                                                                                                                                                                                                          "type":  "integer"
-                                                                                                                                                                                                                      },
-                                                                                                                                                                                                   "cantidad":  {
-                                                                                                                                                                                                                    "type":  "integer"
-                                                                                                                                                                                                                }
-                                                                                                                                                                                               }
-                                                                                                                                                                            }
-                                                                                                                                                               }
-                                                                                                                                            }
-                                                                                                                             }
-                                                                                                    }
-                                                                                    }
-                                                                        }
-                                                      }
-                                          },
-                  "/catalogo/productos/{id}":  {
-                                                   "get":  {
-                                                               "summary":  "Consultar ficha de producto",
-                                                               "tags":  [
-                                                                            "catalogo"
-                                                                        ],
-                                                               "description":  "Ficha de producto activo por id (CU-EC-004).",
-                                                               "parameters":  [
-                                                                                  {
-                                                                                      "schema":  {
-                                                                                                     "type":  "string"
-                                                                                                 },
-                                                                                      "in":  "path",
-                                                                                      "name":  "id",
-                                                                                      "required":  true
-                                                                                  }
-                                                                              ],
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Default Response",
-                                                                                             "content":  {
-                                                                                                             "application/json":  {
-                                                                                                                                      "schema":  {
-                                                                                                                                                     "type":  "object",
-                                                                                                                                                     "properties":  {
-                                                                                                                                                                        "data":  {
-                                                                                                                                                                                     "type":  "object",
-                                                                                                                                                                                     "properties":  {
-                                                                                                                                                                                                        "id":  {
-                                                                                                                                                                                                                   "type":  "integer"
-                                                                                                                                                                                                               },
-                                                                                                                                                                                                        "slug":  {
-                                                                                                                                                                                                                     "type":  "string"
-                                                                                                                                                                                                                 },
-                                                                                                                                                                                                        "nombre":  {
-                                                                                                                                                                                                                       "type":  "string"
-                                                                                                                                                                                                                   },
-                                                                                                                                                                                                        "descripcion":  {
-                                                                                                                                                                                                                            "type":  [
-                                                                                                                                                                                                                                         "null",
-                                                                                                                                                                                                                                         "string"
-                                                                                                                                                                                                                                     ]
-                                                                                                                                                                                                                        },
-                                                                                                                                                                                                        "precioCentavos":  {
-                                                                                                                                                                                                                               "type":  "integer"
-                                                                                                                                                                                                                           },
-                                                                                                                                                                                                        "moneda":  {
-                                                                                                                                                                                                                       "type":  "string"
-                                                                                                                                                                                                                   },
-                                                                                                                                                                                                        "stock":  {
-                                                                                                                                                                                                                      "type":  "integer"
-                                                                                                                                                                                                                  },
-                                                                                                                                                                                                        "urlImagen":  {
-                                                                                                                                                                                                                          "type":  [
-                                                                                                                                                                                                                                       "null",
-                                                                                                                                                                                                                                       "string"
-                                                                                                                                                                                                                                   ]
-                                                                                                                                                                                                                      },
-                                                                                                                                                                                                        "categoria":  {
-                                                                                                                                                                                                                          "type":  [
-                                                                                                                                                                                                                                       "null",
-                                                                                                                                                                                                                                       "string"
-                                                                                                                                                                                                                                   ]
-                                                                                                                                                                                                                      },
-                                                                                                                                                                                                        "precio":  {
-                                                                                                                                                                                                                       "type":  "string"
-                                                                                                                                                                                                                   }
-                                                                                                                                                                                                    }
-                                                                                                                                                                                 }
-                                                                                                                                                                    }
-                                                                                                                                                 }
-                                                                                                                                  }
-                                                                                                         }
-                                                                                         },
-                                                                                 "404":  {
-                                                                                             "description":  "Default Response",
-                                                                                             "content":  {
-                                                                                                             "application/json":  {
-                                                                                                                                      "schema":  {
-                                                                                                                                                     "type":  "object",
-                                                                                                                                                     "properties":  {
-                                                                                                                                                                        "error":  {
-                                                                                                                                                                                      "type":  "string"
-                                                                                                                                                                                  }
-                                                                                                                                                                    }
-                                                                                                                                                 }
-                                                                                                                                  }
-                                                                                                         }
-                                                                                         }
-                                                                             }
-                                                           }
-                                               },
-                  "/carrito":  {
-                                   "get":  {
-                                               "summary":  "Consultar carrito",
-                                               "tags":  [
-                                                            "carrito"
-                                                        ],
-                                               "description":  "Contenido y total del carrito del cliente autenticado (CU-EC-007).",
-                                               "responses":  {
-                                                                 "200":  {
-                                                                             "description":  "Default Response"
-                                                                         }
-                                                             }
-                                           }
-                               },
-                  "/carrito/articulos":  {
-                                             "post":  {
-                                                          "summary":  "Agregar producto al carrito",
-                                                          "tags":  [
-                                                                       "carrito"
-                                                                   ],
-                                                          "requestBody":  {
-                                                                              "required":  true,
-                                                                              "content":  {
-                                                                                              "application/json":  {
-                                                                                                                       "schema":  {
-                                                                                                                                      "type":  "object",
-                                                                                                                                      "required":  [
-                                                                                                                                                       "productoId",
-                                                                                                                                                       "cantidad"
-                                                                                                                                                   ],
-                                                                                                                                      "properties":  {
-                                                                                                                                                         "productoId":  {
-                                                                                                                                                                            "type":  "integer"
-                                                                                                                                                                        },
-                                                                                                                                                         "cantidad":  {
-                                                                                                                                                                          "type":  "integer"
-                                                                                                                                                                      }
-                                                                                                                                                     }
-                                                                                                                                  }
-                                                                                                                   }
-                                                                                          }
-                                                                          },
-                                                          "responses":  {
-                                                                            "200":  {
-                                                                                        "description":  "Default Response"
-                                                                                    }
-                                                                        }
-                                                      }
-                                         },
-                  "/carrito/articulos/{productoId}":  {
-                                                          "patch":  {
-                                                                        "summary":  "Actualizar cantidad",
-                                                                        "tags":  [
-                                                                                     "carrito"
-                                                                                 ],
-                                                                        "requestBody":  {
-                                                                                            "required":  true,
-                                                                                            "content":  {
-                                                                                                            "application/json":  {
-                                                                                                                                     "schema":  {
-                                                                                                                                                    "type":  "object",
-                                                                                                                                                    "required":  [
-                                                                                                                                                                     "cantidad"
-                                                                                                                                                                 ],
-                                                                                                                                                    "properties":  {
-                                                                                                                                                                       "cantidad":  {
-                                                                                                                                                                                        "type":  "integer"
-                                                                                                                                                                                    }
-                                                                                                                                                                   }
-                                                                                                                                                }
-                                                                                                                                 }
-                                                                                                        }
-                                                                                        },
-                                                                        "parameters":  [
-                                                                                           {
-                                                                                               "schema":  {
-                                                                                                              "type":  "string"
-                                                                                                          },
-                                                                                               "in":  "path",
-                                                                                               "name":  "productoId",
-                                                                                               "required":  true
-                                                                                           }
-                                                                                       ],
-                                                                        "responses":  {
-                                                                                          "200":  {
-                                                                                                      "description":  "Default Response"
-                                                                                                  }
-                                                                                      }
-                                                                    },
-                                                          "delete":  {
-                                                                         "summary":  "Quitar producto del carrito",
-                                                                         "tags":  [
-                                                                                      "carrito"
-                                                                                  ],
-                                                                         "parameters":  [
-                                                                                            {
-                                                                                                "schema":  {
-                                                                                                               "type":  "string"
-                                                                                                           },
-                                                                                                "in":  "path",
-                                                                                                "name":  "productoId",
-                                                                                                "required":  true
-                                                                                            }
-                                                                                        ],
-                                                                         "responses":  {
-                                                                                           "200":  {
-                                                                                                       "description":  "Default Response"
-                                                                                                   }
-                                                                                       }
-                                                                     }
-                                                      },
-                  "/carrito/pagar":  {
-                                         "post":  {
-                                                      "summary":  "Crear pedido desde el carrito",
-                                                      "tags":  [
-                                                                   "carrito"
-                                                               ],
-                                                      "description":  "Vacia el carrito y crea el pedido (CU-EC-008).",
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
-                                                                                }
-                                                                    }
-                                                  }
-                                     },
-                  "/pedidos":  {
-                                   "post":  {
-                                                "summary":  "Crear pedido unico desde checkout",
-                                                "tags":  [
-                                                             "pedidos"
-                                                         ],
-                                                "description":  "Transaccion ACID + buzon OrderCreated. Idempotency-Key opcional (BL-023).",
-                                                "requestBody":  {
-                                                                    "required":  true,
-                                                                    "content":  {
-                                                                                    "application/json":  {
-                                                                                                             "schema":  {
-                                                                                                                            "type":  "object",
-                                                                                                                            "required":  [
-                                                                                                                                             "articulos"
-                                                                                                                                         ],
-                                                                                                                            "properties":  {
-                                                                                                                                               "articulos":  {
-                                                                                                                                                                 "type":  "array",
-                                                                                                                                                                 "items":  {
-                                                                                                                                                                               "type":  "object",
-                                                                                                                                                                               "required":  [
-                                                                                                                                                                                                "productoId",
-                                                                                                                                                                                                "cantidad"
-                                                                                                                                                                                            ],
-                                                                                                                                                                               "properties":  {
-                                                                                                                                                                                                  "productoId":  {
-                                                                                                                                                                                                                     "type":  "integer"
-                                                                                                                                                                                                                 },
-                                                                                                                                                                                                  "cantidad":  {
-                                                                                                                                                                                                                   "type":  "integer"
-                                                                                                                                                                                                               }
-                                                                                                                                                                                              }
-                                                                                                                                                                           }
-                                                                                                                                                             }
-                                                                                                                                           }
-                                                                                                                        }
-                                                                                                         }
-                                                                                }
-                                                                },
-                                                "responses":  {
-                                                                  "200":  {
-                                                                              "description":  "Default Response"
-                                                                          }
-                                                              }
-                                            }
-                               },
-                  "/pedidos/{referencia}":  {
-                                                "get":  {
-                                                            "summary":  "Consultar pedido propio",
-                                                            "tags":  [
-                                                                         "pedidos"
-                                                                     ],
-                                                            "description":  "Pedido por referencia del cliente autenticado (CU-EC-009).",
-                                                            "parameters":  [
-                                                                               {
-                                                                                   "schema":  {
-                                                                                                  "type":  "string"
-                                                                                              },
-                                                                                   "in":  "path",
-                                                                                   "name":  "referencia",
-                                                                                   "required":  true
-                                                                               }
-                                                                           ],
-                                                            "responses":  {
-                                                                              "200":  {
-                                                                                          "description":  "Default Response"
-                                                                                      }
-                                                                          }
-                                                        }
-                                            },
-                  "/pagos/iniciar":  {
-                                         "post":  {
-                                                      "summary":  "Iniciar pago Wompi del pedido",
-                                                      "tags":  [
-                                                                   "pagos"
-                                                               ],
-                                                      "requestBody":  {
-                                                                          "required":  true,
-                                                                          "content":  {
-                                                                                          "application/json":  {
-                                                                                                                   "schema":  {
-                                                                                                                                  "type":  "object",
-                                                                                                                                  "required":  [
-                                                                                                                                                   "referenciaPedido"
-                                                                                                                                               ],
-                                                                                                                                  "properties":  {
-                                                                                                                                                     "referenciaPedido":  {
-                                                                                                                                                                              "type":  "string"
-                                                                                                                                                                          }
-                                                                                                                                                 }
-                                                                                                                              }
-                                                                                                               }
-                                                                                      }
-                                                                      },
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
-                                                                                }
-                                                                    }
-                                                  }
-                                     },
-                  "/pagos/{referenciaPago}":  {
-                                                  "get":  {
-                                                              "summary":  "Consultar estado del pago",
-                                                              "tags":  [
-                                                                           "pagos"
-                                                                       ],
-                                                              "description":  "Estado del pago propio del cliente.",
-                                                              "parameters":  [
-                                                                                 {
-                                                                                     "schema":  {
-                                                                                                    "type":  "string"
-                                                                                                },
-                                                                                     "in":  "path",
-                                                                                     "name":  "referenciaPago",
-                                                                                     "required":  true
-                                                                                 }
-                                                                             ],
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          }
-                                              },
-                  "/pagos/simular/{referenciaPago}":  {
-                                                          "post":  {
-                                                                       "summary":  "(DEV) Simular notificacion de pago del proveedor",
-                                                                       "tags":  [
-                                                                                    "pagos"
-                                                                                ],
-                                                                       "parameters":  [
-                                                                                          {
-                                                                                              "schema":  {
-                                                                                                             "type":  "string"
-                                                                                                         },
-                                                                                              "in":  "path",
-                                                                                              "name":  "referenciaPago",
-                                                                                              "required":  true
-                                                                                          }
-                                                                                      ],
-                                                                       "responses":  {
-                                                                                         "200":  {
-                                                                                                     "description":  "Default Response"
-                                                                                                 }
-                                                                                     }
-                                                                   }
-                                                      },
-                  "/buzon/pendientes":  {
-                                            "get":  {
-                                                        "summary":  "Eventos pendientes de publicacion",
-                                                        "tags":  [
-                                                                     "eventos"
-                                                                 ],
-                                                        "description":  "Cola del buzon transaccional pendiente.",
-                                                        "responses":  {
-                                                                          "200":  {
-                                                                                      "description":  "Default Response"
-                                                                                  }
-                                                                      }
-                                                    }
-                                        },
-                  "/buzon/procesar":  {
-                                          "post":  {
-                                                       "summary":  "Procesar buzon pendiente",
-                                                       "tags":  [
-                                                                    "eventos"
-                                                                ],
-                                                       "description":  "Ejecuta una tanda del publicador (dev).",
-                                                       "responses":  {
-                                                                         "200":  {
-                                                                                     "description":  "Default Response"
-                                                                                 }
-                                                                     }
-                                                   }
-                                      },
-                  "/buzon/publicados":  {
-                                            "get":  {
-                                                        "summary":  "Eventos publicados",
-                                                        "tags":  [
-                                                                     "eventos"
-                                                                 ],
-                                                        "description":  "Evidencia local de publicacion (topico + carga).",
-                                                        "responses":  {
-                                                                          "200":  {
-                                                                                      "description":  "Default Response"
-                                                                                  }
-                                                                      }
-                                                    }
-                                        },
-                  "/buzon/fallidos":  {
-                                          "get":  {
-                                                      "summary":  "Eventos fallidos (DLQ)",
-                                                      "tags":  [
-                                                                   "eventos"
-                                                               ],
-                                                      "description":  "Cola de fallos con motivo para reproceso (BL-091).",
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
-                                                                                }
-                                                                    }
-                                                  }
-                                      },
-                  "/emprendedores":  {
-                                         "post":  {
-                                                      "summary":  "Enrolar emprendedor (CU-EM-001)",
-                                                      "tags":  [
-                                                                   "emprendedores"
-                                                               ],
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Default Response"
-                                                                                }
-                                                                    }
-                                                  },
-                                         "get":  {
-                                                     "summary":  "Listar emprendedores (CU-EM-002)",
-                                                     "tags":  [
-                                                                  "emprendedores"
-                                                              ],
-                                                     "responses":  {
-                                                                       "200":  {
-                                                                                   "description":  "Default Response"
-                                                                               }
-                                                                   }
-                                                 }
-                                     },
-                  "/emprendedores/{id}/activar":  {
-                                                      "patch":  {
-                                                                    "summary":  "Validar y activar emprendedor (CU-EM-004)",
-                                                                    "tags":  [
-                                                                                 "emprendedores"
-                                                                             ],
-                                                                    "parameters":  [
-                                                                                       {
-                                                                                           "schema":  {
-                                                                                                          "type":  "string"
-                                                                                                      },
-                                                                                           "in":  "path",
-                                                                                           "name":  "id",
-                                                                                           "required":  true
-                                                                                       }
-                                                                                   ],
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Default Response"
-                                                                                              }
-                                                                                  }
-                                                                }
-                                                  },
-                  "/emprendedores/productos":  {
-                                                   "post":  {
-                                                                "summary":  "Crear producto del emprendedor (CU-EM-007)",
-                                                                "tags":  [
-                                                                             "emprendedores"
-                                                                         ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Default Response"
-                                                                                          }
-                                                                              }
-                                                            },
-                                                   "get":  {
-                                                               "summary":  "Listar productos propios (CU-EM-008)",
-                                                               "tags":  [
-                                                                            "emprendedores"
-                                                                        ],
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Default Response"
-                                                                                         }
-                                                                             }
-                                                           }
-                                               },
-                  "/emprendedores/productos/{id}/aval":  {
-                                                             "post":  {
-                                                                          "summary":  "Avalar o rechazar producto (CU-EM-011)",
-                                                                          "tags":  [
-                                                                                       "emprendedores"
-                                                                                   ],
-                                                                          "parameters":  [
-                                                                                             {
-                                                                                                 "schema":  {
-                                                                                                                "type":  "string"
-                                                                                                            },
-                                                                                                 "in":  "path",
-                                                                                                 "name":  "id",
-                                                                                                 "required":  true
-                                                                                             }
-                                                                                         ],
-                                                                          "responses":  {
-                                                                                            "200":  {
-                                                                                                        "description":  "Default Response"
-                                                                                                    }
-                                                                                        }
-                                                                      }
-                                                         },
-                  "/emprendedores/{id}/medios":  {
-                                                     "patch":  {
-                                                                   "summary":  "Configurar medios de envio y pago (CU-EM-005/006)",
-                                                                   "tags":  [
-                                                                                "emprendedores"
-                                                                            ],
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "schema":  {
-                                                                                                         "type":  "string"
-                                                                                                     },
-                                                                                          "in":  "path",
-                                                                                          "name":  "id",
-                                                                                          "required":  true
-                                                                                      }
-                                                                                  ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Default Response"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                 },
-                  "/emprendedores/ofertas":  {
-                                                 "post":  {
-                                                              "summary":  "Crear oferta (CU-EM-013)",
-                                                              "tags":  [
-                                                                           "emprendedores"
-                                                                       ],
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          },
-                                                 "get":  {
-                                                             "summary":  "Listar ofertas propias (CU-EM-013)",
-                                                             "tags":  [
-                                                                          "emprendedores"
-                                                                      ],
-                                                             "responses":  {
-                                                                               "200":  {
-                                                                                           "description":  "Default Response"
-                                                                                       }
-                                                                           }
-                                                         }
-                                             },
-                  "/emprendedores/ofertas/{id}/estado":  {
-                                                             "patch":  {
-                                                                           "summary":  "Activar o inactivar oferta (CU-EM-013)",
-                                                                           "tags":  [
-                                                                                        "emprendedores"
-                                                                                    ],
-                                                                           "parameters":  [
-                                                                                              {
-                                                                                                  "schema":  {
-                                                                                                                 "type":  "string"
-                                                                                                             },
-                                                                                                  "in":  "path",
-                                                                                                  "name":  "id",
-                                                                                                  "required":  true
-                                                                                              }
-                                                                                          ],
-                                                                           "responses":  {
-                                                                                             "200":  {
-                                                                                                         "description":  "Default Response"
-                                                                                                     }
-                                                                                         }
-                                                                       }
-                                                         },
-                  "/emprendedores/reportes":  {
-                                                  "get":  {
-                                                              "summary":  "Reportes de ventas propias (CU-EM-014)",
-                                                              "tags":  [
-                                                                           "emprendedores"
-                                                                       ],
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          }
-                                              },
-                  "/emprendedores/{id}/suspender":  {
-                                                        "patch":  {
-                                                                      "summary":  "Suspender emprendedor (CU-EM-002)",
-                                                                      "tags":  [
-                                                                                   "emprendedores"
-                                                                               ],
-                                                                      "parameters":  [
-                                                                                         {
-                                                                                             "schema":  {
-                                                                                                            "type":  "string"
-                                                                                                        },
-                                                                                             "in":  "path",
-                                                                                             "name":  "id",
-                                                                                             "required":  true
-                                                                                         }
-                                                                                     ],
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Default Response"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                    },
-                  "/emprendedores/{id}/logistica":  {
-                                                        "patch":  {
-                                                                      "summary":  "Configurar servicio logistico (CU-EM-019)",
-                                                                      "tags":  [
-                                                                                   "emprendedores"
-                                                                               ],
-                                                                      "parameters":  [
-                                                                                         {
-                                                                                             "schema":  {
-                                                                                                            "type":  "string"
-                                                                                                        },
-                                                                                             "in":  "path",
-                                                                                             "name":  "id",
-                                                                                             "required":  true
-                                                                                         }
-                                                                                     ],
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Default Response"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                    },
-                  "/emprendedores/{id}/documentos":  {
-                                                         "patch":  {
-                                                                       "summary":  "Marcar paquete documental completo (CU-EM-003)",
-                                                                       "tags":  [
-                                                                                    "emprendedores"
-                                                                                ],
-                                                                       "parameters":  [
-                                                                                          {
-                                                                                              "schema":  {
-                                                                                                             "type":  "string"
-                                                                                                         },
-                                                                                              "in":  "path",
-                                                                                              "name":  "id",
-                                                                                              "required":  true
-                                                                                          }
-                                                                                      ],
-                                                                       "responses":  {
-                                                                                         "200":  {
-                                                                                                     "description":  "Default Response"
-                                                                                                 }
-                                                                                     }
-                                                                   }
-                                                     },
-                  "/emprendedores/productos/{id}/multimedia-validar":  {
-                                                                           "post":  {
-                                                                                        "summary":  "Validar requisitos multimedia del producto (CU-EM-009)",
-                                                                                        "tags":  [
-                                                                                                     "emprendedores"
-                                                                                                 ],
-                                                                                        "parameters":  [
-                                                                                                           {
-                                                                                                               "schema":  {
-                                                                                                                              "type":  "string"
-                                                                                                                          },
-                                                                                                               "in":  "path",
-                                                                                                               "name":  "id",
-                                                                                                               "required":  true
-                                                                                                           }
-                                                                                                       ],
-                                                                                        "responses":  {
-                                                                                                          "200":  {
-                                                                                                                      "description":  "Default Response"
-                                                                                                                  }
-                                                                                                      }
-                                                                                    }
-                                                                       },
-                  "/dispersiones/entregas":  {
-                                                 "post":  {
-                                                              "summary":  "Confirmar entrega fisica (CU-EM-015)",
-                                                              "tags":  [
-                                                                           "emprendedores"
-                                                                       ],
-                                                              "responses":  {
-                                                                                "200":  {
-                                                                                            "description":  "Default Response"
-                                                                                        }
-                                                                            }
-                                                          }
-                                             },
-                  "/dispersiones":  {
-                                        "post":  {
-                                                     "summary":  "Autorizar dispersion (CU-EM-016)",
-                                                     "tags":  [
-                                                                  "emprendedores"
-                                                              ],
-                                                     "responses":  {
-                                                                       "200":  {
-                                                                                   "description":  "Default Response"
-                                                                               }
-                                                                   }
-                                                 }
-                                    },
-                  "/dispersiones/{referencia}/ejecutar":  {
-                                                              "post":  {
-                                                                           "summary":  "Ejecutar dispersion (CU-EM-017)",
-                                                                           "tags":  [
-                                                                                        "emprendedores"
-                                                                                    ],
-                                                                           "parameters":  [
-                                                                                              {
-                                                                                                  "schema":  {
-                                                                                                                 "type":  "string"
-                                                                                                             },
-                                                                                                  "in":  "path",
-                                                                                                  "name":  "referencia",
-                                                                                                  "required":  true
-                                                                                              }
-                                                                                          ],
-                                                                           "responses":  {
-                                                                                             "200":  {
-                                                                                                         "description":  "Default Response"
-                                                                                                     }
-                                                                                         }
-                                                                       }
-                                                          },
-                  "/casos":  {
-                                 "post":  {
-                                              "summary":  "Crear caso (CU-SGC-002)",
-                                              "tags":  [
-                                                           "casos"
-                                                       ],
-                                              "responses":  {
-                                                                "200":  {
-                                                                            "description":  "Default Response"
-                                                                        }
-                                                            }
-                                          },
-                                 "get":  {
-                                             "summary":  "Listar casos propios (CU-SGC-004)",
-                                             "tags":  [
-                                                          "casos"
-                                                      ],
-                                             "responses":  {
-                                                               "200":  {
-                                                                           "description":  "Default Response"
-                                                                       }
-                                                           }
-                                         }
-                             },
-                  "/casos/{referencia}":  {
-                                              "get":  {
-                                                          "summary":  "Consultar caso propio (CU-SGC-004)",
-                                                          "tags":  [
-                                                                       "casos"
-                                                                   ],
-                                                          "parameters":  [
-                                                                             {
-                                                                                 "schema":  {
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                                 "in":  "path",
-                                                                                 "name":  "referencia",
-                                                                                 "required":  true
-                                                                             }
-                                                                         ],
-                                                          "responses":  {
-                                                                            "200":  {
-                                                                                        "description":  "Default Response"
-                                                                                    }
-                                                                        }
-                                                      }
-                                          },
-                  "/casos/{referencia}/estado":  {
-                                                     "patch":  {
-                                                                   "summary":  "Cambiar estado del caso (CU-SGC-009)",
-                                                                   "tags":  [
-                                                                                "casos"
-                                                                            ],
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "schema":  {
-                                                                                                         "type":  "string"
-                                                                                                     },
-                                                                                          "in":  "path",
-                                                                                          "name":  "referencia",
-                                                                                          "required":  true
-                                                                                      }
-                                                                                  ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Default Response"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                 },
-                  "/casos/{referencia}/mensajes":  {
-                                                       "post":  {
-                                                                    "summary":  "Agregar mensaje al caso (CU-SGC-005)",
-                                                                    "tags":  [
-                                                                                 "casos"
-                                                                             ],
-                                                                    "parameters":  [
-                                                                                       {
-                                                                                           "schema":  {
-                                                                                                          "type":  "string"
-                                                                                                      },
-                                                                                           "in":  "path",
-                                                                                           "name":  "referencia",
-                                                                                           "required":  true
-                                                                                       }
-                                                                                   ],
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Default Response"
-                                                                                              }
-                                                                                  }
-                                                                }
-                                                   },
-                  "/casos/{referencia}/garantia":  {
-                                                       "patch":  {
-                                                                     "summary":  "Decidir garantia (CU-SGC-014)",
-                                                                     "tags":  [
-                                                                                  "casos"
-                                                                              ],
-                                                                     "parameters":  [
-                                                                                        {
-                                                                                            "schema":  {
-                                                                                                           "type":  "string"
-                                                                                                       },
-                                                                                            "in":  "path",
-                                                                                            "name":  "referencia",
-                                                                                            "required":  true
-                                                                                        }
-                                                                                    ],
-                                                                     "responses":  {
-                                                                                       "200":  {
-                                                                                                   "description":  "Default Response"
-                                                                                               }
-                                                                                   }
-                                                                 }
-                                                   },
-                  "/casos/{referencia}/logistica":  {
-                                                        "post":  {
-                                                                     "summary":  "Coordinar logistica del caso (CU-SGC-015)",
-                                                                     "tags":  [
-                                                                                  "casos"
-                                                                              ],
-                                                                     "parameters":  [
-                                                                                        {
-                                                                                            "schema":  {
-                                                                                                           "type":  "string"
-                                                                                                       },
-                                                                                            "in":  "path",
-                                                                                            "name":  "referencia",
-                                                                                            "required":  true
-                                                                                        }
-                                                                                    ],
-                                                                     "responses":  {
-                                                                                       "200":  {
-                                                                                                   "description":  "Default Response"
-                                                                                               }
-                                                                                   }
-                                                                 }
-                                                    },
-                  "/casos/{referencia}/reembolso":  {
-                                                        "post":  {
-                                                                     "summary":  "Solicitar reembolso a pagos (CU-SGC-016)",
-                                                                     "tags":  [
-                                                                                  "casos"
-                                                                              ],
-                                                                     "parameters":  [
-                                                                                        {
-                                                                                            "schema":  {
-                                                                                                           "type":  "string"
-                                                                                                       },
-                                                                                            "in":  "path",
-                                                                                            "name":  "referencia",
-                                                                                            "required":  true
-                                                                                        }
-                                                                                    ],
-                                                                     "responses":  {
-                                                                                       "200":  {
-                                                                                                   "description":  "Default Response"
-                                                                                               }
-                                                                                   }
-                                                                 }
-                                                    },
-                  "/casos/bandeja":  {
-                                         "get":  {
-                                                     "summary":  "Bandeja operativa de soporte (CU-SGC-026)",
-                                                     "tags":  [
-                                                                  "casos"
-                                                              ],
-                                                     "responses":  {
-                                                                       "200":  {
-                                                                                   "description":  "Default Response"
-                                                                               }
-                                                                   }
-                                                 }
-                                     },
-                  "/casos/{referencia}/prioridad":  {
-                                                        "patch":  {
-                                                                      "summary":  "Cambiar prioridad del caso (CU-SGC-008)",
-                                                                      "tags":  [
-                                                                                   "casos"
-                                                                               ],
-                                                                      "parameters":  [
-                                                                                         {
-                                                                                             "schema":  {
-                                                                                                            "type":  "string"
-                                                                                                        },
-                                                                                             "in":  "path",
-                                                                                             "name":  "referencia",
-                                                                                             "required":  true
-                                                                                         }
-                                                                                     ],
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Default Response"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                    },
-                  "/casos/{referencia}/escalar":  {
-                                                      "post":  {
-                                                                   "summary":  "Escalar caso (CU-SGC-010)",
-                                                                   "tags":  [
-                                                                                "casos"
-                                                                            ],
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "schema":  {
-                                                                                                         "type":  "string"
-                                                                                                     },
-                                                                                          "in":  "path",
-                                                                                          "name":  "referencia",
-                                                                                          "required":  true
-                                                                                      }
-                                                                                  ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Default Response"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                  },
-                  "/casos/{referencia}/encuesta":  {
-                                                       "post":  {
-                                                                    "summary":  "Calificar atencion (CU-SGC-018/019)",
-                                                                    "tags":  [
-                                                                                 "casos"
-                                                                             ],
-                                                                    "parameters":  [
-                                                                                       {
-                                                                                           "schema":  {
-                                                                                                          "type":  "string"
-                                                                                                      },
-                                                                                           "in":  "path",
-                                                                                           "name":  "referencia",
-                                                                                           "required":  true
-                                                                                       }
-                                                                                   ],
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Default Response"
-                                                                                              }
-                                                                                  }
-                                                                }
-                                                   },
-                  "/casos/{referencia}/asignar":  {
-                                                      "post":  {
-                                                                   "summary":  "Asignar caso a agente (CU-SGC-007)",
-                                                                   "tags":  [
-                                                                                "casos"
-                                                                            ],
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "schema":  {
-                                                                                                         "type":  "string"
-                                                                                                     },
-                                                                                          "in":  "path",
-                                                                                          "name":  "referencia",
-                                                                                          "required":  true
-                                                                                      }
-                                                                                  ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Default Response"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                  },
-                  "/casos/{referencia}/evidencias":  {
-                                                         "post":  {
-                                                                      "summary":  "Registrar evidencia del caso (CU-SGC-006)",
-                                                                      "tags":  [
-                                                                                   "casos"
-                                                                               ],
-                                                                      "parameters":  [
-                                                                                         {
-                                                                                             "schema":  {
-                                                                                                            "type":  "string"
-                                                                                                        },
-                                                                                             "in":  "path",
-                                                                                             "name":  "referencia",
-                                                                                             "required":  true
-                                                                                         }
-                                                                                     ],
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Default Response"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                     },
-                  "/reembolsos/{referencia}/completar":  {
-                                                             "post":  {
-                                                                          "summary":  "Completar reembolso (Payments)",
-                                                                          "tags":  [
-                                                                                       "casos"
-                                                                                   ],
-                                                                          "parameters":  [
-                                                                                             {
-                                                                                                 "schema":  {
-                                                                                                                "type":  "string"
-                                                                                                            },
-                                                                                                 "in":  "path",
-                                                                                                 "name":  "referencia",
-                                                                                                 "required":  true
-                                                                                             }
-                                                                                         ],
-                                                                          "responses":  {
-                                                                                            "200":  {
-                                                                                                        "description":  "Default Response"
-                                                                                                    }
-                                                                                        }
-                                                                      }
-                                                         },
-                  "/calidad/dashboard":  {
-                                             "get":  {
-                                                         "summary":  "Dashboard de calidad (CU-SGC-023)",
-                                                         "tags":  [
-                                                                      "calidad"
-                                                                  ],
-                                                         "responses":  {
-                                                                           "200":  {
-                                                                                       "description":  "Default Response"
-                                                                                   }
-                                                                       }
-                                                     }
-                                         },
-                  "/calidad/detectar":  {
-                                            "post":  {
-                                                         "summary":  "Detectar patrones de calidad (CU-SGC-020)",
-                                                         "tags":  [
-                                                                      "calidad"
-                                                                  ],
-                                                         "responses":  {
-                                                                           "200":  {
-                                                                                       "description":  "Default Response"
-                                                                                   }
-                                                                       }
-                                                     }
-                                        },
-                  "/calidad/alertas/generar":  {
-                                                   "post":  {
-                                                                "summary":  "Generar alerta por umbral (CU-SGC-021)",
-                                                                "tags":  [
-                                                                             "calidad"
-                                                                         ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Default Response"
-                                                                                          }
-                                                                              }
-                                                            }
-                                               },
-                  "/calidad/acciones":  {
-                                            "post":  {
-                                                         "summary":  "Crear accion correctiva (CU-SGC-022)",
-                                                         "tags":  [
-                                                                      "calidad"
-                                                                  ],
-                                                         "responses":  {
-                                                                           "200":  {
-                                                                                       "description":  "Default Response"
-                                                                                   }
-                                                                       }
-                                                     }
-                                        },
-                  "/calidad/acciones/{referencia}/cerrar":  {
-                                                                "patch":  {
-                                                                              "summary":  "Cerrar accion correctiva (CU-SGC-022)",
-                                                                              "tags":  [
-                                                                                           "calidad"
-                                                                                       ],
-                                                                              "parameters":  [
-                                                                                                 {
-                                                                                                     "schema":  {
-                                                                                                                    "type":  "string"
-                                                                                                                },
-                                                                                                     "in":  "path",
-                                                                                                     "name":  "referencia",
-                                                                                                     "required":  true
-                                                                                                 }
-                                                                                             ],
-                                                                              "responses":  {
-                                                                                                "200":  {
-                                                                                                            "description":  "Default Response"
-                                                                                                        }
-                                                                                            }
-                                                                          }
-                                                            },
-                  "/":  {
-                            "get":  {
-                                        "responses":  {
-                                                          "200":  {
-                                                                      "description":  "Default Response"
-                                                                  }
-                                                      }
-                                    }
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CuchosTool API",
+    "description": "Plataforma CuchosTool.com - API Contract-First. Baseline SRS v5.0 / ARQ v6.0 / BL v6.0.",
+    "version": "0.2.0"
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/salud/estado": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/salud/listo": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/autenticacion/registro": {
+      "post": {
+        "summary": "Registrar cliente E-Commerce",
+        "tags": ["autenticacion"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo", "contrasena", "nombre"],
+                "properties": {
+                  "correo": {
+                    "type": "string"
+                  },
+                  "contrasena": {
+                    "type": "string"
+                  },
+                  "nombre": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/autenticacion/ingreso": {
+      "post": {
+        "summary": "Iniciar sesion de cliente",
+        "tags": ["autenticacion"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo", "contrasena"],
+                "properties": {
+                  "correo": {
+                    "type": "string"
+                  },
+                  "contrasena": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/autenticacion/ingreso-interno": {
+      "post": {
+        "summary": "Iniciar sesion de usuario interno",
+        "tags": ["autenticacion"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo", "contrasena"],
+                "properties": {
+                  "correo": {
+                    "type": "string"
+                  },
+                  "contrasena": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/administracion/clientes": {
+      "get": {
+        "summary": "Listar clientes (ADMIN)",
+        "tags": ["administracion"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/administracion/pedidos": {
+      "get": {
+        "summary": "Listar pedidos (ADMIN / GERENTE_ZONA)",
+        "tags": ["administracion"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/administracion/auditoria": {
+      "get": {
+        "summary": "Consultar auditoria de operaciones (ADMIN / AUDITOR)",
+        "tags": ["administracion"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/catalogo/productos": {
+      "get": {
+        "summary": "Listar productos activos del catalogo",
+        "tags": ["catalogo"],
+        "description": "Catalogo publico (CU-EC-001). Filtro opcional q= por nombre/descripcion.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "q",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nombre": {
+                            "type": "string"
+                          },
+                          "descripcion": {
+                            "type": ["null", "string"]
+                          },
+                          "precioCentavos": {
+                            "type": "integer"
+                          },
+                          "moneda": {
+                            "type": "string"
+                          },
+                          "stock": {
+                            "type": "integer"
+                          },
+                          "urlImagen": {
+                            "type": ["null", "string"]
+                          },
+                          "categoria": {
+                            "type": ["null", "string"]
+                          },
+                          "precio": {
+                            "type": "string"
+                          }
                         }
-              },
-    "tags":  [
-                 {
-                     "name":  "salud",
-                     "description":  "Salud y disponibilidad"
-                 },
-                 {
-                     "name":  "catalogo",
-                     "description":  "Catalogo publico (CU-EC-001..006)"
-                 },
-                 {
-                     "name":  "autenticacion",
-                     "description":  "Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)"
-                 },
-                 {
-                     "name":  "carrito",
-                     "description":  "Carrito de compra (CU-EC-007)"
-                 },
-                 {
-                     "name":  "pedidos",
-                     "description":  "Pedidos (CU-EC-008/009)"
-                 },
-                 {
-                     "name":  "pagos",
-                     "description":  "Pagos Wompi (CU-EC-010, BL-035/101)"
-                 },
-                 {
-                     "name":  "eventos",
-                     "description":  "Buzon y publicador de eventos (CU-INT-001/002, BL-091)"
-                 },
-                 {
-                     "name":  "emprendedores",
-                     "description":  "Enrolamiento, productos y aval (CU-EM-001..012)"
-                 },
-                 {
-                     "name":  "casos",
-                     "description":  "Soporte, garantias y calidad (CU-SGC-002..017)"
-                 },
-                 {
-                     "name":  "calidad",
-                     "description":  "Patrones, alertas, acciones correctivas y dashboard (CU-SGC-020..023)"
-                 },
-                 {
-                     "name":  "administracion",
-                     "description":  "Consola administrativa RBAC/ABAC (CU-SEC-001..015)"
-                 }
-             ]
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "limite": {
+                          "type": "integer"
+                        },
+                        "desplazamiento": {
+                          "type": "integer"
+                        },
+                        "cantidad": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/productos/{id}": {
+      "get": {
+        "summary": "Consultar ficha de producto",
+        "tags": ["catalogo"],
+        "description": "Ficha de producto activo por id (CU-EC-004).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "nombre": {
+                          "type": "string"
+                        },
+                        "descripcion": {
+                          "type": ["null", "string"]
+                        },
+                        "precioCentavos": {
+                          "type": "integer"
+                        },
+                        "moneda": {
+                          "type": "string"
+                        },
+                        "stock": {
+                          "type": "integer"
+                        },
+                        "urlImagen": {
+                          "type": ["null", "string"]
+                        },
+                        "categoria": {
+                          "type": ["null", "string"]
+                        },
+                        "precio": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/carrito": {
+      "get": {
+        "summary": "Consultar carrito",
+        "tags": ["carrito"],
+        "description": "Contenido y total del carrito del cliente autenticado (CU-EC-007).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/carrito/articulos": {
+      "post": {
+        "summary": "Agregar producto al carrito",
+        "tags": ["carrito"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["productoId", "cantidad"],
+                "properties": {
+                  "productoId": {
+                    "type": "integer"
+                  },
+                  "cantidad": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/carrito/articulos/{productoId}": {
+      "patch": {
+        "summary": "Actualizar cantidad",
+        "tags": ["carrito"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["cantidad"],
+                "properties": {
+                  "cantidad": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "productoId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Quitar producto del carrito",
+        "tags": ["carrito"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "productoId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/carrito/pagar": {
+      "post": {
+        "summary": "Crear pedido desde el carrito",
+        "tags": ["carrito"],
+        "description": "Vacia el carrito y crea el pedido (CU-EC-008).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/pedidos": {
+      "post": {
+        "summary": "Crear pedido unico desde checkout",
+        "tags": ["pedidos"],
+        "description": "Transaccion ACID + buzon OrderCreated. Idempotency-Key opcional (BL-023).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["articulos"],
+                "properties": {
+                  "articulos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["productoId", "cantidad"],
+                      "properties": {
+                        "productoId": {
+                          "type": "integer"
+                        },
+                        "cantidad": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/pedidos/{referencia}": {
+      "get": {
+        "summary": "Consultar pedido propio",
+        "tags": ["pedidos"],
+        "description": "Pedido por referencia del cliente autenticado (CU-EC-009).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/pagos/iniciar": {
+      "post": {
+        "summary": "Iniciar pago Wompi del pedido",
+        "tags": ["pagos"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["referenciaPedido"],
+                "properties": {
+                  "referenciaPedido": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/pagos/{referenciaPago}": {
+      "get": {
+        "summary": "Consultar estado del pago",
+        "tags": ["pagos"],
+        "description": "Estado del pago propio del cliente.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referenciaPago",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/pagos/simular/{referenciaPago}": {
+      "post": {
+        "summary": "(DEV) Simular notificacion de pago del proveedor",
+        "tags": ["pagos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referenciaPago",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/buzon/pendientes": {
+      "get": {
+        "summary": "Eventos pendientes de publicacion",
+        "tags": ["eventos"],
+        "description": "Cola del buzon transaccional pendiente.",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/buzon/procesar": {
+      "post": {
+        "summary": "Procesar buzon pendiente",
+        "tags": ["eventos"],
+        "description": "Ejecuta una tanda del publicador (dev).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/buzon/publicados": {
+      "get": {
+        "summary": "Eventos publicados",
+        "tags": ["eventos"],
+        "description": "Evidencia local de publicacion (topico + carga).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/buzon/fallidos": {
+      "get": {
+        "summary": "Eventos fallidos (DLQ)",
+        "tags": ["eventos"],
+        "description": "Cola de fallos con motivo para reproceso (BL-091).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores": {
+      "post": {
+        "summary": "Enrolar emprendedor (CU-EM-001)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar emprendedores (CU-EM-002)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/{id}/activar": {
+      "patch": {
+        "summary": "Validar y activar emprendedor (CU-EM-004)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/productos": {
+      "post": {
+        "summary": "Crear producto del emprendedor (CU-EM-007)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar productos propios (CU-EM-008)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/productos/{id}/aval": {
+      "post": {
+        "summary": "Avalar o rechazar producto (CU-EM-011)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/{id}/medios": {
+      "patch": {
+        "summary": "Configurar medios de envio y pago (CU-EM-005/006)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/ofertas": {
+      "post": {
+        "summary": "Crear oferta (CU-EM-013)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar ofertas propias (CU-EM-013)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/ofertas/{id}/estado": {
+      "patch": {
+        "summary": "Activar o inactivar oferta (CU-EM-013)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/reportes": {
+      "get": {
+        "summary": "Reportes de ventas propias (CU-EM-014)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/{id}/suspender": {
+      "patch": {
+        "summary": "Suspender emprendedor (CU-EM-002)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/{id}/logistica": {
+      "patch": {
+        "summary": "Configurar servicio logistico (CU-EM-019)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/{id}/documentos": {
+      "patch": {
+        "summary": "Marcar paquete documental completo (CU-EM-003)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/emprendedores/productos/{id}/multimedia-validar": {
+      "post": {
+        "summary": "Validar requisitos multimedia del producto (CU-EM-009)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/dispersiones/entregas": {
+      "post": {
+        "summary": "Confirmar entrega fisica (CU-EM-015)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/dispersiones": {
+      "post": {
+        "summary": "Autorizar dispersion (CU-EM-016)",
+        "tags": ["emprendedores"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/dispersiones/{referencia}/ejecutar": {
+      "post": {
+        "summary": "Ejecutar dispersion (CU-EM-017)",
+        "tags": ["emprendedores"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos": {
+      "post": {
+        "summary": "Crear caso (CU-SGC-002)",
+        "tags": ["casos"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar casos propios (CU-SGC-004)",
+        "tags": ["casos"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}": {
+      "get": {
+        "summary": "Consultar caso propio (CU-SGC-004)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/estado": {
+      "patch": {
+        "summary": "Cambiar estado del caso (CU-SGC-009)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/mensajes": {
+      "post": {
+        "summary": "Agregar mensaje al caso (CU-SGC-005)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/garantia": {
+      "patch": {
+        "summary": "Decidir garantia (CU-SGC-014)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/logistica": {
+      "post": {
+        "summary": "Coordinar logistica del caso (CU-SGC-015)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/reembolso": {
+      "post": {
+        "summary": "Solicitar reembolso a pagos (CU-SGC-016)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/bandeja": {
+      "get": {
+        "summary": "Bandeja operativa de soporte (CU-SGC-026)",
+        "tags": ["casos"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/prioridad": {
+      "patch": {
+        "summary": "Cambiar prioridad del caso (CU-SGC-008)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/escalar": {
+      "post": {
+        "summary": "Escalar caso (CU-SGC-010)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/encuesta": {
+      "post": {
+        "summary": "Calificar atencion (CU-SGC-018/019)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/asignar": {
+      "post": {
+        "summary": "Asignar caso a agente (CU-SGC-007)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/casos/{referencia}/evidencias": {
+      "post": {
+        "summary": "Registrar evidencia del caso (CU-SGC-006)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/reembolsos/{referencia}/completar": {
+      "post": {
+        "summary": "Completar reembolso (Payments)",
+        "tags": ["casos"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/calidad/dashboard": {
+      "get": {
+        "summary": "Dashboard de calidad (CU-SGC-023)",
+        "tags": ["calidad"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/calidad/detectar": {
+      "post": {
+        "summary": "Detectar patrones de calidad (CU-SGC-020)",
+        "tags": ["calidad"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/calidad/alertas/generar": {
+      "post": {
+        "summary": "Generar alerta por umbral (CU-SGC-021)",
+        "tags": ["calidad"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/calidad/acciones": {
+      "post": {
+        "summary": "Crear accion correctiva (CU-SGC-022)",
+        "tags": ["calidad"],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/calidad/acciones/{referencia}/cerrar": {
+      "patch": {
+        "summary": "Cerrar accion correctiva (CU-SGC-022)",
+        "tags": ["calidad"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "referencia",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "salud",
+      "description": "Salud y disponibilidad"
+    },
+    {
+      "name": "catalogo",
+      "description": "Catalogo publico (CU-EC-001..006)"
+    },
+    {
+      "name": "autenticacion",
+      "description": "Identidad de cliente e interna (CU-EC-013/014, CU-SEC-009)"
+    },
+    {
+      "name": "carrito",
+      "description": "Carrito de compra (CU-EC-007)"
+    },
+    {
+      "name": "pedidos",
+      "description": "Pedidos (CU-EC-008/009)"
+    },
+    {
+      "name": "pagos",
+      "description": "Pagos Wompi (CU-EC-010, BL-035/101)"
+    },
+    {
+      "name": "eventos",
+      "description": "Buzon y publicador de eventos (CU-INT-001/002, BL-091)"
+    },
+    {
+      "name": "emprendedores",
+      "description": "Enrolamiento, productos y aval (CU-EM-001..012)"
+    },
+    {
+      "name": "casos",
+      "description": "Soporte, garantias y calidad (CU-SGC-002..017)"
+    },
+    {
+      "name": "calidad",
+      "description": "Patrones, alertas, acciones correctivas y dashboard (CU-SGC-020..023)"
+    },
+    {
+      "name": "administracion",
+      "description": "Consola administrativa RBAC/ABAC (CU-SEC-001..015)"
+    }
+  ]
 }

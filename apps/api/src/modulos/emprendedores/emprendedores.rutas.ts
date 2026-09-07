@@ -15,6 +15,7 @@ import {
   listarOfertasEmprendedor,
   listarProductosEmprendedor,
   marcarDocumentosCompletos,
+  obtenerEmprendedor,
   reportesEmprendedor,
   suspenderEmprendedor,
   validarMultimediaProducto,
@@ -35,6 +36,35 @@ type CuerpoProducto = {
   stock: number;
 };
 type CuerpoAval = { decision: 'aprobar' | 'rechazar' };
+
+// Validacion de alcance por zona (ABAC, EM-020): un Gerente de Zona no puede
+// actuar sobre emprendedores fuera de su zona. Devuelve true si tiene permiso.
+async function esDeZonaDelUsuario(
+  usuario: any,
+  emprendedorZonaId: string | null,
+): Promise<boolean> {
+  if (usuario.rol === ROL_ADMIN) return true;
+  if (usuario.rol !== ROL_GERENTE_ZONA) return false;
+  return usuario.zonaId ? String(usuario.zonaId) === String(emprendedorZonaId || '') : false;
+}
+
+async function validarAlcance(
+  solicitud: any,
+  respuesta: any,
+  emprendedorId: number,
+): Promise<{ ok: boolean; zonaId?: string } | undefined> {
+  const filas = await obtenerEmprendedor(emprendedorId);
+  if (!filas[0]) {
+    respuesta.code(404).send({ error: 'emprendedor_no_encontrado' });
+    return { ok: false };
+  }
+  const usuario = (solicitud as any).usuario || {};
+  if (!(await esDeZonaDelUsuario(usuario, filas[0].zonaId))) {
+    respuesta.code(403).send({ error: 'prohibido' });
+    return { ok: false };
+  }
+  return { ok: true };
+}
 
 export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<void> {
   const requerirRol = (aplicacion as any).requerirRol as (roles: string[]) => any;
@@ -64,8 +94,12 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
       preHandler: requerirRol([ROL_GERENTE_ZONA, ROL_ADMIN]),
       schema: { tags: ['emprendedores'], summary: 'Listar emprendedores (CU-EM-002)' },
     },
-    async function () {
-      return { data: await listarEmprendedores() };
+    async function (solicitud) {
+      // ABAC (EM-020): el Gerente de Zona solo ve emprendedores de su zona.
+      const usuario = (solicitud as any).usuario || {};
+      const zonaId =
+        usuario.rol === ROL_GERENTE_ZONA && usuario.zonaId ? String(usuario.zonaId) : undefined;
+      return { data: await listarEmprendedores(zonaId) };
     },
   );
 
@@ -76,6 +110,8 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
       schema: { tags: ['emprendedores'], summary: 'Validar y activar emprendedor (CU-EM-004)' },
     },
     async function (solicitud, respuesta) {
+      const alcance = await validarAlcance(solicitud, respuesta, Number(solicitud.params.id));
+      if (!alcance || !alcance.ok) return;
       const resultado = await activarEmprendedor(Number(solicitud.params.id));
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
@@ -251,6 +287,8 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
       schema: { tags: ['emprendedores'], summary: 'Suspender emprendedor (CU-EM-002)' },
     },
     async function (solicitud, respuesta) {
+      const alcance = await validarAlcance(solicitud, respuesta, Number(solicitud.params.id));
+      if (!alcance || !alcance.ok) return;
       const resultado = await suspenderEmprendedor(Number(solicitud.params.id));
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
@@ -296,6 +334,8 @@ export async function rutasEmprendedores(aplicacion: FastifyInstance): Promise<v
       },
     },
     async function (solicitud, respuesta) {
+      const alcance = await validarAlcance(solicitud, respuesta, Number(solicitud.params.id));
+      if (!alcance || !alcance.ok) return;
       const resultado = await marcarDocumentosCompletos(Number(solicitud.params.id));
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
