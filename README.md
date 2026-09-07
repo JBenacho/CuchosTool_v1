@@ -4,18 +4,16 @@ Plataforma web empresarial: E-Commerce + ERP + Core + dominios modulares (Empren
 
 ## Documentacion de referencia (linea base)
 
-- SRS IEEE 830 v5.0: 03_SRS_CuchosTool_IEEE830_DevOps_GoogleCloud_v5.docx
-- Arquitectura v6.0: 04_Arquitectura_Oficial_CuchosTool_v6.docx
-- Backlog maestro v6.0: 05_Backlog_CuchosTool_v6.docx
-- Reglas de negocio v1.0: 06_CuchosTool_Catalogo_Reglas_Negocio_v1.docx
-- Catalogo de casos de uso v5.0: 02_Catalogo_Maestro_Casos_Uso_CuchosTool_v5.docx
-- Fichas de CU (HTML/PNG): Carpeta 'Casos de Uso CuchosTool'
-- Guia visual UI: IU_CT.png (design system: modo oscuro azul-noche, acentos verde #0B9F68 y naranja #D16014, tipografia Inter/Space Grotesk)
+La documentacion del proyecto vive en la carpeta 'Documentos Consulta' (fuera del codigo migrable):
+
+- SRS IEEE 830 v5.0, Arquitectura v6.0, Backlog maestro v6.0, Reglas de negocio v1.0 y Catalogo de casos de uso v5.0 (docx).
+- Fichas de CU (HTML/PNG) en 'Casos de Uso CuchosTool'.
+- Guia visual UI: IU_CT.png (design system: modo oscuro azul-noche, acentos verde #0B9F68 y naranja #D16014, tipografia Inter/Space Grotesk).
 
 ## Documentacion tecnica
 
-- docs/architecture.md (C4 + decisiones, mapeado al codigo).
-- docs/adr/ (decisiones registradas, ADR-0001 stack).
+- Documentos Consulta/docs/architecture.md (C4 + decisiones, mapeado al codigo).
+- Documentos Consulta/docs/adr/ (decisiones registradas, ADR-0001 stack).
 - scripts/setup.ps1 (bootstrap reproducible desde cero).
 
 ## Stack de desarrollo local (spike BL-014 cerrado)
@@ -29,8 +27,10 @@ Node.js 24 + TypeScript + Fastify + Drizzle ORM + PostgreSQL (Docker) + Vite/Rea
     apps/web-erp       Sitio administrativo ERP (dominio independiente)
     paquetes/tokens-diseno  Design system IU_CT compartido (tokens CSS)
     contracts/        Contratos OpenAPI y esquemas de eventos versionados
-    docs/             Planes, trazabilidad y decisiones (docs-as-code)
-    .github/       Workflows CI/CD (GitHub Actions)
+    infra/            Terraform GCP (Pub/Sub + Cloud Scheduler)
+    scripts/          Validacion de contratos y bootstrap
+    .github/          Workflows CI/CD (GitHub Actions)
+    Documentos Consulta/  Documentacion y archivos de consulta (fuera de la raiz migrable)
     docker-compose.yml  Entorno local: PostgreSQL + API
 
 ## Arranque local
