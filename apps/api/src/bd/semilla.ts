@@ -10,6 +10,7 @@ import {
   ROL_AGENTE,
   ROL_EMPRENDEDOR,
   ROL_GERENTE_ZONA,
+  ROL_RESPONSABLE_GARANTIAS,
   RONDAS_BCRYPT,
 } from '../dominio/constantes';
 
@@ -123,6 +124,13 @@ async function principal(): Promise<void> {
         correo: 'agente@cuchostool.com',
         hashContrasena: hashContrasena,
         rol: ROL_AGENTE,
+        zonaId: null,
+        vendedorId: null,
+      },
+      {
+        correo: 'garantias@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_RESPONSABLE_GARANTIAS,
         zonaId: null,
         vendedorId: null,
       },

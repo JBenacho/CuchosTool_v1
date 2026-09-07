@@ -182,6 +182,10 @@ export const casos = pgTable('casos', {
   pedidoId: integer('pedido_id').references(() => pedidos.id),
   asunto: text('asunto').notNull(),
   descripcion: text('descripcion'),
+  // Garantias (CU-SGC-013/014) y coordinacion logistica (CU-SGC-015).
+  garantiaEstado: text('garantia_estado').notNull().default('solicitada'),
+  garantiaDecididaEn: timestamp('garantia_decidida_en', { withTimezone: true }),
+  logisticaAccion: text('logistica_accion'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -195,6 +199,39 @@ export const casoMensajes = pgTable('caso_mensajes', {
   autorId: text('autor_id'),
   contenido: text('contenido').notNull(),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Dispersiones al emprendedor (CU-EM-015..018). Payments ejecuta el dinero;
+// Emprendedor solo coordina (RN-GOB-005). La comision es configurable (TBD de negocio).
+export const dispersiones = pgTable('dispersiones', {
+  id: serial('id').primaryKey(),
+  referenciaDispersion: text('referencia_dispersion').notNull().unique(),
+  pedidoId: integer('pedido_id')
+    .notNull()
+    .references(() => pedidos.id),
+  emprendedorId: integer('emprendedor_id')
+    .notNull()
+    .references(() => emprendedores.id),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  comisionCentavos: bigint('comision_centavos', { mode: 'number' }),
+  estado: text('estado').notNull().default('pendiente'),
+  ejecutadoEn: timestamp('ejecutado_en', { withTimezone: true }),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Reembolsos coordinados por SGC y ejecutados por Payments (CU-SGC-016, BL-062).
+export const reembolsos = pgTable('reembolsos', {
+  id: serial('id').primaryKey(),
+  referenciaReembolso: text('referencia_reembolso').notNull().unique(),
+  pagoId: integer('pago_id')
+    .notNull()
+    .references(() => pagos.id),
+  casoId: integer('caso_id').references(() => casos.id),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  estado: text('estado').notNull().default('pendiente'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).

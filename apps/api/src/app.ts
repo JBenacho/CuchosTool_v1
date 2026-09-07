@@ -14,6 +14,7 @@ import { rutasAdministracion } from './modulos/administracion/administracion.rut
 import { rutasPagos } from './modulos/pagos/pagos.rutas';
 import { rutasEventos } from './modulos/eventos/eventos.rutas';
 import { rutasEmprendedores } from './modulos/emprendedores/emprendedores.rutas';
+import { rutasDispersiones } from './modulos/emprendedores/dispersiones.rutas';
 import { rutasCasos } from './modulos/casos/casos.rutas';
 import { config } from './config';
 
@@ -112,6 +113,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasPagos);
   await aplicacion.register(rutasEventos);
   await aplicacion.register(rutasEmprendedores);
+  await aplicacion.register(rutasDispersiones);
   await aplicacion.register(rutasCasos);
 
   aplicacion.get('/', async function () {

@@ -803,6 +803,55 @@
                                                                                         }
                                                                       }
                                                          },
+                  "/dispersiones/entregas":  {
+                                                 "post":  {
+                                                              "summary":  "Confirmar entrega fisica (CU-EM-015)",
+                                                              "tags":  [
+                                                                           "emprendedores"
+                                                                       ],
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Default Response"
+                                                                                        }
+                                                                            }
+                                                          }
+                                             },
+                  "/dispersiones":  {
+                                        "post":  {
+                                                     "summary":  "Autorizar dispersion (CU-EM-016)",
+                                                     "tags":  [
+                                                                  "emprendedores"
+                                                              ],
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "Default Response"
+                                                                               }
+                                                                   }
+                                                 }
+                                    },
+                  "/dispersiones/{referencia}/ejecutar":  {
+                                                              "post":  {
+                                                                           "summary":  "Ejecutar dispersion (CU-EM-017)",
+                                                                           "tags":  [
+                                                                                        "emprendedores"
+                                                                                    ],
+                                                                           "parameters":  [
+                                                                                              {
+                                                                                                  "schema":  {
+                                                                                                                 "type":  "string"
+                                                                                                             },
+                                                                                                  "in":  "path",
+                                                                                                  "name":  "referencia",
+                                                                                                  "required":  true
+                                                                                              }
+                                                                                          ],
+                                                                           "responses":  {
+                                                                                             "200":  {
+                                                                                                         "description":  "Default Response"
+                                                                                                     }
+                                                                                         }
+                                                                       }
+                                                          },
                   "/casos":  {
                                  "post":  {
                                               "summary":  "Crear caso (CU-SGC-002)",
@@ -896,6 +945,98 @@
                                                                                   }
                                                                 }
                                                    },
+                  "/casos/{referencia}/garantia":  {
+                                                       "patch":  {
+                                                                     "summary":  "Decidir garantia (CU-SGC-014)",
+                                                                     "tags":  [
+                                                                                  "casos"
+                                                                              ],
+                                                                     "parameters":  [
+                                                                                        {
+                                                                                            "schema":  {
+                                                                                                           "type":  "string"
+                                                                                                       },
+                                                                                            "in":  "path",
+                                                                                            "name":  "referencia",
+                                                                                            "required":  true
+                                                                                        }
+                                                                                    ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Default Response"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                   },
+                  "/casos/{referencia}/logistica":  {
+                                                        "post":  {
+                                                                     "summary":  "Coordinar logistica del caso (CU-SGC-015)",
+                                                                     "tags":  [
+                                                                                  "casos"
+                                                                              ],
+                                                                     "parameters":  [
+                                                                                        {
+                                                                                            "schema":  {
+                                                                                                           "type":  "string"
+                                                                                                       },
+                                                                                            "in":  "path",
+                                                                                            "name":  "referencia",
+                                                                                            "required":  true
+                                                                                        }
+                                                                                    ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Default Response"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                    },
+                  "/casos/{referencia}/reembolso":  {
+                                                        "post":  {
+                                                                     "summary":  "Solicitar reembolso a pagos (CU-SGC-016)",
+                                                                     "tags":  [
+                                                                                  "casos"
+                                                                              ],
+                                                                     "parameters":  [
+                                                                                        {
+                                                                                            "schema":  {
+                                                                                                           "type":  "string"
+                                                                                                       },
+                                                                                            "in":  "path",
+                                                                                            "name":  "referencia",
+                                                                                            "required":  true
+                                                                                        }
+                                                                                    ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Default Response"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                    },
+                  "/reembolsos/{referencia}/completar":  {
+                                                             "post":  {
+                                                                          "summary":  "Completar reembolso (Payments)",
+                                                                          "tags":  [
+                                                                                       "casos"
+                                                                                   ],
+                                                                          "parameters":  [
+                                                                                             {
+                                                                                                 "schema":  {
+                                                                                                                "type":  "string"
+                                                                                                            },
+                                                                                                 "in":  "path",
+                                                                                                 "name":  "referencia",
+                                                                                                 "required":  true
+                                                                                             }
+                                                                                         ],
+                                                                          "responses":  {
+                                                                                            "200":  {
+                                                                                                        "description":  "Default Response"
+                                                                                                    }
+                                                                                        }
+                                                                      }
+                                                         },
                   "/":  {
                             "get":  {
                                         "responses":  {

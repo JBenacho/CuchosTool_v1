@@ -15,6 +15,8 @@ export const config = {
   secretoJwt: process.env.JWT_SECRET || 'dev-secret-cambiar-en-produccion',
   // Intervalo del publicador del buzon en ms (0 lo desactiva; dev: 15 s).
   intervaloPublicadorMs: enteroDeEntorno('PUBLICADOR_INTERVALO_MS', 15000),
+  // Comision por producto vendido en puntos basicos (0 = sin comision; valor de negocio TBD, BL-051).
+  tasaComisionBps: enteroDeEntorno('TASA_COMISION_BPS', 0),
   urlBaseDatos:
     process.env.DATABASE_URL || 'postgres://cuchos:cuchos_dev_pass@localhost:5433/cuchostool_dev',
   // Proveedor de pagos activo: 'simulado' (dev) o 'wompi' (real). BL-035.
