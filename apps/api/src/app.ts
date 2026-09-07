@@ -13,6 +13,8 @@ import { rutasPedidos } from './modulos/pedidos/pedidos.rutas';
 import { rutasAdministracion } from './modulos/administracion/administracion.rutas';
 import { rutasPagos } from './modulos/pagos/pagos.rutas';
 import { rutasEventos } from './modulos/eventos/eventos.rutas';
+import { rutasEmprendedores } from './modulos/emprendedores/emprendedores.rutas';
+import { rutasCasos } from './modulos/casos/casos.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -50,6 +52,8 @@ export async function construirAplicacion(opciones?: {
         { name: 'pedidos', description: 'Pedidos (CU-EC-008/009)' },
         { name: 'pagos', description: 'Pagos Wompi (CU-EC-010, BL-035/101)' },
         { name: 'eventos', description: 'Buzon y publicador de eventos (CU-INT-001/002, BL-091)' },
+        { name: 'emprendedores', description: 'Enrolamiento, productos y aval (CU-EM-001..012)' },
+        { name: 'casos', description: 'Soporte, garantias y calidad (CU-SGC-002..017)' },
         {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
@@ -70,6 +74,8 @@ export async function construirAplicacion(opciones?: {
     ) {
       try {
         await solicitud.jwtVerify();
+        // @fastify/jwt deja el payload en request.user; lo exponemos como .usuario.
+        (solicitud as any).usuario = (solicitud as any).user;
       } catch {
         return respuesta.code(401).send({ error: 'no_autorizado' });
       }
@@ -105,6 +111,8 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasPedidos);
   await aplicacion.register(rutasPagos);
   await aplicacion.register(rutasEventos);
+  await aplicacion.register(rutasEmprendedores);
+  await aplicacion.register(rutasCasos);
 
   aplicacion.get('/', async function () {
     return {

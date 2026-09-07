@@ -1,172 +1,249 @@
-// Shell CuchosTool: patrones IU_CT (header + sidebar oscuro, KPI, tabla, catalogo).
-// F2: catalogo publico conectado a la API (/api/catalog/products).
+// Storefront E-Commerce (F4): catalogo publico, login de cliente, carrito y checkout
+// conectado a /carrito y /pagos (design system IU_CT).
 import { useEffect, useState } from 'react';
 import './App.css';
 
-type Product = { id: number; name: string; price: string; category?: string | null };
+const API = '/api';
 
-const kpis = [
-  { label: 'Pedidos hoy', value: '128', delta: '+12%', tone: 'ok' },
-  { label: 'Ingresos (COP)', value: '$ 8.4M', delta: '+4%', tone: 'ok' },
-  { label: 'Disponibilidad', value: '96.8%', delta: '-0.5%', tone: 'warn' },
-  { label: 'Casos abiertos', value: '34', delta: 'SLA 98%', tone: 'info' },
-] as const;
+interface Producto {
+  id: number;
+  nombre: string;
+  precio: string;
+  categoria?: string | null;
+}
 
-const orders = [
-  {
-    id: 'ORD-10421',
-    client: 'Ana Torres',
-    total: '$ 186.000',
-    state: 'PENDING_PAYMENT',
-    tone: 'warn',
-  },
-  { id: 'ORD-10420', client: 'Luis Rojas', total: '$ 92.500', state: 'PAID', tone: 'ok' },
-  { id: 'ORD-10419', client: 'Carla Ruiz', total: '$ 41.200', state: 'SHIPPED', tone: 'info' },
-  { id: 'ORD-10418', client: 'Pedro Gil', total: '$ 312.700', state: 'DELIVERED', tone: 'ok' },
-] as const;
+interface ArticuloCarrito {
+  productoId: number;
+  cantidad: number;
+  nombre: string;
+  precioCentavos: number;
+}
 
-const fallbackProducts: Product[] = [
-  { id: 0, name: 'Cargando catalogo...', price: '', category: 'sin conexion a la API' },
-];
+interface Carrito {
+  articulos: ArticuloCarrito[];
+  totalCentavos: number;
+}
 
-const nav = [
-  'Dashboard',
-  'Catalogo',
-  'Pedidos',
-  'Emprendedores',
-  'Soporte / Garantias',
-  'ERP',
-  'Gerencia',
-  'Seguridad',
-] as const;
+/**
+ * Peticion a la API con JSON y token opcional (Bearer).
+ */
+async function peticion(
+  ruta: string,
+  token: string,
+  metodo = 'GET',
+  cuerpo?: unknown,
+): Promise<Response> {
+  return fetch(API + ruta, {
+    method: metodo,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    },
+    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+  });
+}
 
-function Header(): JSX.Element {
-  return (
-    <header className="app-header">
-      <div className="brand">
-        <span className="brand-logo">CT</span>
-        <span className="brand-name">CuchosTool</span>
-      </div>
-      <div className="header-meta">
-        <span className="chip chip--ok">Dev F2</span>
-        <span className="header-user">Jose</span>
-      </div>
-    </header>
-  );
+function formatearPesos(centavos: number): string {
+  return '$ ' + (centavos / 100).toLocaleString('es-CO');
 }
 
 function App(): JSX.Element {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
-  const [catalogError, setCatalogError] = useState(false);
+  const [token, setToken] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [carrito, setCarrito] = useState<Carrito>({ articulos: [], totalCentavos: 0 });
+  const [referenciaPago, setReferenciaPago] = useState('');
+  const [urlPago, setUrlPago] = useState('');
+  const [confirmacion, setConfirmacion] = useState('');
+
+  async function cargarCatalogo(): Promise<void> {
+    const respuesta = await peticion('/catalogo/productos', token);
+    if (respuesta.ok) {
+      const json = await respuesta.json();
+      setProductos(json.data || []);
+    }
+  }
+
+  async function cargarCarrito(tokenActivo: string): Promise<void> {
+    if (!tokenActivo) return;
+    const respuesta = await peticion('/carrito', tokenActivo);
+    if (respuesta.ok) {
+      const json = await respuesta.json();
+      setCarrito(json.data || { articulos: [], totalCentavos: 0 });
+    }
+  }
+
+  async function ingresar(): Promise<void> {
+    setMensaje('');
+    const respuesta = await peticion('/autenticacion/ingreso', '', 'POST', {
+      correo: correo,
+      contrasena: contrasena,
+    });
+    if (!respuesta.ok) {
+      setMensaje('Credenciales invalidas');
+      return;
+    }
+    const json = await respuesta.json();
+    setToken(json.data.token);
+    await cargarCarrito(json.data.token);
+  }
+
+  async function agregarAlCarrito(productoId: number): Promise<void> {
+    if (!token) {
+      setMensaje('Inicia sesion para comprar');
+      return;
+    }
+    const respuesta = await peticion('/carrito/articulos', token, 'POST', {
+      productoId: productoId,
+      cantidad: 1,
+    });
+    if (respuesta.ok) {
+      const json = await respuesta.json();
+      setCarrito(json.data);
+    } else {
+      setMensaje('No se pudo agregar al carrito');
+    }
+  }
+
+  async function pagarCarrito(): Promise<void> {
+    setMensaje('');
+    const respuestaPedido = await peticion('/carrito/pagar', token, 'POST', {});
+    if (!respuestaPedido.ok) {
+      setMensaje('No se pudo crear el pedido');
+      return;
+    }
+    const pedido = (await respuestaPedido.json()).data as {
+      referenciaPedido: string;
+      totalCentavos: number;
+    };
+    const respuestaPago = await peticion('/pagos/iniciar', token, 'POST', {
+      referenciaPedido: pedido.referenciaPedido,
+    });
+    if (!respuestaPago.ok) {
+      setMensaje('No se pudo iniciar el pago');
+      return;
+    }
+    const pago = (await respuestaPago.json()).data as {
+      referenciaPago: string;
+      urlPagoSimulada?: string;
+    };
+    setReferenciaPago(pago.referenciaPago);
+    setUrlPago(pago.urlPagoSimulada || '');
+    setConfirmacion(
+      'Pedido ' + pedido.referenciaPedido + ' - ' + formatearPesos(pedido.totalCentavos),
+    );
+  }
+
+  async function simularPago(): Promise<void> {
+    const respuesta = await peticion(urlPago, token, 'POST', {});
+    if (respuesta.ok) {
+      const json = await respuesta.json();
+      setConfirmacion('Pago ' + json.data.estado + ' - ' + confirmacion);
+      setUrlPago('');
+      await cargarCarrito(token);
+    } else {
+      setMensaje('El pago simulado fallo');
+    }
+  }
 
   useEffect(function () {
-    let active = true;
-    fetch('/api/catalogo/productos')
-      .then(function (r) {
-        if (!r.ok) throw new Error('bad status');
-        return r.json();
-      })
-      .then(function (json) {
-        if (active && json && Array.isArray(json.data)) setProducts(json.data);
-      })
-      .catch(function () {
-        if (active) setCatalogError(true);
-      });
-    return function () {
-      active = false;
-    };
+    cargarCatalogo();
   }, []);
 
   return (
     <div className="app-shell">
-      <Header />
+      <header className="app-header">
+        <div className="brand">
+          <span className="brand-logo">CT</span>
+          <span className="brand-name">CuchosTool E-Commerce</span>
+        </div>
+        <div className="header-meta">
+          {token ? (
+            <span className="chip chip--ok">Sesion activa</span>
+          ) : (
+            <span className="chip chip--info">Visitante</span>
+          )}
+        </div>
+      </header>
       <div className="app-body">
         <aside className="app-sidebar">
-          <nav className="side-nav">
-            {nav.map(function (item, i) {
-              return (
-                <a
-                  key={item}
-                  className={'side-link' + (i === 0 ? ' is-active' : '')}
-                  href={'#' + item.toLowerCase()}
-                >
-                  {item}
-                </a>
-              );
-            })}
-          </nav>
+          <h2>Ingresar</h2>
+          <input
+            className="input"
+            placeholder="Correo"
+            value={correo}
+            onChange={function (e) {
+              setCorreo(e.target.value);
+            }}
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Contrasena"
+            value={contrasena}
+            onChange={function (e) {
+              setContrasena(e.target.value);
+            }}
+          />
+          <button className="btn btn--primary" onClick={ingresar}>
+            Entrar
+          </button>
+          <p className="muted">Dev: f3@example.com / secreto123</p>
+          {mensaje && <p className="muted">{mensaje}</p>}
+          <h2 className="mt">Carrito</h2>
+          {carrito.articulos.length === 0 && <p className="muted">Vacio</p>}
+          {carrito.articulos.map(function (a) {
+            return (
+              <p className="muted" key={a.productoId}>
+                {a.nombre} x{a.cantidad}
+              </p>
+            );
+          })}
+          <p className="cart-total">Total: {formatearPesos(carrito.totalCentavos)}</p>
+          <button
+            className="btn btn--primary"
+            disabled={carrito.articulos.length === 0 || !token}
+            onClick={pagarCarrito}
+          >
+            Pagar
+          </button>
+          {urlPago && (
+            <button className="btn btn--warm mt" onClick={simularPago}>
+              Simular pago ({referenciaPago})
+            </button>
+          )}
+          {confirmacion && <p className="muted">{confirmacion}</p>}
         </aside>
         <main className="app-main">
           <section className="page-head">
             <div>
               <h1>Catalogo</h1>
-              <p className="muted">F2 - Catalogo publico desde la API (Docker + Postgres).</p>
+              <p className="muted">Productos avalados (CU-EC-001..006, CU-EM-012)</p>
             </div>
-            <button className="btn btn--primary">Nuevo pedido</button>
           </section>
-
-          <section className="kpi-grid">
-            {kpis.map(function (k) {
-              return (
-                <article className="kpi-card" key={k.label}>
-                  <span className="muted">{k.label}</span>
-                  <strong>{k.value}</strong>
-                  <span className={'chip chip--' + k.tone}>{k.delta}</span>
-                </article>
-              );
-            })}
-          </section>
-
           <section className="catalog-grid">
-            {products.map(function (p) {
+            {productos.map(function (p) {
               return (
                 <article className="product-card" key={p.id}>
-                  <div className="product-thumb">{p.name.charAt(0)}</div>
-                  <h3>{p.name}</h3>
-                  <span className="muted">{p.category || 'CuchosTool'}</span>
-                  <strong>{p.price}</strong>
+                  <div className="product-thumb">{p.nombre.charAt(0)}</div>
+                  <h3>{p.nombre}</h3>
+                  <span className="muted">{p.categoria || 'CuchosTool'}</span>
+                  <strong>{p.precio}</strong>
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      agregarAlCarrito(p.id);
+                    }}
+                  >
+                    Agregar
+                  </button>
                 </article>
               );
             })}
           </section>
-
-          <section className="panel">
-            <div className="panel-head">
-              <h2>Pedidos recientes</h2>
-            </div>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Pedido</th>
-                  <th>Cliente</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map(function (o) {
-                  return (
-                    <tr key={o.id}>
-                      <td>{o.id}</td>
-                      <td>{o.client}</td>
-                      <td>{o.total}</td>
-                      <td>
-                        <span className={'chip chip--' + o.tone}>{o.state}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </section>
-
-          {catalogError && (
-            <p className="muted">No se pudo conectar con la API (/api/catalog/products).</p>
-          )}
-
-          <footer className="app-footer">
-            CuchosTool.com - SRS v5.0 / ARQ v6.0 / Backlog v6.0 - Design System IU_CT
-          </footer>
+          <footer className="app-footer">CuchosTool.com - E-Commerce - Design System IU_CT</footer>
         </main>
       </div>
     </div>

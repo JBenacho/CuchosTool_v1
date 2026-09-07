@@ -56,4 +56,5 @@ main protegida; develop rama de integracion; PR revisado por otro integrante; na
 - Refactor de calidad: COMPLETADO - nomenclatura 100% en espanol (codigo, tablas, rutas, contratos), capas separadas, constantes de negocio, pruebas (BL-002/013).
 - Sitios web: E-Commerce (apps/web-ecommerce) operativo; ERP (apps/web-erp) shell listo para F5.
 - F3 (pagos y eventos): EN CURSO - Pagos Wompi (iniciar/simular/consultar), confirmacion idempotente, pedido -> pagado, publicador del buzon con topicos y DLQ operable (BL-035/036/091/101, CU-EC-010, CU-INT-002).
-- Pruebas: suite Vitest (7 tests: salud, contrato OpenAPI, totales, topicos) ejecutandose en CI.
+- F4 (Emprendedor + SGC + checkout UI): EN CURSO - Enrolamiento/activacion de emprendedores, productos con aval, casos SGC con transiciones y mensajes, y UI de checkout en el E-Commerce (BL-039..068 base, CU-EM-001..012, CU-SGC-002..009, CU-EC-007/008).
+- Pruebas: suite Vitest (13 tests) ejecutandose en CI.

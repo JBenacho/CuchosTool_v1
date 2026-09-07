@@ -15,6 +15,13 @@
       "when": 1788552144682,
       "tag": "0001_modern_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788814342172,
+      "tag": "0002_green_old_lace",
+      "breakpoints": true
     }
   ]
 }
