@@ -472,25 +472,27 @@ function ContenidoAplicacion(): JSX.Element {
     const productoId = Number(productoCompraSel);
     const bodegaId = Number(bodegaCompraSel);
     const cantidad = Number(cantidadOrden);
-    const precio = Number(precioOrden);
+    // El precio se captura en pesos colombianos (COP) y se almacena en centavos (MONEDA_COP).
+    const precioPesos = Number(precioOrden);
     if (
       !proveedorId ||
       !productoId ||
       !bodegaId ||
       !cantidad ||
       cantidad <= 0 ||
-      !precio ||
-      precio <= 0
+      !precioPesos ||
+      precioPesos <= 0
     ) {
-      setMensaje('Complete proveedor, producto, bodega, cantidad y precio');
+      setMensaje('Complete proveedor, producto, bodega, cantidad y precio (COP)');
       return;
     }
+    const precioCentavos = Math.round(precioPesos * 100);
     const respuesta = await peticion('/compras/ordenes', token, 'POST', {
       proveedorId: proveedorId,
       productoId: productoId,
       bodegaDestinoId: bodegaId,
       cantidad: cantidad,
-      precioUnitarioCentavos: precio,
+      precioUnitarioCentavos: precioCentavos,
     });
     if (!respuesta.ok) {
       setMensaje('No se pudo crear la orden de compra');
@@ -972,7 +974,8 @@ function ContenidoAplicacion(): JSX.Element {
                     className="input"
                     type="number"
                     min="1"
-                    placeholder="Precio unitario (centavos)"
+                    placeholder="Precio unitario (COP)"
+                    title="Precio en pesos colombianos; se almacena en centavos"
                     value={precioOrden}
                     onChange={function (e) {
                       setPrecioOrden(e.target.value);

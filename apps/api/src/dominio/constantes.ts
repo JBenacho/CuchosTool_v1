@@ -2,7 +2,8 @@
 // Regla de calidad: ningun valor de negocio se escribe directamente en el codigo;
 // siempre se referencia desde aqui para mantener un unico punto de verdad.
 
-// Moneda unica de la plataforma (peso colombiano).
+// Moneda oficial del proyecto: Peso colombiano (COP). Todos los importes monetarios
+// se almacenan en centavos de peso (integer/bigint) para evitar errores de redondeo.
 export const MONEDA_COP = 'COP';
 
 // Estados de pedido (CU-EC-008/009). El flujo de pagos (F3) ampliara esta lista.
