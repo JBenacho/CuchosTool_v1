@@ -128,6 +128,7 @@ export const ACCION_CERRADA = 'cerrada';
 export const ROL_COMPRAS = 'COMPRAS';
 export const ROL_ALMACENISTA = 'ALMACENISTA';
 export const ROL_CONTADOR = 'CONTADOR';
+export const ROL_VENDEDOR = 'VENDEDOR';
 // Inventario (CU-INV-001..003): tipos de movimiento del kardex.
 export const MOVIMIENTO_ENTRADA = 'ENTRADA';
 export const MOVIMIENTO_SALIDA = 'SALIDA';
@@ -146,6 +147,9 @@ export const ORDEN_COMPLETADA = 'completada';
 export const CUENTA_PENDIENTE = 'pendiente';
 export const CUENTA_PAGADA = 'pagada';
 export const TERMINO_PAGO_DIAS_POR_DEFECTO = 30;
+// Estados del ciclo de venta del canal E-Commerce (modulo ERP Ventas, CU-CM-007 base).
+export const PEDIDO_CANCELADO = 'cancelado';
+export const EVENTO_PEDIDO_ENTREGADO = 'com.cuchostool.pedido.entregado';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;
