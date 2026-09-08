@@ -1,9 +1,13 @@
 // Servicio de proveedores del ERP (F5, CU-ERP-001).
 // Reglas: nit unico; solo roles de compras/admin pueden operar; no se elimina, se inactiva.
+// Datos de contacto del proveedor: correo, direccion de sede y sitio web (validacion de correo).
 import { asc, eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { proveedores } from '../../bd/esquema';
 import { ESTADO_ACTIVO, ESTADO_INACTIVO } from '../../dominio/constantes';
+
+// Patron basico de correo electronico para validar entrada externa (no hardcodeado por ruta).
+const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type ResultadoProveedor = {
   ok: boolean;
@@ -17,6 +21,9 @@ export interface DatosProveedor {
   nombre: string;
   contacto?: string;
   telefono?: string;
+  correo?: string;
+  direccion?: string;
+  sitioWeb?: string;
 }
 
 export interface ProveedorNormalizado {
@@ -24,11 +31,15 @@ export interface ProveedorNormalizado {
   nombre: string;
   contacto: string | null;
   telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  sitioWeb: string | null;
 }
 
 /**
  * Normaliza y valida los datos de un proveedor (puro, sin acceso a BD).
  * Entrada: datos crudos del cuerpo HTTP. Salida: campos recortados o codigo de error.
+ * Regla: si se recibe correo, debe tener formato valido (correo_invalido).
  */
 export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
   error?: string;
@@ -37,12 +48,17 @@ export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
   const nit = String(datos.nit || '').trim();
   const nombre = String(datos.nombre || '').trim();
   if (!nit || !nombre) return { error: 'datos_incompletos' };
+  const correo = String(datos.correo || '').trim() || null;
+  if (correo && !PATRON_CORREO.test(correo)) return { error: 'correo_invalido' };
   return {
     datos: {
       nit: nit,
       nombre: nombre,
       contacto: String(datos.contacto || '').trim() || null,
       telefono: String(datos.telefono || '').trim() || null,
+      correo: correo,
+      direccion: String(datos.direccion || '').trim() || null,
+      sitioWeb: String(datos.sitioWeb || '').trim() || null,
     },
   };
 }
@@ -53,7 +69,8 @@ export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
 export async function crearProveedor(datos: DatosProveedor): Promise<ResultadoProveedor> {
   const normalizado = normalizarDatosProveedor(datos);
   if (normalizado.error) return { ok: false, codigoEstado: 400, error: normalizado.error };
-  const { nit, nombre, contacto, telefono } = normalizado.datos as ProveedorNormalizado;
+  const { nit, nombre, contacto, telefono, correo, direccion, sitioWeb } =
+    normalizado.datos as ProveedorNormalizado;
   const existente = await base.select().from(proveedores).where(eq(proveedores.nit, nit)).limit(1);
   if (existente[0]) return { ok: false, codigoEstado: 409, error: 'nit_ya_existe' };
   const [creado] = await base
@@ -63,12 +80,18 @@ export async function crearProveedor(datos: DatosProveedor): Promise<ResultadoPr
       nombre: nombre,
       contacto: contacto,
       telefono: telefono,
+      correo: correo,
+      direccion: direccion,
+      sitioWeb: sitioWeb,
       estado: ESTADO_ACTIVO,
     })
     .returning({
       id: proveedores.id,
       nit: proveedores.nit,
       nombre: proveedores.nombre,
+      correo: proveedores.correo,
+      direccion: proveedores.direccion,
+      sitioWeb: proveedores.sitioWeb,
       estado: proveedores.estado,
     });
   return { ok: true, datos: creado };
@@ -86,20 +109,42 @@ export async function listarProveedores(soloActivos = true) {
 }
 
 /**
- * Actualiza datos de contacto de un proveedor.
+ * Actualiza datos de contacto/sede de un proveedor (contacto, telefono, correo, direccion, sitio web).
  */
 export async function actualizarProveedor(
   id: number,
-  cambios: { contacto?: string; telefono?: string },
+  cambios: {
+    contacto?: string;
+    telefono?: string;
+    correo?: string;
+    direccion?: string;
+    sitioWeb?: string;
+  },
 ): Promise<ResultadoProveedor> {
   const existente = await base.select().from(proveedores).where(eq(proveedores.id, id)).limit(1);
   if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'proveedor_no_encontrado' };
-  const actualizacion: { contacto?: string | null; telefono?: string | null; actualizadoEn: Date } =
-    { actualizadoEn: new Date() };
+  if (cambios.correo !== undefined) {
+    const correo = String(cambios.correo).trim() || null;
+    if (correo && !PATRON_CORREO.test(correo))
+      return { ok: false, codigoEstado: 400, error: 'correo_invalido' };
+  }
+  const actualizacion: {
+    contacto?: string | null;
+    telefono?: string | null;
+    correo?: string | null;
+    direccion?: string | null;
+    sitioWeb?: string | null;
+    actualizadoEn: Date;
+  } = { actualizadoEn: new Date() };
   if (cambios.contacto !== undefined)
     actualizacion.contacto = String(cambios.contacto).trim() || null;
   if (cambios.telefono !== undefined)
     actualizacion.telefono = String(cambios.telefono).trim() || null;
+  if (cambios.correo !== undefined) actualizacion.correo = String(cambios.correo).trim() || null;
+  if (cambios.direccion !== undefined)
+    actualizacion.direccion = String(cambios.direccion).trim() || null;
+  if (cambios.sitioWeb !== undefined)
+    actualizacion.sitioWeb = String(cambios.sitioWeb).trim() || null;
   await base.update(proveedores).set(actualizacion).where(eq(proveedores.id, id));
   return { ok: true, datos: { id: id } };
 }
