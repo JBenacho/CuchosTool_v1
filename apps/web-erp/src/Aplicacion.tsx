@@ -103,7 +103,14 @@ const MODULOS = [
 ] as const;
 
 function formatearPesos(centavos: number): string {
-  return '$ ' + (centavos / 100).toLocaleString('es-CO');
+  // Pesos colombianos con dos decimales (ej. $ 1.000,50); sin etiquetas de centavos.
+  return (
+    '$ ' +
+    (centavos / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 async function peticion(
@@ -973,9 +980,10 @@ function ContenidoAplicacion(): JSX.Element {
                   <input
                     className="input"
                     type="number"
-                    min="1"
+                    min="0.01"
+                    step="0.01"
                     placeholder="Precio unitario (COP)"
-                    title="Precio en pesos colombianos; se almacena en centavos"
+                    title="Valor en pesos colombianos (COP), ej. 1000,50"
                     value={precioOrden}
                     onChange={function (e) {
                       setPrecioOrden(e.target.value);

@@ -31,10 +31,13 @@ export interface FiltroCatalogo {
 /**
  * Convierte centavos a texto legible en pesos colombianos.
  * @param centavos monto en centavos.
- * @returns texto como '$ 145.000'.
+ * @returns texto como '$ 145.000,50' (dos decimales).
  */
 export function formatearPrecioPesos(centavos: number): string {
-  return '$ ' + (centavos / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 });
+  return (
+    '$ ' +
+    (centavos / 100).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  );
 }
 
 /**
