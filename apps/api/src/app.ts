@@ -20,6 +20,7 @@ import { rutasCalidad } from './modulos/calidad/calidad.rutas';
 import { rutasErp } from './modulos/erp/erp.rutas';
 import { rutasInventario } from './modulos/inventario/inventario.rutas';
 import { rutasCompras } from './modulos/compras/compras.rutas';
+import { rutasVentas } from './modulos/ventas/ventas.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -73,6 +74,11 @@ export async function construirAplicacion(opciones?: {
           name: 'compras',
           description:
             'Compras avanzado (F5): solicitudes, ordenes, recepcion y cuentas por pagar (CU-ERP-002..009)',
+        },
+        {
+          name: 'ventas',
+          description:
+            'Ventas del ERP (F5): consulta y gestion del ciclo de pedidos del canal (CU-CM-007 base)',
         },
         {
           name: 'administracion',
@@ -138,6 +144,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasErp);
   await aplicacion.register(rutasInventario);
   await aplicacion.register(rutasCompras);
+  await aplicacion.register(rutasVentas);
 
   aplicacion.get('/', async function () {
     return {
