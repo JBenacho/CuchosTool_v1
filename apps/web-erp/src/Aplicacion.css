@@ -241,3 +241,12 @@
   margin-bottom: var(--ct-space-4);
   font-size: var(--ct-text-sm);
 }
+.header-acciones {
+  display: flex;
+  gap: var(--ct-space-2);
+  margin-left: var(--ct-space-3);
+}
+.btn--sm {
+  padding: var(--ct-space-1) var(--ct-space-3);
+  font-size: var(--ct-text-xs);
+}
