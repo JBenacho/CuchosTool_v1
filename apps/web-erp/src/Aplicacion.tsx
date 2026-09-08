@@ -31,6 +31,42 @@ interface Proveedor {
   estado: string;
 }
 
+interface BodegaInv {
+  id: number;
+  nombre: string;
+  ubicacion: string | null;
+  estado: string;
+}
+
+interface ProductoCorto {
+  id: number;
+  nombre: string;
+  stock: number;
+}
+
+interface FilaStock {
+  bodegaId: number;
+  bodegaNombre: string;
+  productoId: number;
+  productoNombre: string;
+  cantidad: number;
+  stockMinimo: number;
+  bajoMinimo: boolean;
+}
+
+interface FilaKardex {
+  id: number;
+  consecutivo: string;
+  tipo: string;
+  cantidad: number;
+  stockResultante: number;
+  motivo: string;
+  referencia: string | null;
+  bodegaNombre: string;
+  productoNombre: string;
+  creadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -90,6 +126,19 @@ function Aplicacion(): JSX.Element {
   const [sitioNuevo, setSitioNuevo] = useState('');
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  // Estado del modulo Inventario (CU-INV-001..008).
+  const [bodegasInv, setBodegasInv] = useState<BodegaInv[]>([]);
+  const [productosInv, setProductosInv] = useState<ProductoCorto[]>([]);
+  const [stockInv, setStockInv] = useState<FilaStock[]>([]);
+  const [kardexInv, setKardexInv] = useState<FilaKardex[]>([]);
+  const [bodegaSel, setBodegaSel] = useState('');
+  const [productoInvSel, setProductoInvSel] = useState('');
+  const [cantidadInv, setCantidadInv] = useState('');
+  const [motivoInv, setMotivoInv] = useState('');
+  const [referenciaInv, setReferenciaInv] = useState('');
+  const [minimoInv, setMinimoInv] = useState('');
+  const [nombreBodegaNueva, setNombreBodegaNueva] = useState('');
+  const [ubicacionBodegaNueva, setUbicacionBodegaNueva] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -118,7 +167,8 @@ function Aplicacion(): JSX.Element {
         ultimosClientes: clientes.slice(0, 5),
       });
     } catch {
-      setMensaje('No se pudo cargar el resumen');
+      // El resumen es solo del Dashboard; no contaminar otros modulos con su error.
+      if (moduloActivo === 'Dashboard') setMensaje('No se pudo cargar el resumen');
     }
   }
 
@@ -224,6 +274,132 @@ function Aplicacion(): JSX.Element {
     await cargarProveedores(token);
   }
 
+  async function cargarInventario(tokenActivo: string): Promise<void> {
+    try {
+      const bodegasJson = await (await peticion('/inventario/bodegas', tokenActivo)).json();
+      setBodegasInv(bodegasJson.data as BodegaInv[]);
+    } catch {
+      setMensaje('No se pudieron cargar las bodegas');
+    }
+    try {
+      const catalogoJson = await (await peticion('/catalogo/productos', tokenActivo)).json();
+      setProductosInv(catalogoJson.data as ProductoCorto[]);
+    } catch {
+      setMensaje('No se pudo cargar el catalogo');
+    }
+    try {
+      const stockJson = await (await peticion('/inventario/stock', tokenActivo)).json();
+      setStockInv(stockJson.data as FilaStock[]);
+    } catch {
+      setMensaje('No se pudo cargar el stock');
+    }
+    try {
+      const kardexJson = await (await peticion('/inventario/kardex', tokenActivo)).json();
+      setKardexInv(kardexJson.data as FilaKardex[]);
+    } catch {
+      setMensaje('No se pudo cargar el kardex');
+    }
+  }
+
+  // Registra entrada/salida (CU-INV-001/002) o ajuste por conteo fisico (CU-INV-003).
+  async function registrarMovimientoInv(tipo: string): Promise<void> {
+    if (!token) return;
+    const bodegaId = Number(bodegaSel);
+    const productoId = Number(productoInvSel);
+    const cantidad = Number(cantidadInv);
+    if (!bodegaId || !productoId || !cantidad || cantidad <= 0) {
+      setMensaje('Seleccione bodega, producto y cantidad valida');
+      return;
+    }
+    if (!motivoInv.trim()) {
+      setMensaje('El motivo es obligatorio');
+      return;
+    }
+    const cuerpo = {
+      bodegaId: bodegaId,
+      productoId: productoId,
+      cantidad: cantidad,
+      motivo: motivoInv.trim(),
+      referencia: referenciaInv.trim() || undefined,
+    };
+    const ruta =
+      tipo === 'entrada'
+        ? '/inventario/movimientos/entrada'
+        : tipo === 'salida'
+          ? '/inventario/movimientos/salida'
+          : '/inventario/movimientos/ajuste';
+    const respuesta = await peticion(ruta, token, 'POST', cuerpo);
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        json.error === 'stock_insuficiente'
+          ? 'Stock insuficiente en la bodega'
+          : 'No se pudo registrar el movimiento',
+      );
+      return;
+    }
+    setCantidadInv('');
+    setMotivoInv('');
+    setReferenciaInv('');
+    await cargarInventario(token);
+  }
+
+  // Crea una bodega (CU-INV-005).
+  async function crearBodegaInv(): Promise<void> {
+    if (!token) return;
+    if (!nombreBodegaNueva.trim()) {
+      setMensaje('El nombre de la bodega es obligatorio');
+      return;
+    }
+    const respuesta = await peticion('/inventario/bodegas', token, 'POST', {
+      nombre: nombreBodegaNueva.trim(),
+      ubicacion: ubicacionBodegaNueva.trim() || undefined,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear la bodega');
+      return;
+    }
+    setNombreBodegaNueva('');
+    setUbicacionBodegaNueva('');
+    await cargarInventario(token);
+  }
+
+  // Inactiva una bodega (CU-INV-005).
+  async function inactivarBodegaInv(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/inventario/bodegas/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar la bodega');
+      return;
+    }
+    await cargarInventario(token);
+  }
+
+  // Configura el stock minimo de un producto en la bodega (CU-INV-007).
+  async function fijarStockMinimoInv(): Promise<void> {
+    if (!token) return;
+    const bodegaId = Number(bodegaSel);
+    const productoId = Number(productoInvSel);
+    const stockMinimo = Number(minimoInv);
+    if (!bodegaId || !productoId || stockMinimo < 0) {
+      setMensaje('Seleccione bodega y producto con minimo valido');
+      return;
+    }
+    const respuesta = await peticion('/inventario/stock/minimo', token, 'PATCH', {
+      bodegaId: bodegaId,
+      productoId: productoId,
+      stockMinimo: stockMinimo,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo configurar el stock minimo');
+      return;
+    }
+    setMinimoInv('');
+    await cargarInventario(token);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -253,8 +429,18 @@ function Aplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Inventario') {
+        cargarInventario(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
+  const esInventario = moduloActivo === 'Inventario';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -550,7 +736,267 @@ function Aplicacion(): JSX.Element {
               </section>
             </>
           )}
-          {!esDashboard && !esCompras && (
+          {esInventario && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Registrar movimiento de inventario (CU-INV-001/002/003)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={bodegaSel}
+                    onChange={function (e) {
+                      setBodegaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Bodega...</option>
+                    {bodegasInv.map(function (b) {
+                      return (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={productoInvSel}
+                    onChange={function (e) {
+                      setProductoInvSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Producto...</option>
+                    {productosInv.map(function (p) {
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    placeholder="Cantidad"
+                    value={cantidadInv}
+                    onChange={function (e) {
+                      setCantidadInv(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Motivo (obligatorio)"
+                    value={motivoInv}
+                    onChange={function (e) {
+                      setMotivoInv(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Referencia (OC, guia, acta)"
+                    value={referenciaInv}
+                    onChange={function (e) {
+                      setReferenciaInv(e.target.value);
+                    }}
+                  />
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      registrarMovimientoInv('entrada');
+                    }}
+                  >
+                    Entrada
+                  </button>
+                  <button
+                    className="btn btn--warm"
+                    onClick={function () {
+                      registrarMovimientoInv('salida');
+                    }}
+                  >
+                    Salida
+                  </button>
+                  <button
+                    className="btn btn--line"
+                    onClick={function () {
+                      registrarMovimientoInv('ajuste');
+                    }}
+                  >
+                    Ajuste (conteo)
+                  </button>
+                </div>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Existencias por bodega (CU-INV-008)</h2>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Bodega</th>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Minimo</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockInv.map(function (fila) {
+                      return (
+                        <tr key={fila.bodegaId + '-' + fila.productoId}>
+                          <td>{fila.bodegaNombre}</td>
+                          <td>{fila.productoNombre}</td>
+                          <td>{fila.cantidad}</td>
+                          <td>{fila.stockMinimo}</td>
+                          <td>
+                            {fila.bajoMinimo ? (
+                              <span className="chip chip--warn">bajo minimo</span>
+                            ) : (
+                              <span className="chip chip--ok">ok</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {stockInv.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin existencias registradas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Bodegas (CU-INV-005) y stock minimo (CU-INV-007)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre nueva bodega"
+                    value={nombreBodegaNueva}
+                    onChange={function (e) {
+                      setNombreBodegaNueva(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Ubicacion"
+                    value={ubicacionBodegaNueva}
+                    onChange={function (e) {
+                      setUbicacionBodegaNueva(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearBodegaInv}>
+                    Crear bodega
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Bodega</th>
+                      <th>Ubicacion</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bodegasInv.map(function (b) {
+                      return (
+                        <tr key={b.id}>
+                          <td>{b.nombre}</td>
+                          <td>{b.ubicacion || '-'}</td>
+                          <td>{b.estado}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              <button
+                                className="btn btn--line"
+                                onClick={function () {
+                                  setBodegaSel(String(b.id));
+                                }}
+                              >
+                                Usar
+                              </button>
+                              <button
+                                className="btn btn--warm"
+                                onClick={function () {
+                                  inactivarBodegaInv(b.id);
+                                }}
+                              >
+                                Inactivar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    placeholder="Stock minimo"
+                    value={minimoInv}
+                    onChange={function (e) {
+                      setMinimoInv(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={fijarStockMinimoInv}>
+                    Fijar minimo a producto seleccionado
+                  </button>
+                </div>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Kardex reciente (CU-INV-006)</h2>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Consecutivo</th>
+                      <th>Fecha</th>
+                      <th>Tipo</th>
+                      <th>Producto</th>
+                      <th>Bodega</th>
+                      <th>Cantidad</th>
+                      <th>Saldo</th>
+                      <th>Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kardexInv.map(function (k) {
+                      return (
+                        <tr key={k.id}>
+                          <td>{k.consecutivo}</td>
+                          <td>{k.creadoEn.slice(0, 19).replace('T', ' ')}</td>
+                          <td>{k.tipo}</td>
+                          <td>{k.productoNombre}</td>
+                          <td>{k.bodegaNombre}</td>
+                          <td>{k.cantidad > 0 ? '+' + k.cantidad : String(k.cantidad)}</td>
+                          <td>{k.stockResultante}</td>
+                          <td>{k.motivo}</td>
+                        </tr>
+                      );
+                    })}
+                    {kardexInv.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin movimientos registrados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+          {!esDashboard && !esCompras && !esInventario && (
             <section className="panel">
               <div className="panel-head">
                 <h2>{moduloActivo}</h2>
