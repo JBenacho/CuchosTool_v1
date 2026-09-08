@@ -89,6 +89,38 @@ interface FilaCuenta {
   referenciaPago: string | null;
 }
 
+interface FilaVenta {
+  id: number;
+  referenciaPedido: string;
+  clienteId: string;
+  clienteCorreo: string | null;
+  clienteNombre: string | null;
+  totalCentavos: number;
+  estado: string;
+  creadoEn: string;
+}
+
+interface ResumenVentas {
+  total: number;
+  porEstado: Record<string, number>;
+  ventasEfectivas: number;
+  montoEfectivoCentavos: number;
+  montoPendienteCentavos: number;
+}
+
+interface DetalleVenta {
+  referenciaPedido: string;
+  estado: string;
+  totalCentavos: number;
+  cliente: { id: number; correo: string; nombre: string } | null;
+  lineas: {
+    productoId: number;
+    productoNombre: string;
+    cantidad: number;
+    precioUnitarioCentavos: number;
+  }[];
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -178,6 +210,11 @@ function ContenidoAplicacion(): JSX.Element {
   const [bodegaCompraSel, setBodegaCompraSel] = useState('');
   const [cantidadOrden, setCantidadOrden] = useState('');
   const [precioOrden, setPrecioOrden] = useState('');
+  // Estado del modulo Ventas (CU-CM-007 base).
+  const [ventas, setVentas] = useState<FilaVenta[]>([]);
+  const [resumenVentas, setResumenVentas] = useState<ResumenVentas | null>(null);
+  const [filtroEstadoVenta, setFiltroEstadoVenta] = useState('');
+  const [detalleVenta, setDetalleVenta] = useState<DetalleVenta | null>(null);
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -570,6 +607,54 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarComprasAvanzado(token);
   }
 
+  // Consulta las ventas y su resumen (CU-CM-007 base).
+  async function cargarVentas(tokenActivo: string): Promise<void> {
+    const ruta = filtroEstadoVenta ? '/ventas?estado=' + filtroEstadoVenta : '/ventas';
+    const respuesta = await peticion(ruta, tokenActivo);
+    if (!respuesta.ok) {
+      setVentas([]);
+      return;
+    }
+    const json = await respuesta.json();
+    setVentas((json.data as FilaVenta[]) || []);
+    const resRespuesta = await peticion('/ventas/resumen', tokenActivo);
+    if (resRespuesta.ok) {
+      const resJson = await resRespuesta.json();
+      setResumenVentas((resJson.data as ResumenVentas) || null);
+    }
+  }
+
+  async function entregarVentaUI(referencia: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/ventas/' + referencia + '/entregar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo marcar la venta como entregada');
+      return;
+    }
+    await cargarVentas(token);
+  }
+
+  async function cancelarVentaUI(referencia: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/ventas/' + referencia + '/cancelar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo cancelar la venta');
+      return;
+    }
+    await cargarVentas(token);
+  }
+
+  async function verDetalleVentaUI(referencia: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/ventas/' + referencia, token);
+    if (!respuesta.ok) {
+      setDetalleVenta(null);
+      return;
+    }
+    const json = await respuesta.json();
+    setDetalleVenta((json.data as DetalleVenta) || null);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -618,9 +703,19 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Ventas') {
+        cargarVentas(token);
+      }
+    },
+    [moduloActivo, token, filtroEstadoVenta],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
+  const esVentas = moduloActivo === 'Ventas';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -1375,7 +1470,146 @@ function ContenidoAplicacion(): JSX.Element {
               </section>
             </>
           )}
-          {!esDashboard && !esCompras && !esInventario && (
+          {esVentas && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              {resumenVentas && (
+                <section className="kpi-grid">
+                  <article className="kpi-card">
+                    <span className="muted">Ventas totales</span>
+                    <strong>{resumenVentas.total}</strong>
+                  </article>
+                  <article className="kpi-card">
+                    <span className="muted">Ventas efectivas</span>
+                    <strong>{resumenVentas.ventasEfectivas}</strong>
+                  </article>
+                  <article className="kpi-card">
+                    <span className="muted">Monto efectivo</span>
+                    <strong>{formatearPesos(resumenVentas.montoEfectivoCentavos)}</strong>
+                  </article>
+                  <article className="kpi-card">
+                    <span className="muted">Monto pendiente de pago</span>
+                    <strong>{formatearPesos(resumenVentas.montoPendienteCentavos)}</strong>
+                  </article>
+                </section>
+              )}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ventas / pedidos del canal (CU-CM-007 base)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={filtroEstadoVenta}
+                    onChange={function (e) {
+                      setFiltroEstadoVenta(e.target.value);
+                    }}
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente_pago">Pendiente de pago</option>
+                    <option value="pagado">Pagado</option>
+                    <option value="entregado">Entregado</option>
+                    <option value="cancelado">Cancelado</option>
+                    <option value="rechazado">Rechazado</option>
+                  </select>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Cliente</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Fecha</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ventas.map(function (v) {
+                      return (
+                        <tr key={v.referenciaPedido}>
+                          <td>{v.referenciaPedido}</td>
+                          <td>{v.clienteNombre || v.clienteCorreo || v.clienteId}</td>
+                          <td>{formatearPesos(v.totalCentavos)}</td>
+                          <td>{v.estado}</td>
+                          <td>{v.creadoEn.slice(0, 19).replace('T', ' ')}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              <button
+                                className="btn btn--line"
+                                onClick={function () {
+                                  verDetalleVentaUI(v.referenciaPedido);
+                                }}
+                              >
+                                Ver
+                              </button>
+                              {v.estado === 'pagado' && (
+                                <button
+                                  className="btn btn--primary"
+                                  onClick={function () {
+                                    entregarVentaUI(v.referenciaPedido);
+                                  }}
+                                >
+                                  Entregar
+                                </button>
+                              )}
+                              {v.estado === 'pendiente_pago' && (
+                                <button
+                                  className="btn btn--warm"
+                                  onClick={function () {
+                                    cancelarVentaUI(v.referenciaPedido);
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {ventas.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin ventas para el filtro actual.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              {detalleVenta && (
+                <section className="panel">
+                  <div className="panel-head">
+                    <h2>Detalle de {detalleVenta.referenciaPedido}</h2>
+                  </div>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio unitario</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detalleVenta.lineas.map(function (linea, indice) {
+                        return (
+                          <tr key={indice}>
+                            <td>{linea.productoNombre}</td>
+                            <td>{linea.cantidad}</td>
+                            <td>{formatearPesos(linea.precioUnitarioCentavos)}</td>
+                            <td>{formatearPesos(linea.cantidad * linea.precioUnitarioCentavos)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+            </>
+          )}
+          {!esDashboard && !esCompras && !esInventario && !esVentas && (
             <section className="panel">
               <div className="panel-head">
                 <h2>{moduloActivo}</h2>
