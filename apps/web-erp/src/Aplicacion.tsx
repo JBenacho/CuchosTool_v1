@@ -595,6 +595,15 @@ function Aplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Inventario') {
+        cargarInventario(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
