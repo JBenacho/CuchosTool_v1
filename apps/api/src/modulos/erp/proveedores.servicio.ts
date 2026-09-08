@@ -114,6 +114,7 @@ export async function listarProveedores(soloActivos = true) {
 export async function actualizarProveedor(
   id: number,
   cambios: {
+    nombre?: string;
     contacto?: string;
     telefono?: string;
     correo?: string;
@@ -123,12 +124,17 @@ export async function actualizarProveedor(
 ): Promise<ResultadoProveedor> {
   const existente = await base.select().from(proveedores).where(eq(proveedores.id, id)).limit(1);
   if (!existente[0]) return { ok: false, codigoEstado: 404, error: 'proveedor_no_encontrado' };
+  if (cambios.nombre !== undefined) {
+    const nombre = String(cambios.nombre).trim();
+    if (!nombre) return { ok: false, codigoEstado: 400, error: 'datos_incompletos' };
+  }
   if (cambios.correo !== undefined) {
     const correo = String(cambios.correo).trim() || null;
     if (correo && !PATRON_CORREO.test(correo))
       return { ok: false, codigoEstado: 400, error: 'correo_invalido' };
   }
   const actualizacion: {
+    nombre?: string;
     contacto?: string | null;
     telefono?: string | null;
     correo?: string | null;
@@ -136,6 +142,7 @@ export async function actualizarProveedor(
     sitioWeb?: string | null;
     actualizadoEn: Date;
   } = { actualizadoEn: new Date() };
+  if (cambios.nombre !== undefined) actualizacion.nombre = String(cambios.nombre).trim();
   if (cambios.contacto !== undefined)
     actualizacion.contacto = String(cambios.contacto).trim() || null;
   if (cambios.telefono !== undefined)
