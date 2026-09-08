@@ -1,5 +1,5 @@
 // Sitio ERP (F5): login interno y dashboards con datos reales de la API.
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import './Aplicacion.css';
 
 const API = '/api';
@@ -123,7 +123,7 @@ async function peticion(
   });
 }
 
-function Aplicacion(): JSX.Element {
+function ContenidoAplicacion(): JSX.Element {
   const [token, setToken] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -434,29 +434,34 @@ function Aplicacion(): JSX.Element {
 
   // Carga datos de Compras avanzado (CU-ERP-002..009).
   async function cargarComprasAvanzado(tokenActivo: string): Promise<void> {
-    try {
-      const ordenesJson = await (await peticion('/compras/ordenes', tokenActivo)).json();
-      setOrdenesCompra(ordenesJson.data as FilaOrden[]);
-    } catch {
-      setMensaje('No se pudieron cargar las ordenes de compra');
+    // Cada consulta es opcional segun el rol: si la API responde 403/error se deja la lista anterior.
+    const ordenesRespuesta = await peticion('/compras/ordenes', tokenActivo);
+    if (ordenesRespuesta.ok) {
+      const ordenesJson = await ordenesRespuesta.json();
+      setOrdenesCompra((ordenesJson.data as FilaOrden[]) || []);
+    } else {
+      setOrdenesCompra([]);
     }
-    try {
-      const cuentasJson = await (await peticion('/compras/cuentas-pagar', tokenActivo)).json();
-      setCuentasPagar(cuentasJson.data as FilaCuenta[]);
-    } catch {
-      // Solo el rol contable/admin consulta cuentas; silencioso para los demas.
+    const cuentasRespuesta = await peticion('/compras/cuentas-pagar', tokenActivo);
+    if (cuentasRespuesta.ok) {
+      const cuentasJson = await cuentasRespuesta.json();
+      setCuentasPagar((cuentasJson.data as FilaCuenta[]) || []);
+    } else {
+      setCuentasPagar([]);
     }
-    try {
-      const catalogoJson = await (await peticion('/catalogo/productos', tokenActivo)).json();
-      setCatalogoCompras(catalogoJson.data as ProductoCorto[]);
-    } catch {
-      // Silencioso: el catalogo puede requerir otro permiso.
+    const catalogoRespuesta = await peticion('/catalogo/productos', tokenActivo);
+    if (catalogoRespuesta.ok) {
+      const catalogoJson = await catalogoRespuesta.json();
+      setCatalogoCompras((catalogoJson.data as ProductoCorto[]) || []);
+    } else {
+      setCatalogoCompras([]);
     }
-    try {
-      const bodegasJson = await (await peticion('/inventario/bodegas', tokenActivo)).json();
-      setBodegasCompras(bodegasJson.data as BodegaInv[]);
-    } catch {
-      // Silencioso.
+    const bodegasRespuesta = await peticion('/inventario/bodegas', tokenActivo);
+    if (bodegasRespuesta.ok) {
+      const bodegasJson = await bodegasRespuesta.json();
+      setBodegasCompras((bodegasJson.data as BodegaInv[]) || []);
+    } else {
+      setBodegasCompras([]);
     }
   }
 
@@ -1374,6 +1379,53 @@ function Aplicacion(): JSX.Element {
         </main>
       </div>
     </div>
+  );
+}
+
+// Limite de errores: si un modulo falla se muestra un aviso en vez de pantalla en negro.
+class LimiteErrores extends Component<{ children: unknown }, { error: unknown }> {
+  constructor(props: { children: unknown }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="app-shell">
+          <div
+            className="panel"
+            style={{ margin: 'var(--ct-space-5)', padding: 'var(--ct-space-4)' }}
+          >
+            <h2>Ocurrio un error inesperado en el modulo</h2>
+            <p className="muted">
+              Recarga la pagina para continuar. Si persiste, revisa la consola del navegador.
+            </p>
+            <button
+              className="btn btn--primary"
+              onClick={function () {
+                window.location.reload();
+              }}
+            >
+              Recargar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}
+
+function Aplicacion(): JSX.Element {
+  return (
+    <LimiteErrores>
+      <ContenidoAplicacion />
+    </LimiteErrores>
   );
 }
 
