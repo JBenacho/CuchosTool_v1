@@ -20,6 +20,7 @@ type CuerpoProveedor = {
 };
 
 type CambiosProveedor = {
+  nombre?: string;
   contacto?: string;
   telefono?: string;
   correo?: string;
@@ -70,6 +71,13 @@ export async function rutasErp(aplicacion: FastifyInstance): Promise<void> {
       );
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'erp.actualizar_proveedor',
+        'proveedores',
+        solicitud.params.id,
+        'ok',
+      );
       return { data: resultado.datos };
     },
   );

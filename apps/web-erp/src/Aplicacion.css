@@ -212,3 +212,32 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.btn--line {
+  background: transparent;
+  border: 1px solid var(--ct-line-strong);
+  color: var(--ct-text);
+}
+.btn--line:hover {
+  border-color: var(--ct-accent);
+  color: var(--ct-accent);
+}
+.acciones-fila {
+  display: flex;
+  gap: var(--ct-space-2);
+}
+.search-box {
+  padding: var(--ct-space-3) var(--ct-space-4) 0;
+}
+.search-box .input {
+  max-width: 360px;
+  margin: 0;
+}
+.alerta {
+  background: rgba(209, 97, 20, 0.12);
+  border: 1px solid rgba(209, 97, 20, 0.4);
+  color: var(--ct-warm);
+  border-radius: var(--ct-radius-md);
+  padding: var(--ct-space-2) var(--ct-space-4);
+  margin-bottom: var(--ct-space-4);
+  font-size: var(--ct-text-sm);
+}
