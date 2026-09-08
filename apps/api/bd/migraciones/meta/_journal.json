@@ -71,6 +71,13 @@
       "when": 1788827790496,
       "tag": "0009_faithful_gressill",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788830291223,
+      "tag": "0010_tiresome_albert_cleary",
+      "breakpoints": true
     }
   ]
 }
