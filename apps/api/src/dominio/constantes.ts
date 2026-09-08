@@ -2,7 +2,8 @@
 // Regla de calidad: ningun valor de negocio se escribe directamente en el codigo;
 // siempre se referencia desde aqui para mantener un unico punto de verdad.
 
-// Moneda unica de la plataforma (peso colombiano).
+// Moneda oficial del proyecto: Peso colombiano (COP). Todos los importes monetarios
+// se almacenan en centavos de peso (integer/bigint) para evitar errores de redondeo.
 export const MONEDA_COP = 'COP';
 
 // Estados de pedido (CU-EC-008/009). El flujo de pagos (F3) ampliara esta lista.
@@ -132,6 +133,19 @@ export const MOVIMIENTO_ENTRADA = 'ENTRADA';
 export const MOVIMIENTO_SALIDA = 'SALIDA';
 export const MOVIMIENTO_AJUSTE = 'AJUSTE';
 export const EVENTO_INVENTARIO_STOCK_ACTUALIZADO = 'com.cuchostool.inventario.stock_actualizado';
+// Compras avanzado (CU-ERP-002..009): estados de solicitud, orden y cuentas por pagar.
+// Trazabilidad con los codigos de ficha: PENDING_REVIEW, PENDING_APPROVAL, APPROVED, PENDING/PAID.
+export const SOLICITUD_PENDIENTE_REVISION = 'pendiente_revision';
+export const SOLICITUD_CONVERTIDA = 'convertida';
+export const SOLICITUD_CANCELADA = 'cancelada';
+export const ORDEN_PENDIENTE_APROBACION = 'pendiente_aprobacion';
+export const ORDEN_APROBADA = 'aprobada';
+export const ORDEN_CANCELADA = 'cancelada';
+export const ORDEN_RECIBIDA_PARCIAL = 'recibida_parcial';
+export const ORDEN_COMPLETADA = 'completada';
+export const CUENTA_PENDIENTE = 'pendiente';
+export const CUENTA_PAGADA = 'pagada';
+export const TERMINO_PAGO_DIAS_POR_DEFECTO = 30;
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

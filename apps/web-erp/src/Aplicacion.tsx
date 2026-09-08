@@ -1,5 +1,5 @@
 // Sitio ERP (F5): login interno y dashboards con datos reales de la API.
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import './Aplicacion.css';
 
 const API = '/api';
@@ -67,6 +67,28 @@ interface FilaKardex {
   creadoEn: string;
 }
 
+interface FilaOrden {
+  id: number;
+  referencia: string;
+  proveedorNombre: string;
+  productoNombre: string;
+  cantidadPedida: number;
+  cantidadRecibida: number;
+  saldoPendiente: number;
+  totalCentavos: number;
+  estado: string;
+}
+
+interface FilaCuenta {
+  id: number;
+  ordenReferencia: string;
+  proveedorNombre: string;
+  montoCentavos: number;
+  venceEn: string;
+  estado: string;
+  referenciaPago: string | null;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -81,7 +103,14 @@ const MODULOS = [
 ] as const;
 
 function formatearPesos(centavos: number): string {
-  return '$ ' + (centavos / 100).toLocaleString('es-CO');
+  // Pesos colombianos con dos decimales (ej. $ 1.000,50); sin etiquetas de centavos.
+  return (
+    '$ ' +
+    (centavos / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 async function peticion(
@@ -101,7 +130,7 @@ async function peticion(
   });
 }
 
-function Aplicacion(): JSX.Element {
+function ContenidoAplicacion(): JSX.Element {
   const [token, setToken] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -139,6 +168,16 @@ function Aplicacion(): JSX.Element {
   const [minimoInv, setMinimoInv] = useState('');
   const [nombreBodegaNueva, setNombreBodegaNueva] = useState('');
   const [ubicacionBodegaNueva, setUbicacionBodegaNueva] = useState('');
+  // Estado de Compras avanzado (CU-ERP-002..009).
+  const [ordenesCompra, setOrdenesCompra] = useState<FilaOrden[]>([]);
+  const [cuentasPagar, setCuentasPagar] = useState<FilaCuenta[]>([]);
+  const [catalogoCompras, setCatalogoCompras] = useState<ProductoCorto[]>([]);
+  const [bodegasCompras, setBodegasCompras] = useState<BodegaInv[]>([]);
+  const [proveedorSel, setProveedorSel] = useState('');
+  const [productoCompraSel, setProductoCompraSel] = useState('');
+  const [bodegaCompraSel, setBodegaCompraSel] = useState('');
+  const [cantidadOrden, setCantidadOrden] = useState('');
+  const [precioOrden, setPrecioOrden] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -400,6 +439,137 @@ function Aplicacion(): JSX.Element {
     await cargarInventario(token);
   }
 
+  // Carga datos de Compras avanzado (CU-ERP-002..009).
+  async function cargarComprasAvanzado(tokenActivo: string): Promise<void> {
+    // Cada consulta es opcional segun el rol: si la API responde 403/error se deja la lista anterior.
+    const ordenesRespuesta = await peticion('/compras/ordenes', tokenActivo);
+    if (ordenesRespuesta.ok) {
+      const ordenesJson = await ordenesRespuesta.json();
+      setOrdenesCompra((ordenesJson.data as FilaOrden[]) || []);
+    } else {
+      setOrdenesCompra([]);
+    }
+    const cuentasRespuesta = await peticion('/compras/cuentas-pagar', tokenActivo);
+    if (cuentasRespuesta.ok) {
+      const cuentasJson = await cuentasRespuesta.json();
+      setCuentasPagar((cuentasJson.data as FilaCuenta[]) || []);
+    } else {
+      setCuentasPagar([]);
+    }
+    const catalogoRespuesta = await peticion('/catalogo/productos', tokenActivo);
+    if (catalogoRespuesta.ok) {
+      const catalogoJson = await catalogoRespuesta.json();
+      setCatalogoCompras((catalogoJson.data as ProductoCorto[]) || []);
+    } else {
+      setCatalogoCompras([]);
+    }
+    const bodegasRespuesta = await peticion('/inventario/bodegas', tokenActivo);
+    if (bodegasRespuesta.ok) {
+      const bodegasJson = await bodegasRespuesta.json();
+      setBodegasCompras((bodegasJson.data as BodegaInv[]) || []);
+    } else {
+      setBodegasCompras([]);
+    }
+  }
+
+  // Crea una orden de compra directa (CU-ERP-003).
+  async function crearOrdenUI(): Promise<void> {
+    if (!token) return;
+    const proveedorId = Number(proveedorSel);
+    const productoId = Number(productoCompraSel);
+    const bodegaId = Number(bodegaCompraSel);
+    const cantidad = Number(cantidadOrden);
+    // El precio se captura en pesos colombianos (COP) y se almacena en centavos (MONEDA_COP).
+    const precioPesos = Number(precioOrden);
+    if (
+      !proveedorId ||
+      !productoId ||
+      !bodegaId ||
+      !cantidad ||
+      cantidad <= 0 ||
+      !precioPesos ||
+      precioPesos <= 0
+    ) {
+      setMensaje('Complete proveedor, producto, bodega, cantidad y precio (COP)');
+      return;
+    }
+    const precioCentavos = Math.round(precioPesos * 100);
+    const respuesta = await peticion('/compras/ordenes', token, 'POST', {
+      proveedorId: proveedorId,
+      productoId: productoId,
+      bodegaDestinoId: bodegaId,
+      cantidad: cantidad,
+      precioUnitarioCentavos: precioCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear la orden de compra');
+      return;
+    }
+    setCantidadOrden('');
+    setPrecioOrden('');
+    await cargarComprasAvanzado(token);
+  }
+
+  async function aprobarOrdenUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/compras/ordenes/' + id + '/aprobar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo aprobar la orden');
+      return;
+    }
+    await cargarComprasAvanzado(token);
+  }
+
+  async function cancelarOrdenUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/compras/ordenes/' + id + '/cancelar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo cancelar la orden');
+      return;
+    }
+    await cargarComprasAvanzado(token);
+  }
+
+  // Recibe el saldo pendiente de la orden e ingresa al inventario (CU-ERP-007/008).
+  async function recibirSaldoOrdenUI(id: number): Promise<void> {
+    if (!token) return;
+    const orden = ordenesCompra.find(function (o) {
+      return o.id === id;
+    });
+    if (!orden || orden.saldoPendiente <= 0) {
+      setMensaje('No hay saldo pendiente por recibir');
+      return;
+    }
+    const respuesta = await peticion('/compras/ordenes/' + id + '/recepcion', token, 'POST', {
+      cantidadRecibida: orden.saldoPendiente,
+    });
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        json.error === 'cantidad_excede_saldo'
+          ? 'La cantidad excede el saldo'
+          : 'No se pudo registrar la recepcion',
+      );
+      return;
+    }
+    await Promise.all([cargarComprasAvanzado(token), cargarProveedores(token)]);
+  }
+
+  // Marca pagada una cuenta por pagar (CU-ERP-009).
+  async function pagarCuentaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/compras/cuentas-pagar/' + id + '/pagar', token, 'PATCH', {
+      referenciaPago: 'PAGO-ERP-' + id,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo registrar el pago');
+      return;
+    }
+    await cargarComprasAvanzado(token);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -424,6 +594,16 @@ function Aplicacion(): JSX.Element {
     function () {
       if (token && moduloActivo === 'Compras') {
         cargarProveedores(token);
+        cargarComprasAvanzado(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Inventario') {
+        cargarInventario(token);
       }
     },
     [moduloActivo, token],
@@ -734,6 +914,205 @@ function Aplicacion(): JSX.Element {
                   </tbody>
                 </table>
               </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ordenes de compra (CU-ERP-002..009)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={proveedorSel}
+                    onChange={function (e) {
+                      setProveedorSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Proveedor...</option>
+                    {proveedores.map(function (p) {
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={productoCompraSel}
+                    onChange={function (e) {
+                      setProductoCompraSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Producto...</option>
+                    {catalogoCompras.map(function (p) {
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={bodegaCompraSel}
+                    onChange={function (e) {
+                      setBodegaCompraSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Bodega destino...</option>
+                    {bodegasCompras.map(function (b) {
+                      return (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    placeholder="Cantidad"
+                    value={cantidadOrden}
+                    onChange={function (e) {
+                      setCantidadOrden(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="Precio unitario (COP)"
+                    title="Valor en pesos colombianos (COP), ej. 1000,50"
+                    value={precioOrden}
+                    onChange={function (e) {
+                      setPrecioOrden(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearOrdenUI}>
+                    Crear orden
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Proveedor</th>
+                      <th>Producto</th>
+                      <th>Pedido</th>
+                      <th>Recibido</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ordenesCompra.map(function (o) {
+                      return (
+                        <tr key={o.id}>
+                          <td>{o.referencia}</td>
+                          <td>{o.proveedorNombre}</td>
+                          <td>{o.productoNombre}</td>
+                          <td>{o.cantidadPedida}</td>
+                          <td>{o.cantidadRecibida}</td>
+                          <td>{formatearPesos(o.totalCentavos)}</td>
+                          <td>{o.estado}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              {o.estado === 'pendiente_aprobacion' && (
+                                <button
+                                  className="btn btn--primary"
+                                  onClick={function () {
+                                    aprobarOrdenUI(o.id);
+                                  }}
+                                >
+                                  Aprobar
+                                </button>
+                              )}
+                              {(o.estado === 'aprobada' || o.estado === 'recibida_parcial') && (
+                                <button
+                                  className="btn btn--warm"
+                                  onClick={function () {
+                                    recibirSaldoOrdenUI(o.id);
+                                  }}
+                                >
+                                  Recibir ({o.saldoPendiente})
+                                </button>
+                              )}
+                              {(o.estado === 'pendiente_aprobacion' || o.estado === 'aprobada') && (
+                                <button
+                                  className="btn btn--line"
+                                  onClick={function () {
+                                    cancelarOrdenUI(o.id);
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {ordenesCompra.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin ordenes de compra.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Cuentas por pagar de compras (CU-ERP-009)</h2>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Orden</th>
+                      <th>Proveedor</th>
+                      <th>Monto</th>
+                      <th>Vence</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cuentasPagar.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.ordenReferencia}</td>
+                          <td>{c.proveedorNombre}</td>
+                          <td>{formatearPesos(c.montoCentavos)}</td>
+                          <td>{c.venceEn.slice(0, 10)}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            {c.estado === 'pendiente' && (
+                              <button
+                                className="btn btn--primary"
+                                onClick={function () {
+                                  pagarCuentaUI(c.id);
+                                }}
+                              >
+                                Pagar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {cuentasPagar.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin cuentas por pagar.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
             </>
           )}
           {esInventario && (
@@ -1011,6 +1390,53 @@ function Aplicacion(): JSX.Element {
         </main>
       </div>
     </div>
+  );
+}
+
+// Limite de errores: si un modulo falla se muestra un aviso en vez de pantalla en negro.
+class LimiteErrores extends Component<{ children: unknown }, { error: unknown }> {
+  constructor(props: { children: unknown }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="app-shell">
+          <div
+            className="panel"
+            style={{ margin: 'var(--ct-space-5)', padding: 'var(--ct-space-4)' }}
+          >
+            <h2>Ocurrio un error inesperado en el modulo</h2>
+            <p className="muted">
+              Recarga la pagina para continuar. Si persiste, revisa la consola del navegador.
+            </p>
+            <button
+              className="btn btn--primary"
+              onClick={function () {
+                window.location.reload();
+              }}
+            >
+              Recargar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}
+
+function Aplicacion(): JSX.Element {
+  return (
+    <LimiteErrores>
+      <ContenidoAplicacion />
+    </LimiteErrores>
   );
 }
 

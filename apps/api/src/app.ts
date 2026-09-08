@@ -19,6 +19,7 @@ import { rutasCasos } from './modulos/casos/casos.rutas';
 import { rutasCalidad } from './modulos/calidad/calidad.rutas';
 import { rutasErp } from './modulos/erp/erp.rutas';
 import { rutasInventario } from './modulos/inventario/inventario.rutas';
+import { rutasCompras } from './modulos/compras/compras.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -67,6 +68,11 @@ export async function construirAplicacion(opciones?: {
           name: 'inventario',
           description:
             'Inventario ERP (F5): movimientos, bodegas, stock y kardex (CU-INV-001..008)',
+        },
+        {
+          name: 'compras',
+          description:
+            'Compras avanzado (F5): solicitudes, ordenes, recepcion y cuentas por pagar (CU-ERP-002..009)',
         },
         {
           name: 'administracion',
@@ -131,6 +137,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasCalidad);
   await aplicacion.register(rutasErp);
   await aplicacion.register(rutasInventario);
+  await aplicacion.register(rutasCompras);
 
   aplicacion.get('/', async function () {
     return {

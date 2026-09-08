@@ -44,7 +44,14 @@ async function peticion(
 }
 
 function formatearPesos(centavos: number): string {
-  return '$ ' + (centavos / 100).toLocaleString('es-CO');
+  // Pesos colombianos con dos decimales (ej. $ 1.000,50); sin etiquetas de centavos.
+  return (
+    '$ ' +
+    (centavos / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 function App(): JSX.Element {

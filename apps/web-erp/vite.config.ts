@@ -7,6 +7,12 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5174,
+    // Evita caidas del watcher en Windows (EBUSY) por archivos temporales del editor.
+    watch: {
+      ignored: function (ruta: string) {
+        return ruta.includes('.tmpdir') || ruta.endsWith('.tmp');
+      },
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
