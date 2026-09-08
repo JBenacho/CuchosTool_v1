@@ -88,6 +88,8 @@ function Aplicacion(): JSX.Element {
   const [correoNuevo, setCorreoNuevo] = useState('');
   const [direccionNueva, setDireccionNueva] = useState('');
   const [sitioNuevo, setSitioNuevo] = useState('');
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -131,9 +133,60 @@ function Aplicacion(): JSX.Element {
     setProveedores(json.data as Proveedor[]);
   }
 
-  async function crearProveedorNuevo(): Promise<void> {
+  function resetearFormulario(): void {
+    setNitNuevo('');
+    setNombreNuevo('');
+    setContactoNuevo('');
+    setTelefonoNuevo('');
+    setCorreoNuevo('');
+    setDireccionNueva('');
+    setSitioNuevo('');
+  }
+
+  function iniciarEdicion(proveedor: Proveedor): void {
+    setEditandoId(proveedor.id);
+    setNitNuevo(proveedor.nit);
+    setNombreNuevo(proveedor.nombre);
+    setContactoNuevo(proveedor.contacto || '');
+    setTelefonoNuevo(proveedor.telefono || '');
+    setCorreoNuevo(proveedor.correo || '');
+    setDireccionNueva(proveedor.direccion || '');
+    setSitioNuevo(proveedor.sitioWeb || '');
+  }
+
+  function cancelarEdicion(): void {
+    setEditandoId(null);
+    resetearFormulario();
+  }
+
+  // Alta (POST) o edicion (PATCH) de proveedor segun editandoId (CU-ERP-001).
+  async function guardarProveedor(): Promise<void> {
     if (!token) return;
-    // Guard clause: nit y nombre son obligatorios (CU-ERP-001).
+    if (editandoId !== null) {
+      // Modo edicion: el NIT no cambia (identificador); enviamos '' para limpiar opcionales.
+      if (!nombreNuevo.trim()) {
+        setMensaje('El nombre es obligatorio');
+        return;
+      }
+      const cuerpo = {
+        nombre: nombreNuevo.trim(),
+        contacto: contactoNuevo.trim(),
+        telefono: telefonoNuevo.trim(),
+        correo: correoNuevo.trim(),
+        direccion: direccionNueva.trim(),
+        sitioWeb: sitioNuevo.trim(),
+      };
+      const respuesta = await peticion('/erp/proveedores/' + editandoId, token, 'PATCH', cuerpo);
+      if (!respuesta.ok) {
+        setMensaje('No se pudo guardar el proveedor');
+        return;
+      }
+      setEditandoId(null);
+      resetearFormulario();
+      await cargarProveedores(token);
+      return;
+    }
+    // Guard clause del alta: nit y nombre son obligatorios.
     if (!nitNuevo.trim() || !nombreNuevo.trim()) {
       setMensaje('NIT y nombre son obligatorios');
       return;
@@ -157,13 +210,7 @@ function Aplicacion(): JSX.Element {
       );
       return;
     }
-    setNitNuevo('');
-    setNombreNuevo('');
-    setContactoNuevo('');
-    setTelefonoNuevo('');
-    setCorreoNuevo('');
-    setDireccionNueva('');
-    setSitioNuevo('');
+    resetearFormulario();
     await cargarProveedores(token);
   }
 
@@ -208,6 +255,15 @@ function Aplicacion(): JSX.Element {
 
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
+  const termino = terminoBusqueda.trim().toLowerCase();
+  const proveedoresFiltrados = termino
+    ? proveedores.filter(function (proveedor) {
+        return (
+          proveedor.nit.toLowerCase().includes(termino) ||
+          proveedor.nombre.toLowerCase().includes(termino)
+        );
+      })
+    : proveedores;
 
   return (
     <div className="app-shell">
@@ -332,15 +388,22 @@ function Aplicacion(): JSX.Element {
           )}
           {esCompras && (
             <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
               <section className="panel">
                 <div className="panel-head">
-                  <h2>Nuevo proveedor (CU-ERP-001)</h2>
+                  <h2>
+                    {editandoId !== null
+                      ? 'Editar proveedor (CU-ERP-001)'
+                      : 'Nuevo proveedor (CU-ERP-001)'}
+                  </h2>
                 </div>
                 <div className="form-grid">
                   <input
                     className="input"
                     placeholder="NIT"
                     value={nitNuevo}
+                    readOnly={editandoId !== null}
+                    title={editandoId !== null ? 'El NIT no se puede editar' : undefined}
                     onChange={function (e) {
                       setNitNuevo(e.target.value);
                     }}
@@ -393,14 +456,29 @@ function Aplicacion(): JSX.Element {
                       setSitioNuevo(e.target.value);
                     }}
                   />
-                  <button className="btn btn--primary" onClick={crearProveedorNuevo}>
-                    Crear
+                  <button className="btn btn--primary" onClick={guardarProveedor}>
+                    {editandoId !== null ? 'Guardar cambios' : 'Crear'}
                   </button>
+                  {editandoId !== null && (
+                    <button className="btn btn--line" onClick={cancelarEdicion}>
+                      Cancelar
+                    </button>
+                  )}
                 </div>
               </section>
               <section className="panel">
                 <div className="panel-head">
                   <h2>Proveedores activos</h2>
+                </div>
+                <div className="search-box">
+                  <input
+                    className="input"
+                    placeholder="Buscar por NIT o nombre"
+                    value={terminoBusqueda}
+                    onChange={function (e) {
+                      setTerminoBusqueda(e.target.value);
+                    }}
+                  />
                 </div>
                 <table className="table">
                   <thead>
@@ -417,7 +495,7 @@ function Aplicacion(): JSX.Element {
                     </tr>
                   </thead>
                   <tbody>
-                    {proveedores.map(function (proveedor) {
+                    {proveedoresFiltrados.map(function (proveedor) {
                       return (
                         <tr key={proveedor.id}>
                           <td>{proveedor.nit}</td>
@@ -431,14 +509,24 @@ function Aplicacion(): JSX.Element {
                             <span className="badge badge--ok">{proveedor.estado}</span>
                           </td>
                           <td>
-                            <button
-                              className="btn btn--warm"
-                              onClick={function () {
-                                inactivarProveedorUI(proveedor.id);
-                              }}
-                            >
-                              Inactivar
-                            </button>
+                            <div className="acciones-fila">
+                              <button
+                                className="btn btn--line"
+                                onClick={function () {
+                                  iniciarEdicion(proveedor);
+                                }}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="btn btn--warm"
+                                onClick={function () {
+                                  inactivarProveedorUI(proveedor.id);
+                                }}
+                              >
+                                Inactivar
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -447,6 +535,13 @@ function Aplicacion(): JSX.Element {
                       <tr>
                         <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
                           Sin proveedores registrados.
+                        </td>
+                      </tr>
+                    )}
+                    {proveedores.length > 0 && proveedoresFiltrados.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin coincidencias para la busqueda.
                         </td>
                       </tr>
                     )}
