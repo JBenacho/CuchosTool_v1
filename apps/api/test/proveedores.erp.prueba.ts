@@ -15,17 +15,43 @@ describe('normalizarDatosProveedor (CU-ERP-001)', function () {
       nombre: 'Distrilibros SA',
       contacto: null,
       telefono: null,
+      correo: null,
+      direccion: null,
+      sitioWeb: null,
     });
   });
 
-  it('normaliza contacto y telefono opcionales', function () {
+  it('normaliza contacto, telefono, correo, direccion y sitio web opcionales', function () {
     const resultado = normalizarDatosProveedor({
       nit: '1',
       nombre: 'X',
       contacto: 'Ana',
       telefono: ' 3115550101 ',
+      correo: '  ana@distrilibros.co ',
+      direccion: ' Cra 15 # 90-20 ',
+      sitioWeb: ' https://distrilibros.co ',
     });
-    expect(resultado.datos).toMatchObject({ contacto: 'Ana', telefono: '3115550101' });
+    expect(resultado.datos).toMatchObject({
+      contacto: 'Ana',
+      telefono: '3115550101',
+      correo: 'ana@distrilibros.co',
+      direccion: 'Cra 15 # 90-20',
+      sitioWeb: 'https://distrilibros.co',
+    });
+  });
+
+  it('rechaza correo mal formado (correo_invalido)', function () {
+    const resultado = normalizarDatosProveedor({
+      nit: '900123456',
+      nombre: 'X',
+      correo: 'correo-sin-arroba',
+    });
+    expect(resultado).toEqual({ error: 'correo_invalido' });
+  });
+
+  it('acepta correo vacio como opcional', function () {
+    const resultado = normalizarDatosProveedor({ nit: '1', nombre: 'X', correo: '   ' });
+    expect(resultado.datos).toMatchObject({ correo: null });
   });
 
   it('rechaza nit vacio (datos_incompletos)', function () {

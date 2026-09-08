@@ -57,6 +57,13 @@
       "when": 1788819752716,
       "tag": "0007_spooky_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788825852630,
+      "tag": "0008_numerous_reaper",
+      "breakpoints": true
     }
   ]
 }
