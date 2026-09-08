@@ -9,7 +9,23 @@ import {
   listarProveedores,
 } from './proveedores.servicio';
 
-type CuerpoProveedor = { nit: string; nombre: string; contacto?: string; telefono?: string };
+type CuerpoProveedor = {
+  nit: string;
+  nombre: string;
+  contacto?: string;
+  telefono?: string;
+  correo?: string;
+  direccion?: string;
+  sitioWeb?: string;
+};
+
+type CambiosProveedor = {
+  contacto?: string;
+  telefono?: string;
+  correo?: string;
+  direccion?: string;
+  sitioWeb?: string;
+};
 
 export async function rutasErp(aplicacion: FastifyInstance): Promise<void> {
   const requerirRol = (aplicacion as any).requerirRol as (roles: string[]) => any;
@@ -41,7 +57,7 @@ export async function rutasErp(aplicacion: FastifyInstance): Promise<void> {
     },
   );
 
-  aplicacion.patch<{ Params: { id: string }; Body: { contacto?: string; telefono?: string } }>(
+  aplicacion.patch<{ Params: { id: string }; Body: CambiosProveedor }>(
     '/erp/proveedores/:id',
     {
       preHandler: requerirRol(gestores),

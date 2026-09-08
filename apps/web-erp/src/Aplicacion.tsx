@@ -25,6 +25,9 @@ interface Proveedor {
   nombre: string;
   contacto: string | null;
   telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  sitioWeb: string | null;
   estado: string;
 }
 
@@ -82,6 +85,9 @@ function Aplicacion(): JSX.Element {
   const [nombreNuevo, setNombreNuevo] = useState('');
   const [contactoNuevo, setContactoNuevo] = useState('');
   const [telefonoNuevo, setTelefonoNuevo] = useState('');
+  const [correoNuevo, setCorreoNuevo] = useState('');
+  const [direccionNueva, setDireccionNueva] = useState('');
+  const [sitioNuevo, setSitioNuevo] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -137,6 +143,9 @@ function Aplicacion(): JSX.Element {
       nombre: nombreNuevo.trim(),
       contacto: contactoNuevo.trim() || undefined,
       telefono: telefonoNuevo.trim() || undefined,
+      correo: correoNuevo.trim() || undefined,
+      direccion: direccionNueva.trim() || undefined,
+      sitioWeb: sitioNuevo.trim() || undefined,
     };
     const respuesta = await peticion('/erp/proveedores', token, 'POST', cuerpo);
     if (!respuesta.ok) {
@@ -152,6 +161,9 @@ function Aplicacion(): JSX.Element {
     setNombreNuevo('');
     setContactoNuevo('');
     setTelefonoNuevo('');
+    setCorreoNuevo('');
+    setDireccionNueva('');
+    setSitioNuevo('');
     await cargarProveedores(token);
   }
 
@@ -357,6 +369,30 @@ function Aplicacion(): JSX.Element {
                       setTelefonoNuevo(e.target.value);
                     }}
                   />
+                  <input
+                    className="input"
+                    placeholder="Correo electronico"
+                    value={correoNuevo}
+                    onChange={function (e) {
+                      setCorreoNuevo(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Direccion de sede"
+                    value={direccionNueva}
+                    onChange={function (e) {
+                      setDireccionNueva(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Sitio web"
+                    value={sitioNuevo}
+                    onChange={function (e) {
+                      setSitioNuevo(e.target.value);
+                    }}
+                  />
                   <button className="btn btn--primary" onClick={crearProveedorNuevo}>
                     Crear
                   </button>
@@ -373,6 +409,9 @@ function Aplicacion(): JSX.Element {
                       <th>Nombre</th>
                       <th>Contacto</th>
                       <th>Telefono</th>
+                      <th>Correo</th>
+                      <th>Direccion</th>
+                      <th>Sitio web</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
@@ -385,6 +424,9 @@ function Aplicacion(): JSX.Element {
                           <td>{proveedor.nombre}</td>
                           <td>{proveedor.contacto || '-'}</td>
                           <td>{proveedor.telefono || '-'}</td>
+                          <td>{proveedor.correo || '-'}</td>
+                          <td>{proveedor.direccion || '-'}</td>
+                          <td>{proveedor.sitioWeb || '-'}</td>
                           <td>
                             <span className="badge badge--ok">{proveedor.estado}</span>
                           </td>
@@ -403,7 +445,7 @@ function Aplicacion(): JSX.Element {
                     })}
                     {proveedores.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
                           Sin proveedores registrados.
                         </td>
                       </tr>
