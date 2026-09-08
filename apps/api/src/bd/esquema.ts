@@ -365,6 +365,61 @@ export const movimientosInventario = pgTable(
   ],
 );
 
+// Compras avanzado (CU-ERP-002..008): solicitudes y ordenes de compra de una linea (MVP).
+export const solicitudesCompra = pgTable('solicitudes_compra', {
+  id: serial('id').primaryKey(),
+  referencia: text('referencia').notNull().unique(),
+  productoId: integer('producto_id')
+    .notNull()
+    .references(() => productos.id),
+  cantidad: integer('cantidad').notNull(),
+  motivo: text('motivo').notNull(),
+  solicitanteId: text('solicitante_id'),
+  solicitanteRol: text('solicitante_rol'),
+  estado: text('estado').notNull().default('pendiente_revision'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const ordenesCompra = pgTable('ordenes_compra', {
+  id: serial('id').primaryKey(),
+  referencia: text('referencia').notNull().unique(),
+  solicitudId: integer('solicitud_id').references(() => solicitudesCompra.id),
+  proveedorId: integer('proveedor_id')
+    .notNull()
+    .references(() => proveedores.id),
+  productoId: integer('producto_id')
+    .notNull()
+    .references(() => productos.id),
+  bodegaDestinoId: integer('bodega_destino_id')
+    .notNull()
+    .references(() => bodegas.id),
+  cantidadPedida: integer('cantidad_pedida').notNull(),
+  cantidadRecibida: integer('cantidad_recibida').notNull().default(0),
+  precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }).notNull(),
+  estado: text('estado').notNull().default('pendiente_aprobacion'),
+  creadoPorRol: text('creado_por_rol'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Cuentas por pagar de compras (CU-ERP-009): se causan al completar la recepcion.
+export const cuentasPorPagar = pgTable('cuentas_por_pagar', {
+  id: serial('id').primaryKey(),
+  ordenId: integer('orden_id')
+    .notNull()
+    .references(() => ordenesCompra.id)
+    .unique(),
+  proveedorId: integer('proveedor_id')
+    .notNull()
+    .references(() => proveedores.id),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  venceEn: timestamp('vence_en', { withTimezone: true }).notNull(),
+  estado: text('estado').notNull().default('pendiente'),
+  referenciaPago: text('referencia_pago'),
+  pagadaEn: timestamp('pagada_en', { withTimezone: true }),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
