@@ -307,6 +307,64 @@ export const proveedores = pgTable('proveedores', {
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
+// Inventario del ERP (CU-INV-001..008): bodegas, existencias por bodega y kardex.
+export const bodegas = pgTable('bodegas', {
+  id: serial('id').primaryKey(),
+  nombre: text('nombre').notNull().unique(),
+  ubicacion: text('ubicacion'),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Existencias por bodega y producto (fuente unica de verdad del inventario, CU-INV-010).
+export const inventarioStock = pgTable(
+  'inventario_stock',
+  {
+    id: serial('id').primaryKey(),
+    bodegaId: integer('bodega_id')
+      .notNull()
+      .references(() => bodegas.id),
+    productoId: integer('producto_id')
+      .notNull()
+      .references(() => productos.id),
+    cantidad: integer('cantidad').notNull().default(0),
+    stockMinimo: integer('stock_minimo').notNull().default(0),
+    actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    uniqueIndex('inventario_stock_bodega_producto_idx').on(tabla.bodegaId, tabla.productoId),
+  ],
+);
+
+// Kardex transaccional (CU-INV-006): cada movimiento inmutable con consecutivo oficial.
+export const movimientosInventario = pgTable(
+  'movimientos_inventario',
+  {
+    id: serial('id').primaryKey(),
+    consecutivo: text('consecutivo').notNull().unique(),
+    bodegaId: integer('bodega_id')
+      .notNull()
+      .references(() => bodegas.id),
+    productoId: integer('producto_id')
+      .notNull()
+      .references(() => productos.id),
+    tipo: text('tipo').notNull(),
+    // Cantidad firmada: positiva en entradas/ajustes al alza; negativa en salidas/ajustes a la baja.
+    cantidad: integer('cantidad').notNull(),
+    stockResultante: integer('stock_resultante').notNull(),
+    motivo: text('motivo').notNull(),
+    referencia: text('referencia'),
+    actorId: text('actor_id'),
+    actorRol: text('actor_rol'),
+    creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    index('movimientos_inventario_producto_idx').on(tabla.productoId),
+    index('movimientos_inventario_bodega_idx').on(tabla.bodegaId),
+  ],
+);
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),

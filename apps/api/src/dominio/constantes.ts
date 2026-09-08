@@ -123,8 +123,15 @@ export const ALERTA_ATENDIDA = 'atendida';
 export const ACCION_ABIERTA = 'abierta';
 export const ACCION_CERRADA = 'cerrada';
 
-// Roles ERP (F5): compras (CU-ERP-001).
+// Roles ERP (F5): compras (CU-ERP-001) e inventario (CU-INV-001..008).
 export const ROL_COMPRAS = 'COMPRAS';
+export const ROL_ALMACENISTA = 'ALMACENISTA';
+export const ROL_CONTADOR = 'CONTADOR';
+// Inventario (CU-INV-001..003): tipos de movimiento del kardex.
+export const MOVIMIENTO_ENTRADA = 'ENTRADA';
+export const MOVIMIENTO_SALIDA = 'SALIDA';
+export const MOVIMIENTO_AJUSTE = 'AJUSTE';
+export const EVENTO_INVENTARIO_STOCK_ACTUALIZADO = 'com.cuchostool.inventario.stock_actualizado';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

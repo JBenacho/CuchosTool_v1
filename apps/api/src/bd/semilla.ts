@@ -2,13 +2,23 @@
 // Solo valores de demostracion; las credenciales aqui son EXCLUSIVAS del entorno local
 // y nunca deben usarse en produccion (CU-SEC-011 / RNF-MAN).
 import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 import { base } from './base';
-import { categorias, emprendedores, productos, usuarios } from './esquema';
+import {
+  bodegas,
+  categorias,
+  emprendedores,
+  inventarioStock,
+  productos,
+  usuarios,
+} from './esquema';
 import {
   EMPRENDEDOR_ACTIVO,
   ROL_ADMIN,
   ROL_AGENTE,
+  ROL_ALMACENISTA,
   ROL_COMPRAS,
+  ROL_CONTADOR,
   ROL_EMPRENDEDOR,
   ROL_GERENTE_ZONA,
   ROL_RESPONSABLE_CALIDAD,
@@ -150,8 +160,47 @@ async function principal(): Promise<void> {
         zonaId: null,
         vendedorId: null,
       },
+      {
+        correo: 'almacen@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_ALMACENISTA,
+        zonaId: null,
+        vendedorId: null,
+      },
+      {
+        correo: 'contador@cuchostool.com',
+        hashContrasena: hashContrasena,
+        rol: ROL_CONTADOR,
+        zonaId: null,
+        vendedorId: null,
+      },
     ])
     .onConflictDoNothing();
+
+  // Inventario (CU-INV-005/010): bodega principal y sincronizacion inicial de existencias.
+  const [bodegaPrincipal] = await base
+    .insert(bodegas)
+    .values({ nombre: 'Bodega Principal', ubicacion: 'Centro de distribucion' })
+    .onConflictDoNothing()
+    .returning({ id: bodegas.id });
+  const idBodega = bodegaPrincipal
+    ? bodegaPrincipal.id
+    : (await base.select().from(bodegas).where(eq(bodegas.nombre, 'Bodega Principal')).limit(1))[0]
+        ?.id;
+  if (idBodega) {
+    const filasProductos = await base.select().from(productos);
+    for (const producto of filasProductos) {
+      await base
+        .insert(inventarioStock)
+        .values({
+          bodegaId: idBodega,
+          productoId: producto.id,
+          cantidad: producto.stock,
+          stockMinimo: 3,
+        })
+        .onConflictDoNothing();
+    }
+  }
 
   console.log('Semilla completada.');
   await import('./cliente').then(function (modulo) {
