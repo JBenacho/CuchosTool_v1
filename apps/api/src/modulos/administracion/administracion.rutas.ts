@@ -1,9 +1,9 @@
 // Consola administrativa (RBAC/ABAC + Default Deny, BL-019, CU-SEC-001..015).
 // Cada ruta declara explicitamente los roles permitidos; cualquier otro rol recibe 403.
 import type { FastifyInstance } from 'fastify';
-import { desc } from 'drizzle-orm';
+import { asc, desc } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { auditoriaRegistros, clientes, pedidos } from '../../bd/esquema';
+import { auditoriaRegistros, clientes, pedidos, usuarios } from '../../bd/esquema';
 import { ROL_ADMIN, ROL_AUDITOR, ROL_GERENTE_ZONA } from '../../dominio/constantes';
 import { registrarAuditoria } from './auditoria';
 
@@ -87,6 +87,37 @@ export async function rutasAdministracion(aplicacion: FastifyInstance): Promise<
         .from(auditoriaRegistros)
         .orderBy(desc(auditoriaRegistros.id))
         .limit(200);
+      return { data: filas };
+    },
+  );
+
+  // Usuarios internos y perfiles (RBAC, CU-SEC-001..007). Solo administracion.
+  aplicacion.get(
+    '/administracion/usuarios',
+    {
+      preHandler: requerirRol([ROL_ADMIN]),
+      schema: { tags: ['administracion'], summary: 'Listar usuarios internos y perfiles (ADMIN)' },
+    },
+    async function (solicitud) {
+      await registrarAuditoria(
+        solicitud,
+        'administracion.usuarios.listar',
+        'usuarios',
+        'todos',
+        'ok',
+      );
+      const filas = await base
+        .select({
+          id: usuarios.id,
+          correo: usuarios.correo,
+          rol: usuarios.rol,
+          zonaId: usuarios.zonaId,
+          emprendedorId: usuarios.emprendedorId,
+          estado: usuarios.estado,
+          creadoEn: usuarios.creadoEn,
+        })
+        .from(usuarios)
+        .orderBy(asc(usuarios.correo));
       return { data: filas };
     },
   );

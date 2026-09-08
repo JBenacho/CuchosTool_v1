@@ -121,6 +121,22 @@ interface DetalleVenta {
   }[];
 }
 
+interface UsuarioSesion {
+  id: number;
+  correo: string;
+  rol: string;
+}
+
+interface FilaUsuario {
+  id: number;
+  correo: string;
+  rol: string;
+  zonaId: string | null;
+  emprendedorId: number | null;
+  estado: string;
+  creadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -167,6 +183,7 @@ function ContenidoAplicacion(): JSX.Element {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
   const [moduloActivo, setModuloActivo] = useState<string>('Dashboard');
   const [resumen, setResumen] = useState<Resumen>({
     pedidos: 0,
@@ -215,6 +232,8 @@ function ContenidoAplicacion(): JSX.Element {
   const [resumenVentas, setResumenVentas] = useState<ResumenVentas | null>(null);
   const [filtroEstadoVenta, setFiltroEstadoVenta] = useState('');
   const [detalleVenta, setDetalleVenta] = useState<DetalleVenta | null>(null);
+  // Usuarios y perfiles (Seguridad).
+  const [usuariosInternos, setUsuariosInternos] = useState<FilaUsuario[]>([]);
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -668,7 +687,35 @@ function ContenidoAplicacion(): JSX.Element {
     const json = await respuesta.json();
     const tokenNuevo = json.data.token as string;
     setToken(tokenNuevo);
+    const usuarioNuevo = json.data.usuario as { id?: number; correo?: string; rol?: string };
+    setUsuarioSesion({
+      id: usuarioNuevo.id || 0,
+      correo: usuarioNuevo.correo || correo,
+      rol: usuarioNuevo.rol || '',
+    });
     await cargarResumen(tokenNuevo);
+  }
+
+  // Cierra la sesion y regresa al login; tambien sirve para cambiar de usuario.
+  function cerrarSesion(): void {
+    setToken('');
+    setUsuarioSesion(null);
+    setMensaje('');
+    setModuloActivo('Dashboard');
+    setDetalleVenta(null);
+    setFiltroEstadoVenta('');
+  }
+
+  // Carga el listado de usuarios internos (Seguridad, solo ADMIN).
+  async function cargarUsuarios(tokenActivo: string): Promise<void> {
+    const respuesta = await peticion('/administracion/usuarios', tokenActivo);
+    if (!respuesta.ok) {
+      setUsuariosInternos([]);
+      setMensaje('Requiere rol ADMIN para ver usuarios');
+      return;
+    }
+    const json = await respuesta.json();
+    setUsuariosInternos((json.data as FilaUsuario[]) || []);
   }
 
   useEffect(function () {
@@ -712,10 +759,20 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token, filtroEstadoVenta],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Seguridad') {
+        cargarUsuarios(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
   const esVentas = moduloActivo === 'Ventas';
+  const esSeguridad = moduloActivo === 'Seguridad';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -735,7 +792,19 @@ function ContenidoAplicacion(): JSX.Element {
         </div>
         <div className="header-meta">
           {token ? (
-            <span className="chip chip--ok">Sesion activa</span>
+            <>
+              <span className="chip chip--ok">
+                {usuarioSesion ? usuarioSesion.correo + ' · ' + usuarioSesion.rol : 'Sesion activa'}
+              </span>
+              <div className="header-acciones">
+                <button className="btn btn--line btn--sm" onClick={cerrarSesion}>
+                  Cambiar usuario
+                </button>
+                <button className="btn btn--line btn--sm" onClick={cerrarSesion}>
+                  Cerrar sesion
+                </button>
+              </div>
+            </>
           ) : (
             <span className="chip chip--info">Fase F5</span>
           )}
@@ -1609,7 +1678,52 @@ function ContenidoAplicacion(): JSX.Element {
               )}
             </>
           )}
-          {!esDashboard && !esCompras && !esInventario && !esVentas && (
+          {esSeguridad && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Usuarios internos y perfiles (CU-SEC-001..007)</h2>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Correo</th>
+                      <th>Rol / Perfil</th>
+                      <th>Zona</th>
+                      <th>Emprendedor</th>
+                      <th>Estado</th>
+                      <th>Creado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usuariosInternos.map(function (u) {
+                      return (
+                        <tr key={u.id}>
+                          <td>{u.correo}</td>
+                          <td>
+                            <span className="chip chip--info">{u.rol}</span>
+                          </td>
+                          <td>{u.zonaId || '-'}</td>
+                          <td>{u.emprendedorId || '-'}</td>
+                          <td>{u.estado}</td>
+                          <td>{u.creadoEn.slice(0, 10)}</td>
+                        </tr>
+                      );
+                    })}
+                    {usuariosInternos.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin datos. Este modulo requiere el rol ADMIN.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+          {!esDashboard && !esCompras && !esInventario && !esVentas && !esSeguridad && (
             <section className="panel">
               <div className="panel-head">
                 <h2>{moduloActivo}</h2>
