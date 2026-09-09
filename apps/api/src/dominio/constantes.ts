@@ -129,6 +129,7 @@ export const ROL_COMPRAS = 'COMPRAS';
 export const ROL_ALMACENISTA = 'ALMACENISTA';
 export const ROL_CONTADOR = 'CONTADOR';
 export const ROL_VENDEDOR = 'VENDEDOR';
+export const ROL_LOGISTICA = 'LOGISTICA';
 // Roles internos gestionables desde Seguridad (requieren vinculos especificos: CLIENTE/EMPRENDEDOR fuera).
 export const ROLES_ERP_GESTIONABLES = [
   ROL_ADMIN,
@@ -136,6 +137,7 @@ export const ROLES_ERP_GESTIONABLES = [
   ROL_ALMACENISTA,
   ROL_CONTADOR,
   ROL_VENDEDOR,
+  ROL_LOGISTICA,
   ROL_AUDITOR,
   ROL_AGENTE,
   ROL_SUPERVISOR,
@@ -164,6 +166,11 @@ export const TERMINO_PAGO_DIAS_POR_DEFECTO = 30;
 // Estados del ciclo de venta del canal E-Commerce (modulo ERP Ventas, CU-CM-007 base).
 export const PEDIDO_CANCELADO = 'cancelado';
 export const EVENTO_PEDIDO_ENTREGADO = 'com.cuchostool.pedido.entregado';
+// Logistica (CU-LG-001..006): estados de despacho y entrega (CREATED -> IN_TRANSIT -> DELIVERED/RETURNED).
+export const DESPACHO_PROGRAMADO = 'programado';
+export const DESPACHO_EN_RUTA = 'en_ruta';
+export const DESPACHO_ENTREGADO = 'entregado';
+export const DESPACHO_DEVUELTO = 'devuelto';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;
