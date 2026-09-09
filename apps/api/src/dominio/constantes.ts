@@ -130,6 +130,7 @@ export const ROL_ALMACENISTA = 'ALMACENISTA';
 export const ROL_CONTADOR = 'CONTADOR';
 export const ROL_VENDEDOR = 'VENDEDOR';
 export const ROL_LOGISTICA = 'LOGISTICA';
+export const ROL_RRHH = 'RRHH';
 // Roles internos gestionables desde Seguridad (requieren vinculos especificos: CLIENTE/EMPRENDEDOR fuera).
 export const ROLES_ERP_GESTIONABLES = [
   ROL_ADMIN,
@@ -138,6 +139,7 @@ export const ROLES_ERP_GESTIONABLES = [
   ROL_CONTADOR,
   ROL_VENDEDOR,
   ROL_LOGISTICA,
+  ROL_RRHH,
   ROL_AUDITOR,
   ROL_AGENTE,
   ROL_SUPERVISOR,
@@ -171,6 +173,11 @@ export const DESPACHO_PROGRAMADO = 'programado';
 export const DESPACHO_EN_RUTA = 'en_ruta';
 export const DESPACHO_ENTREGADO = 'entregado';
 export const DESPACHO_DEVUELTO = 'devuelto';
+// RRHH / Nomina (CU-RH-001..007).
+export const NOMINA_GENERADA = 'generada';
+export const NOMINA_PAGADA = 'pagada';
+export const AUSENCIA_REGISTRADA = 'registrada';
+export const AUSENCIA_JUSTIFICADA = 'justificada';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;
