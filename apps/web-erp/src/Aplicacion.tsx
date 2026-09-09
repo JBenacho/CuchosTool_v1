@@ -137,6 +137,81 @@ interface FilaUsuario {
   creadoEn: string;
 }
 
+interface TransportistaLog {
+  id: number;
+  nombre: string;
+  nit: string;
+  telefono: string | null;
+  polizaVenceEn: string | null;
+  estado: string;
+}
+
+interface VehiculoLog {
+  id: number;
+  placa: string;
+  capacidadKg: number;
+  estado: string;
+  transportistaId: number;
+  transportistaNombre: string;
+}
+
+interface VentaDespachable {
+  id: number;
+  referenciaPedido: string;
+  clienteNombre: string;
+  totalCentavos: number;
+}
+
+interface DespachoLog {
+  id: number;
+  referencia: string;
+  guia: string;
+  ruta: string | null;
+  estado: string;
+  referenciaPedido: string;
+  clienteNombre: string;
+  transportistaNombre: string;
+  placa: string;
+  creadoEn: string;
+}
+
+interface CargoRrhh {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: string;
+}
+
+interface EmpleadoRrhh {
+  id: number;
+  nombre: string;
+  documentoUnico: string;
+  correo: string | null;
+  telefono: string | null;
+  cargoId: number | null;
+  cargoNombre: string | null;
+  salarioBaseCentavos: number;
+  estado: string;
+}
+
+interface AusenciaRrhh {
+  id: number;
+  empleadoNombre: string;
+  fecha: string;
+  motivo: string;
+  estado: string;
+}
+
+interface NominaRrhh {
+  id: number;
+  periodo: string;
+  empleadoNombre: string;
+  cargoNombre: string | null;
+  netoCentavos: number;
+  estado: string;
+  creadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -154,7 +229,9 @@ const MODULOS = [
 const MODULOS_POR_ROL: Record<string, readonly string[]> = {
   ADMIN: [...MODULOS],
   COMPRAS: ['Dashboard', 'Compras', 'Inventario'],
-  ALMACENISTA: ['Dashboard', 'Inventario', 'Compras'],
+  ALMACENISTA: ['Dashboard', 'Inventario', 'Compras', 'Logistica'],
+  LOGISTICA: ['Dashboard', 'Logistica', 'Inventario'],
+  RRHH: ['Dashboard', 'RRHH / Nomina'],
   CONTADOR: ['Dashboard', 'Compras', 'Inventario', 'Contabilidad', 'Facturacion'],
   VENDEDOR: ['Dashboard', 'Ventas'],
   AUDITOR: ['Dashboard', 'Inventario'],
@@ -172,6 +249,8 @@ const PERFILES_GESTIONABLES = [
   'ALMACENISTA',
   'CONTADOR',
   'VENDEDOR',
+  'LOGISTICA',
+  'RRHH',
   'AUDITOR',
   'AGENTE_SOPORTE',
   'SUPERVISOR_SOPORTE',
@@ -265,6 +344,34 @@ function ContenidoAplicacion(): JSX.Element {
   // Usuarios y perfiles (Seguridad).
   const [usuariosInternos, setUsuariosInternos] = useState<FilaUsuario[]>([]);
   const [rolesEdicion, setRolesEdicion] = useState<Record<number, string>>({});
+  // Estado del modulo RRHH / Nomina (CU-RH-001/002/005/007).
+  const [cargosRrhh, setCargosRrhh] = useState<CargoRrhh[]>([]);
+  const [empleadosRrhh, setEmpleadosRrhh] = useState<EmpleadoRrhh[]>([]);
+  const [ausenciasRrhh, setAusenciasRrhh] = useState<AusenciaRrhh[]>([]);
+  const [nominasRrhh, setNominasRrhh] = useState<NominaRrhh[]>([]);
+  const [nombreCargo, setNombreCargo] = useState('');
+  const [nombreEmpleado, setNombreEmpleado] = useState('');
+  const [documentoEmpleado, setDocumentoEmpleado] = useState('');
+  const [salarioEmpleadoPesos, setSalarioEmpleadoPesos] = useState('');
+  const [cargoSelEmpleado, setCargoSelEmpleado] = useState('');
+  const [empleadoSelAusencia, setEmpleadoSelAusencia] = useState('');
+  const [fechaAusencia, setFechaAusencia] = useState('');
+  const [motivoAusencia, setMotivoAusencia] = useState('');
+  const [periodoNomina, setPeriodoNomina] = useState('');
+  // Estado del modulo Logistica (CU-LG-001..006).
+  const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
+  const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
+  const [ventasDesp, setVentasDesp] = useState<VentaDespachable[]>([]);
+  const [despachosLog, setDespachosLog] = useState<DespachoLog[]>([]);
+  const [nombreTransportista, setNombreTransportista] = useState('');
+  const [nitTransportista, setNitTransportista] = useState('');
+  const [telefonoTransportista, setTelefonoTransportista] = useState('');
+  const [placaVehiculo, setPlacaVehiculo] = useState('');
+  const [capacidadVehiculo, setCapacidadVehiculo] = useState('1000');
+  const [transportistaSelLog, setTransportistaSelLog] = useState('');
+  const [ventaSelLog, setVentaSelLog] = useState('');
+  const [vehiculoSelLog, setVehiculoSelLog] = useState('');
+  const [rutaDespacho, setRutaDespacho] = useState('');
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -749,6 +856,238 @@ function ContenidoAplicacion(): JSX.Element {
     setUsuariosInternos((json.data as FilaUsuario[]) || []);
   }
   // Activa o inactiva un usuario (Seguridad, ADMIN).
+  // Carga datos de Logistica (CU-LG-001..006).
+  async function cargarLogistica(tokenActivo: string): Promise<void> {
+    const trResp = await peticion('/logistica/transportistas', tokenActivo);
+    if (trResp.ok) setTransportistasLog(((await trResp.json()).data as TransportistaLog[]) || []);
+    const veResp = await peticion('/logistica/vehiculos', tokenActivo);
+    if (veResp.ok) setVehiculosLog(((await veResp.json()).data as VehiculoLog[]) || []);
+    const vdResp = await peticion('/logistica/ventas-despachables', tokenActivo);
+    if (vdResp.ok) setVentasDesp(((await vdResp.json()).data as VentaDespachable[]) || []);
+    const dpResp = await peticion('/logistica/despachos', tokenActivo);
+    if (dpResp.ok) setDespachosLog(((await dpResp.json()).data as DespachoLog[]) || []);
+  }
+
+  async function crearTransportistaLogUI(): Promise<void> {
+    if (!token) return;
+    if (!nombreTransportista.trim() || !nitTransportista.trim()) {
+      setMensaje('Nombre y NIT del transportista son obligatorios');
+      return;
+    }
+    const respuesta = await peticion('/logistica/transportistas', token, 'POST', {
+      nombre: nombreTransportista.trim(),
+      nit: nitTransportista.trim(),
+      telefono: telefonoTransportista.trim() || undefined,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el transportista');
+      return;
+    }
+    setNombreTransportista('');
+    setNitTransportista('');
+    setTelefonoTransportista('');
+    await cargarLogistica(token);
+  }
+
+  async function inactivarTransportistaLogUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion(
+      '/logistica/transportistas/' + id + '/inactivar',
+      token,
+      'PATCH',
+    );
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el transportista');
+      return;
+    }
+    await cargarLogistica(token);
+  }
+
+  async function crearVehiculoLogUI(): Promise<void> {
+    if (!token) return;
+    const transportistaId = Number(transportistaSelLog);
+    if (!transportistaId || !placaVehiculo.trim()) {
+      setMensaje('Seleccione transportista y escriba la placa');
+      return;
+    }
+    const respuesta = await peticion('/logistica/vehiculos', token, 'POST', {
+      transportistaId: transportistaId,
+      placa: placaVehiculo.trim(),
+      capacidadKg: Number(capacidadVehiculo) || 1000,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo registrar el vehiculo');
+      return;
+    }
+    setPlacaVehiculo('');
+    setCapacidadVehiculo('1000');
+    await cargarLogistica(token);
+  }
+
+  async function inactivarVehiculoLogUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/logistica/vehiculos/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el vehiculo');
+      return;
+    }
+    await cargarLogistica(token);
+  }
+
+  async function crearDespachoLogUI(): Promise<void> {
+    if (!token) return;
+    const pedidoId = Number(ventaSelLog);
+    const transportistaId = Number(transportistaSelLog);
+    const vehiculoId = Number(vehiculoSelLog);
+    if (!pedidoId || !transportistaId || !vehiculoId) {
+      setMensaje('Seleccione venta, transportista y vehiculo');
+      return;
+    }
+    const respuesta = await peticion('/logistica/despachos', token, 'POST', {
+      pedidoId: pedidoId,
+      transportistaId: transportistaId,
+      vehiculoId: vehiculoId,
+      ruta: rutaDespacho.trim() || undefined,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el despacho');
+      return;
+    }
+    setVentaSelLog('');
+    setVehiculoSelLog('');
+    setRutaDespacho('');
+    await cargarLogistica(token);
+  }
+
+  async function accionDespachoUI(id: number, accion: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/logistica/despachos/' + id + '/' + accion, token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo ' + accion + ' el despacho');
+      return;
+    }
+    await cargarLogistica(token);
+  }
+
+  // Carga los datos de RRHH / Nomina (CU-RH-001/002/005/007).
+  async function cargarRrhh(tokenActivo: string): Promise<void> {
+    const rutaCargos = await peticion('/rrhh/cargos', tokenActivo);
+    if (rutaCargos.ok) setCargosRrhh(((await rutaCargos.json()).data as CargoRrhh[]) || []);
+    const rutaEmp = await peticion('/rrhh/empleados', tokenActivo);
+    if (rutaEmp.ok) setEmpleadosRrhh(((await rutaEmp.json()).data as EmpleadoRrhh[]) || []);
+    const rutaAus = await peticion('/rrhh/ausencias', tokenActivo);
+    if (rutaAus.ok) setAusenciasRrhh(((await rutaAus.json()).data as AusenciaRrhh[]) || []);
+    const rutaNom = await peticion('/rrhh/nominas', tokenActivo);
+    if (rutaNom.ok) setNominasRrhh(((await rutaNom.json()).data as NominaRrhh[]) || []);
+  }
+
+  async function crearCargoUI(): Promise<void> {
+    if (!token) return;
+    if (!nombreCargo.trim()) {
+      setMensaje('El nombre del cargo es obligatorio');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/cargos', token, 'POST', { nombre: nombreCargo.trim() });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el cargo');
+      return;
+    }
+    setNombreCargo('');
+    await cargarRrhh(token);
+  }
+
+  async function crearEmpleadoUI(): Promise<void> {
+    if (!token) return;
+    const salarioCentavos = Math.round((Number(salarioEmpleadoPesos) || 0) * 100);
+    if (!nombreEmpleado.trim() || !documentoEmpleado.trim()) {
+      setMensaje('Nombre y documento son obligatorios');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/empleados', token, 'POST', {
+      nombre: nombreEmpleado.trim(),
+      documentoUnico: documentoEmpleado.trim(),
+      cargoId: cargoSelEmpleado ? Number(cargoSelEmpleado) : undefined,
+      salarioBaseCentavos: salarioCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el empleado');
+      return;
+    }
+    setNombreEmpleado('');
+    setDocumentoEmpleado('');
+    setSalarioEmpleadoPesos('');
+    setCargoSelEmpleado('');
+    await cargarRrhh(token);
+  }
+
+  async function inactivarEmpleadoUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/empleados/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el empleado');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function registrarAusenciaUI(): Promise<void> {
+    if (!token) return;
+    const empleadoId = Number(empleadoSelAusencia);
+    if (!empleadoId || !fechaAusencia || !motivoAusencia.trim()) {
+      setMensaje('Seleccione empleado, fecha y motivo');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/ausencias', token, 'POST', {
+      empleadoId: empleadoId,
+      fecha: fechaAusencia,
+      motivo: motivoAusencia.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo registrar la ausencia');
+      return;
+    }
+    setEmpleadoSelAusencia('');
+    setFechaAusencia('');
+    setMotivoAusencia('');
+    await cargarRrhh(token);
+  }
+
+  async function justificarAusenciaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/ausencias/' + id + '/justificar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo justificar la ausencia');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function generarNominaUI(): Promise<void> {
+    if (!token) return;
+    if (!periodoNomina.trim()) {
+      setMensaje('Indique el periodo (YYYY-MM)');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/nominas/generar', token, 'POST', {
+      periodo: periodoNomina.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo generar la nomina');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function pagarNominaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/nominas/' + id + '/pagar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo marcar la nomina como pagada');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
   async function cambiarEstadoUsuarioUI(id: number, estado: string): Promise<void> {
     if (!token) return;
     const respuesta = await peticion('/administracion/usuarios/' + id + '/estado', token, 'PATCH', {
@@ -834,11 +1173,31 @@ function ContenidoAplicacion(): JSX.Element {
     ? MODULOS_POR_ROL[usuarioSesion.rol] || ['Dashboard']
     : MODULOS;
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Logistica') {
+        cargarLogistica(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'RRHH / Nomina') {
+        cargarRrhh(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
   const esVentas = moduloActivo === 'Ventas';
   const esSeguridad = moduloActivo === 'Seguridad';
+  const esLogistica = moduloActivo === 'Logistica';
+  const esRrhh = moduloActivo === 'RRHH / Nomina';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -1843,17 +2202,594 @@ function ContenidoAplicacion(): JSX.Element {
               </section>
             </>
           )}
-          {!esDashboard && !esCompras && !esInventario && !esVentas && !esSeguridad && (
-            <section className="panel">
-              <div className="panel-head">
-                <h2>{moduloActivo}</h2>
-              </div>
-              <p className="muted" style={{ padding: '12px 16px' }}>
-                Modulo de la fase F5 (ERP) en desarrollo sobre la API modular; el Dashboard y
-                Compras ya consumen datos reales.
-              </p>
-            </section>
+          {esLogistica && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Transportistas (CU-LG-001)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre"
+                    value={nombreTransportista}
+                    onChange={function (e) {
+                      setNombreTransportista(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="NIT"
+                    value={nitTransportista}
+                    onChange={function (e) {
+                      setNitTransportista(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Telefono"
+                    value={telefonoTransportista}
+                    onChange={function (e) {
+                      setTelefonoTransportista(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearTransportistaLogUI}>
+                    Crear transportista
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>NIT</th>
+                      <th>Telefono</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transportistasLog.map(function (t) {
+                      return (
+                        <tr key={t.id}>
+                          <td>{t.nombre}</td>
+                          <td>{t.nit}</td>
+                          <td>{t.telefono || '-'}</td>
+                          <td>{t.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarTransportistaLogUI(t.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {transportistasLog.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin transportistas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Vehiculos (CU-LG-002)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={transportistaSelLog}
+                    onChange={function (e) {
+                      setTransportistaSelLog(e.target.value);
+                    }}
+                  >
+                    <option value="">Transportista...</option>
+                    {transportistasLog.map(function (t) {
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Placa"
+                    value={placaVehiculo}
+                    onChange={function (e) {
+                      setPlacaVehiculo(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    placeholder="Capacidad (kg)"
+                    value={capacidadVehiculo}
+                    onChange={function (e) {
+                      setCapacidadVehiculo(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearVehiculoLogUI}>
+                    Registrar vehiculo
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Placa</th>
+                      <th>Transportista</th>
+                      <th>Capacidad kg</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vehiculosLog.map(function (v) {
+                      return (
+                        <tr key={v.id}>
+                          <td>{v.placa}</td>
+                          <td>{v.transportistaNombre}</td>
+                          <td>{v.capacidadKg}</td>
+                          <td>{v.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarVehiculoLogUI(v.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {vehiculosLog.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin vehiculos.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Despachos (CU-LG-003/004/005/006)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={ventaSelLog}
+                    onChange={function (e) {
+                      setVentaSelLog(e.target.value);
+                    }}
+                  >
+                    <option value="">Venta pagada...</option>
+                    {ventasDesp.map(function (v) {
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.referenciaPedido} - {v.clienteNombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={transportistaSelLog}
+                    onChange={function (e) {
+                      setTransportistaSelLog(e.target.value);
+                    }}
+                  >
+                    <option value="">Transportista...</option>
+                    {transportistasLog.map(function (t) {
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={vehiculoSelLog}
+                    onChange={function (e) {
+                      setVehiculoSelLog(e.target.value);
+                    }}
+                  >
+                    <option value="">Vehiculo...</option>
+                    {vehiculosLog.map(function (v) {
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.placa}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Ruta (ej. Bogota - Cali)"
+                    value={rutaDespacho}
+                    onChange={function (e) {
+                      setRutaDespacho(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearDespachoLogUI}>
+                    Crear despacho
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Despacho</th>
+                      <th>Guia</th>
+                      <th>Venta</th>
+                      <th>Cliente</th>
+                      <th>Transportista</th>
+                      <th>Vehiculo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {despachosLog.map(function (d) {
+                      return (
+                        <tr key={d.id}>
+                          <td>{d.referencia}</td>
+                          <td>{d.guia}</td>
+                          <td>{d.referenciaPedido}</td>
+                          <td>{d.clienteNombre}</td>
+                          <td>{d.transportistaNombre}</td>
+                          <td>{d.placa}</td>
+                          <td>{d.estado}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              {d.estado === 'programado' && (
+                                <button
+                                  className="btn btn--primary btn--sm"
+                                  onClick={function () {
+                                    accionDespachoUI(d.id, 'despachar');
+                                  }}
+                                >
+                                  Despachar
+                                </button>
+                              )}
+                              {d.estado === 'programado' || d.estado === 'en_ruta' ? (
+                                <button
+                                  className="btn btn--warm btn--sm"
+                                  onClick={function () {
+                                    accionDespachoUI(d.id, 'entregar');
+                                  }}
+                                >
+                                  Entregar
+                                </button>
+                              ) : null}
+                              {d.estado === 'en_ruta' && (
+                                <button
+                                  className="btn btn--line btn--sm"
+                                  onClick={function () {
+                                    accionDespachoUI(d.id, 'devolver');
+                                  }}
+                                >
+                                  Devolver
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {despachosLog.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin despachos.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+            </>
           )}
+          {esRrhh && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Cargos (CU-RH-002)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre del cargo"
+                    value={nombreCargo}
+                    onChange={function (e) {
+                      setNombreCargo(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearCargoUI}>
+                    Crear cargo
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Cargo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cargosRrhh.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.nombre}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarEmpleadoUI(c.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Empleados (CU-RH-001)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre"
+                    value={nombreEmpleado}
+                    onChange={function (e) {
+                      setNombreEmpleado(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Documento"
+                    value={documentoEmpleado}
+                    onChange={function (e) {
+                      setDocumentoEmpleado(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={cargoSelEmpleado}
+                    onChange={function (e) {
+                      setCargoSelEmpleado(e.target.value);
+                    }}
+                  >
+                    <option value="">Cargo...</option>
+                    {cargosRrhh.map(function (c) {
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Salario (COP)"
+                    value={salarioEmpleadoPesos}
+                    onChange={function (e) {
+                      setSalarioEmpleadoPesos(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearEmpleadoUI}>
+                    Crear empleado
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Documento</th>
+                      <th>Cargo</th>
+                      <th>Salario</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <tr key={em.id}>
+                          <td>{em.nombre}</td>
+                          <td>{em.documentoUnico}</td>
+                          <td>{em.cargoNombre || '-'}</td>
+                          <td>{formatearPesos(em.salarioBaseCentavos)}</td>
+                          <td>{em.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarEmpleadoUI(em.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ausencias (CU-RH-005)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={empleadoSelAusencia}
+                    onChange={function (e) {
+                      setEmpleadoSelAusencia(e.target.value);
+                    }}
+                  >
+                    <option value="">Empleado...</option>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <option key={em.id} value={em.id}>
+                          {em.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="date"
+                    value={fechaAusencia}
+                    onChange={function (e) {
+                      setFechaAusencia(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Motivo"
+                    value={motivoAusencia}
+                    onChange={function (e) {
+                      setMotivoAusencia(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={registrarAusenciaUI}>
+                    Registrar ausencia
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Empleado</th>
+                      <th>Fecha</th>
+                      <th>Motivo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ausenciasRrhh.map(function (a) {
+                      return (
+                        <tr key={a.id}>
+                          <td>{a.empleadoNombre}</td>
+                          <td>{a.fecha.slice(0, 10)}</td>
+                          <td>{a.motivo}</td>
+                          <td>{a.estado}</td>
+                          <td>
+                            {a.estado !== 'justificada' && (
+                              <button
+                                className="btn btn--line btn--sm"
+                                onClick={function () {
+                                  justificarAusenciaUI(a.id);
+                                }}
+                              >
+                                Justificar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Nomina (CU-RH-007)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoNomina}
+                    onChange={function (e) {
+                      setPeriodoNomina(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={generarNominaUI}>
+                    Generar nomina del periodo
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Periodo</th>
+                      <th>Empleado</th>
+                      <th>Cargo</th>
+                      <th>Neto</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {nominasRrhh.map(function (n) {
+                      return (
+                        <tr key={n.id}>
+                          <td>{n.periodo}</td>
+                          <td>{n.empleadoNombre}</td>
+                          <td>{n.cargoNombre || '-'}</td>
+                          <td>{formatearPesos(n.netoCentavos)}</td>
+                          <td>{n.estado}</td>
+                          <td>
+                            {n.estado === 'generada' && (
+                              <button
+                                className="btn btn--warm btn--sm"
+                                onClick={function () {
+                                  pagarNominaUI(n.id);
+                                }}
+                              >
+                                Pagar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+          {!esDashboard &&
+            !esCompras &&
+            !esInventario &&
+            !esVentas &&
+            !esSeguridad &&
+            !esLogistica &&
+            !esRrhh && (
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>{moduloActivo}</h2>
+                </div>
+                <p className="muted" style={{ padding: '12px 16px' }}>
+                  Modulo de la fase F5 (ERP) en desarrollo sobre la API modular; el Dashboard y
+                  Compras ya consumen datos reales.
+                </p>
+              </section>
+            )}
           <footer className="app-footer">CuchosTool.com - ERP (F5) - Design System IU_CT</footer>
         </main>
       </div>
