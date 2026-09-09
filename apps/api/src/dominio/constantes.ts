@@ -129,6 +129,20 @@ export const ROL_COMPRAS = 'COMPRAS';
 export const ROL_ALMACENISTA = 'ALMACENISTA';
 export const ROL_CONTADOR = 'CONTADOR';
 export const ROL_VENDEDOR = 'VENDEDOR';
+// Roles internos gestionables desde Seguridad (requieren vinculos especificos: CLIENTE/EMPRENDEDOR fuera).
+export const ROLES_ERP_GESTIONABLES = [
+  ROL_ADMIN,
+  ROL_COMPRAS,
+  ROL_ALMACENISTA,
+  ROL_CONTADOR,
+  ROL_VENDEDOR,
+  ROL_AUDITOR,
+  ROL_AGENTE,
+  ROL_SUPERVISOR,
+  ROL_RESPONSABLE_GARANTIAS,
+  ROL_RESPONSABLE_CALIDAD,
+  ROL_GERENTE_ZONA,
+] as const;
 // Inventario (CU-INV-001..003): tipos de movimiento del kardex.
 export const MOVIMIENTO_ENTRADA = 'ENTRADA';
 export const MOVIMIENTO_SALIDA = 'SALIDA';

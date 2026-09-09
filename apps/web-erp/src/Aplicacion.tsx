@@ -150,6 +150,21 @@ const MODULOS = [
   'Seguridad',
 ] as const;
 
+// Perfiles internos gestionables desde Seguridad (coinciden con ROLES_ERP_GESTIONABLES).
+const PERFILES_GESTIONABLES = [
+  'ADMIN',
+  'COMPRAS',
+  'ALMACENISTA',
+  'CONTADOR',
+  'VENDEDOR',
+  'AUDITOR',
+  'AGENTE_SOPORTE',
+  'SUPERVISOR_SOPORTE',
+  'RESPONSABLE_GARANTIAS',
+  'RESPONSABLE_CALIDAD',
+  'GERENTE_ZONA',
+] as const;
+
 function formatearPesos(centavos: number): string {
   // Pesos colombianos con dos decimales (ej. $ 1.000,50); sin etiquetas de centavos.
   return (
@@ -234,6 +249,7 @@ function ContenidoAplicacion(): JSX.Element {
   const [detalleVenta, setDetalleVenta] = useState<DetalleVenta | null>(null);
   // Usuarios y perfiles (Seguridad).
   const [usuariosInternos, setUsuariosInternos] = useState<FilaUsuario[]>([]);
+  const [rolesEdicion, setRolesEdicion] = useState<Record<number, string>>({});
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -716,6 +732,36 @@ function ContenidoAplicacion(): JSX.Element {
     }
     const json = await respuesta.json();
     setUsuariosInternos((json.data as FilaUsuario[]) || []);
+  }
+  // Activa o inactiva un usuario (Seguridad, ADMIN).
+  async function cambiarEstadoUsuarioUI(id: number, estado: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/administracion/usuarios/' + id + '/estado', token, 'PATCH', {
+      estado: estado,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo cambiar el estado del usuario');
+      return;
+    }
+    await cargarUsuarios(token);
+  }
+
+  // Guarda el rol/perfil elegido de un usuario (Seguridad, ADMIN).
+  async function guardarPerfilUsuarioUI(id: number): Promise<void> {
+    if (!token) return;
+    const rol = rolesEdicion[id];
+    if (!rol) return;
+    const respuesta = await peticion('/administracion/usuarios/' + id + '/perfil', token, 'PATCH', {
+      rol: rol,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo actualizar el perfil del usuario');
+      return;
+    }
+    const proximos = { ...rolesEdicion };
+    delete proximos[id];
+    setRolesEdicion(proximos);
+    await cargarUsuarios(token);
   }
 
   useEffect(function () {
@@ -1694,13 +1740,20 @@ function ContenidoAplicacion(): JSX.Element {
                       <th>Emprendedor</th>
                       <th>Estado</th>
                       <th>Creado</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {usuariosInternos.map(function (u) {
+                      const esPropio = usuarioSesion ? usuarioSesion.id === u.id : false;
+                      const rolPendiente = rolesEdicion[u.id];
+                      const rolMostrado = rolPendiente || u.rol;
                       return (
                         <tr key={u.id}>
-                          <td>{u.correo}</td>
+                          <td>
+                            {u.correo}
+                            {esPropio && <span className="muted"> (usted)</span>}
+                          </td>
                           <td>
                             <span className="chip chip--info">{u.rol}</span>
                           </td>
@@ -1708,12 +1761,59 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{u.emprendedorId || '-'}</td>
                           <td>{u.estado}</td>
                           <td>{u.creadoEn.slice(0, 10)}</td>
+                          <td>
+                            {esPropio ? (
+                              <span className="muted">No editable</span>
+                            ) : (
+                              <div className="acciones-fila">
+                                <select
+                                  className="input"
+                                  style={{ margin: 0, minWidth: 150 }}
+                                  value={rolMostrado}
+                                  onChange={function (e) {
+                                    setRolesEdicion({
+                                      ...rolesEdicion,
+                                      [u.id]: e.target.value,
+                                    });
+                                  }}
+                                >
+                                  {PERFILES_GESTIONABLES.map(function (perfil) {
+                                    return (
+                                      <option key={perfil} value={perfil}>
+                                        {perfil}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <button
+                                  className="btn btn--primary btn--sm"
+                                  disabled={!rolPendiente || rolPendiente === u.rol}
+                                  onClick={function () {
+                                    guardarPerfilUsuarioUI(u.id);
+                                  }}
+                                >
+                                  Guardar rol
+                                </button>
+                                <button
+                                  className="btn btn--warm btn--sm"
+                                  onClick={function () {
+                                    cambiarEstadoUsuarioUI(
+                                      u.id,
+                                      u.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO',
+                                    );
+                                  }}
+                                >
+                                  {u.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
                     {usuariosInternos.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={7} className="muted" style={{ padding: '12px 16px' }}>
                           Sin datos. Este modulo requiere el rol ADMIN.
                         </td>
                       </tr>
