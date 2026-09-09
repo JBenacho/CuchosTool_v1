@@ -22,6 +22,7 @@ import { rutasInventario } from './modulos/inventario/inventario.rutas';
 import { rutasCompras } from './modulos/compras/compras.rutas';
 import { rutasVentas } from './modulos/ventas/ventas.rutas';
 import { rutasLogistica } from './modulos/logistica/logistica.rutas';
+import { rutasRrhh } from './modulos/rrhh/rrhh.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -85,6 +86,11 @@ export async function construirAplicacion(opciones?: {
           name: 'logistica',
           description:
             'Logistica ERP (F5): transportistas, vehiculos y despachos con guia y estados (CU-LG-001..006)',
+        },
+        {
+          name: 'rrhh',
+          description:
+            'RRHH / Nomina ERP (F5): cargos, empleados, ausencias y nomina (CU-RH-001/002/005/007)',
         },
         {
           name: 'administracion',
@@ -152,6 +158,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasCompras);
   await aplicacion.register(rutasVentas);
   await aplicacion.register(rutasLogistica);
+  await aplicacion.register(rutasRrhh);
 
   aplicacion.get('/', async function () {
     return {

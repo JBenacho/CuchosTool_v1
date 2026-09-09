@@ -175,6 +175,43 @@ interface DespachoLog {
   creadoEn: string;
 }
 
+interface CargoRrhh {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: string;
+}
+
+interface EmpleadoRrhh {
+  id: number;
+  nombre: string;
+  documentoUnico: string;
+  correo: string | null;
+  telefono: string | null;
+  cargoId: number | null;
+  cargoNombre: string | null;
+  salarioBaseCentavos: number;
+  estado: string;
+}
+
+interface AusenciaRrhh {
+  id: number;
+  empleadoNombre: string;
+  fecha: string;
+  motivo: string;
+  estado: string;
+}
+
+interface NominaRrhh {
+  id: number;
+  periodo: string;
+  empleadoNombre: string;
+  cargoNombre: string | null;
+  netoCentavos: number;
+  estado: string;
+  creadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -194,6 +231,7 @@ const MODULOS_POR_ROL: Record<string, readonly string[]> = {
   COMPRAS: ['Dashboard', 'Compras', 'Inventario'],
   ALMACENISTA: ['Dashboard', 'Inventario', 'Compras', 'Logistica'],
   LOGISTICA: ['Dashboard', 'Logistica', 'Inventario'],
+  RRHH: ['Dashboard', 'RRHH / Nomina'],
   CONTADOR: ['Dashboard', 'Compras', 'Inventario', 'Contabilidad', 'Facturacion'],
   VENDEDOR: ['Dashboard', 'Ventas'],
   AUDITOR: ['Dashboard', 'Inventario'],
@@ -212,6 +250,7 @@ const PERFILES_GESTIONABLES = [
   'CONTADOR',
   'VENDEDOR',
   'LOGISTICA',
+  'RRHH',
   'AUDITOR',
   'AGENTE_SOPORTE',
   'SUPERVISOR_SOPORTE',
@@ -305,6 +344,20 @@ function ContenidoAplicacion(): JSX.Element {
   // Usuarios y perfiles (Seguridad).
   const [usuariosInternos, setUsuariosInternos] = useState<FilaUsuario[]>([]);
   const [rolesEdicion, setRolesEdicion] = useState<Record<number, string>>({});
+  // Estado del modulo RRHH / Nomina (CU-RH-001/002/005/007).
+  const [cargosRrhh, setCargosRrhh] = useState<CargoRrhh[]>([]);
+  const [empleadosRrhh, setEmpleadosRrhh] = useState<EmpleadoRrhh[]>([]);
+  const [ausenciasRrhh, setAusenciasRrhh] = useState<AusenciaRrhh[]>([]);
+  const [nominasRrhh, setNominasRrhh] = useState<NominaRrhh[]>([]);
+  const [nombreCargo, setNombreCargo] = useState('');
+  const [nombreEmpleado, setNombreEmpleado] = useState('');
+  const [documentoEmpleado, setDocumentoEmpleado] = useState('');
+  const [salarioEmpleadoPesos, setSalarioEmpleadoPesos] = useState('');
+  const [cargoSelEmpleado, setCargoSelEmpleado] = useState('');
+  const [empleadoSelAusencia, setEmpleadoSelAusencia] = useState('');
+  const [fechaAusencia, setFechaAusencia] = useState('');
+  const [motivoAusencia, setMotivoAusencia] = useState('');
+  const [periodoNomina, setPeriodoNomina] = useState('');
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -916,6 +969,125 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarLogistica(token);
   }
 
+  // Carga los datos de RRHH / Nomina (CU-RH-001/002/005/007).
+  async function cargarRrhh(tokenActivo: string): Promise<void> {
+    const rutaCargos = await peticion('/rrhh/cargos', tokenActivo);
+    if (rutaCargos.ok) setCargosRrhh(((await rutaCargos.json()).data as CargoRrhh[]) || []);
+    const rutaEmp = await peticion('/rrhh/empleados', tokenActivo);
+    if (rutaEmp.ok) setEmpleadosRrhh(((await rutaEmp.json()).data as EmpleadoRrhh[]) || []);
+    const rutaAus = await peticion('/rrhh/ausencias', tokenActivo);
+    if (rutaAus.ok) setAusenciasRrhh(((await rutaAus.json()).data as AusenciaRrhh[]) || []);
+    const rutaNom = await peticion('/rrhh/nominas', tokenActivo);
+    if (rutaNom.ok) setNominasRrhh(((await rutaNom.json()).data as NominaRrhh[]) || []);
+  }
+
+  async function crearCargoUI(): Promise<void> {
+    if (!token) return;
+    if (!nombreCargo.trim()) {
+      setMensaje('El nombre del cargo es obligatorio');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/cargos', token, 'POST', { nombre: nombreCargo.trim() });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el cargo');
+      return;
+    }
+    setNombreCargo('');
+    await cargarRrhh(token);
+  }
+
+  async function crearEmpleadoUI(): Promise<void> {
+    if (!token) return;
+    const salarioCentavos = Math.round((Number(salarioEmpleadoPesos) || 0) * 100);
+    if (!nombreEmpleado.trim() || !documentoEmpleado.trim()) {
+      setMensaje('Nombre y documento son obligatorios');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/empleados', token, 'POST', {
+      nombre: nombreEmpleado.trim(),
+      documentoUnico: documentoEmpleado.trim(),
+      cargoId: cargoSelEmpleado ? Number(cargoSelEmpleado) : undefined,
+      salarioBaseCentavos: salarioCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el empleado');
+      return;
+    }
+    setNombreEmpleado('');
+    setDocumentoEmpleado('');
+    setSalarioEmpleadoPesos('');
+    setCargoSelEmpleado('');
+    await cargarRrhh(token);
+  }
+
+  async function inactivarEmpleadoUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/empleados/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el empleado');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function registrarAusenciaUI(): Promise<void> {
+    if (!token) return;
+    const empleadoId = Number(empleadoSelAusencia);
+    if (!empleadoId || !fechaAusencia || !motivoAusencia.trim()) {
+      setMensaje('Seleccione empleado, fecha y motivo');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/ausencias', token, 'POST', {
+      empleadoId: empleadoId,
+      fecha: fechaAusencia,
+      motivo: motivoAusencia.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo registrar la ausencia');
+      return;
+    }
+    setEmpleadoSelAusencia('');
+    setFechaAusencia('');
+    setMotivoAusencia('');
+    await cargarRrhh(token);
+  }
+
+  async function justificarAusenciaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/ausencias/' + id + '/justificar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo justificar la ausencia');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function generarNominaUI(): Promise<void> {
+    if (!token) return;
+    if (!periodoNomina.trim()) {
+      setMensaje('Indique el periodo (YYYY-MM)');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/nominas/generar', token, 'POST', {
+      periodo: periodoNomina.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo generar la nomina');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
+  async function pagarNominaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/rrhh/nominas/' + id + '/pagar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo marcar la nomina como pagada');
+      return;
+    }
+    await cargarRrhh(token);
+  }
+
   async function cambiarEstadoUsuarioUI(id: number, estado: string): Promise<void> {
     if (!token) return;
     const respuesta = await peticion('/administracion/usuarios/' + id + '/estado', token, 'PATCH', {
@@ -1010,12 +1182,22 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'RRHH / Nomina') {
+        cargarRrhh(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
   const esVentas = moduloActivo === 'Ventas';
   const esSeguridad = moduloActivo === 'Seguridad';
   const esLogistica = moduloActivo === 'Logistica';
+  const esRrhh = moduloActivo === 'RRHH / Nomina';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -2319,12 +2501,285 @@ function ContenidoAplicacion(): JSX.Element {
               </section>
             </>
           )}
+          {esRrhh && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Cargos (CU-RH-002)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre del cargo"
+                    value={nombreCargo}
+                    onChange={function (e) {
+                      setNombreCargo(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearCargoUI}>
+                    Crear cargo
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Cargo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cargosRrhh.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.nombre}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarEmpleadoUI(c.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Empleados (CU-RH-001)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre"
+                    value={nombreEmpleado}
+                    onChange={function (e) {
+                      setNombreEmpleado(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Documento"
+                    value={documentoEmpleado}
+                    onChange={function (e) {
+                      setDocumentoEmpleado(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={cargoSelEmpleado}
+                    onChange={function (e) {
+                      setCargoSelEmpleado(e.target.value);
+                    }}
+                  >
+                    <option value="">Cargo...</option>
+                    {cargosRrhh.map(function (c) {
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Salario (COP)"
+                    value={salarioEmpleadoPesos}
+                    onChange={function (e) {
+                      setSalarioEmpleadoPesos(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearEmpleadoUI}>
+                    Crear empleado
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Documento</th>
+                      <th>Cargo</th>
+                      <th>Salario</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <tr key={em.id}>
+                          <td>{em.nombre}</td>
+                          <td>{em.documentoUnico}</td>
+                          <td>{em.cargoNombre || '-'}</td>
+                          <td>{formatearPesos(em.salarioBaseCentavos)}</td>
+                          <td>{em.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarEmpleadoUI(em.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ausencias (CU-RH-005)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={empleadoSelAusencia}
+                    onChange={function (e) {
+                      setEmpleadoSelAusencia(e.target.value);
+                    }}
+                  >
+                    <option value="">Empleado...</option>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <option key={em.id} value={em.id}>
+                          {em.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="date"
+                    value={fechaAusencia}
+                    onChange={function (e) {
+                      setFechaAusencia(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Motivo"
+                    value={motivoAusencia}
+                    onChange={function (e) {
+                      setMotivoAusencia(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={registrarAusenciaUI}>
+                    Registrar ausencia
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Empleado</th>
+                      <th>Fecha</th>
+                      <th>Motivo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ausenciasRrhh.map(function (a) {
+                      return (
+                        <tr key={a.id}>
+                          <td>{a.empleadoNombre}</td>
+                          <td>{a.fecha.slice(0, 10)}</td>
+                          <td>{a.motivo}</td>
+                          <td>{a.estado}</td>
+                          <td>
+                            {a.estado !== 'justificada' && (
+                              <button
+                                className="btn btn--line btn--sm"
+                                onClick={function () {
+                                  justificarAusenciaUI(a.id);
+                                }}
+                              >
+                                Justificar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Nomina (CU-RH-007)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoNomina}
+                    onChange={function (e) {
+                      setPeriodoNomina(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={generarNominaUI}>
+                    Generar nomina del periodo
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Periodo</th>
+                      <th>Empleado</th>
+                      <th>Cargo</th>
+                      <th>Neto</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {nominasRrhh.map(function (n) {
+                      return (
+                        <tr key={n.id}>
+                          <td>{n.periodo}</td>
+                          <td>{n.empleadoNombre}</td>
+                          <td>{n.cargoNombre || '-'}</td>
+                          <td>{formatearPesos(n.netoCentavos)}</td>
+                          <td>{n.estado}</td>
+                          <td>
+                            {n.estado === 'generada' && (
+                              <button
+                                className="btn btn--warm btn--sm"
+                                onClick={function () {
+                                  pagarNominaUI(n.id);
+                                }}
+                              >
+                                Pagar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
           {!esDashboard &&
             !esCompras &&
             !esInventario &&
             !esVentas &&
             !esSeguridad &&
-            !esLogistica && (
+            !esLogistica &&
+            !esRrhh && (
               <section className="panel">
                 <div className="panel-head">
                   <h2>{moduloActivo}</h2>
