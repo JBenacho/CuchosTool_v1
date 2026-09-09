@@ -420,6 +420,51 @@ export const cuentasPorPagar = pgTable('cuentas_por_pagar', {
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Logistica (CU-LG-001..006): transportistas, vehiculos y despachos con guia y estados de entrega.
+export const transportistas = pgTable('transportistas', {
+  id: serial('id').primaryKey(),
+  nombre: text('nombre').notNull(),
+  nit: text('nit').notNull().unique(),
+  telefono: text('telefono'),
+  polizaVenceEn: timestamp('poliza_vence_en', { withTimezone: true }),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const vehiculos = pgTable('vehiculos', {
+  id: serial('id').primaryKey(),
+  transportistaId: integer('transportista_id')
+    .notNull()
+    .references(() => transportistas.id),
+  placa: text('placa').notNull().unique(),
+  capacidadKg: integer('capacidad_kg').notNull().default(1000),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const despachos = pgTable('despachos', {
+  id: serial('id').primaryKey(),
+  referencia: text('referencia').notNull().unique(),
+  pedidoId: integer('pedido_id')
+    .notNull()
+    .references(() => pedidos.id)
+    .unique(),
+  transportistaId: integer('transportista_id')
+    .notNull()
+    .references(() => transportistas.id),
+  vehiculoId: integer('vehiculo_id')
+    .notNull()
+    .references(() => vehiculos.id),
+  guia: text('guia').notNull().unique(),
+  ruta: text('ruta'),
+  estado: text('estado').notNull().default('programado'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+  entregadoEn: timestamp('entregado_en', { withTimezone: true }),
+});
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),

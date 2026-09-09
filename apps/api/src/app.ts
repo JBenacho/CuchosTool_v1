@@ -21,6 +21,7 @@ import { rutasErp } from './modulos/erp/erp.rutas';
 import { rutasInventario } from './modulos/inventario/inventario.rutas';
 import { rutasCompras } from './modulos/compras/compras.rutas';
 import { rutasVentas } from './modulos/ventas/ventas.rutas';
+import { rutasLogistica } from './modulos/logistica/logistica.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -79,6 +80,11 @@ export async function construirAplicacion(opciones?: {
           name: 'ventas',
           description:
             'Ventas del ERP (F5): consulta y gestion del ciclo de pedidos del canal (CU-CM-007 base)',
+        },
+        {
+          name: 'logistica',
+          description:
+            'Logistica ERP (F5): transportistas, vehiculos y despachos con guia y estados (CU-LG-001..006)',
         },
         {
           name: 'administracion',
@@ -145,6 +151,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasInventario);
   await aplicacion.register(rutasCompras);
   await aplicacion.register(rutasVentas);
+  await aplicacion.register(rutasLogistica);
 
   aplicacion.get('/', async function () {
     return {
