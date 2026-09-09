@@ -150,6 +150,21 @@ const MODULOS = [
   'Seguridad',
 ] as const;
 
+// Modulos visibles por perfil en el menu lateral (RBAC de navegacion ERP).
+const MODULOS_POR_ROL: Record<string, readonly string[]> = {
+  ADMIN: [...MODULOS],
+  COMPRAS: ['Dashboard', 'Compras', 'Inventario'],
+  ALMACENISTA: ['Dashboard', 'Inventario', 'Compras'],
+  CONTADOR: ['Dashboard', 'Compras', 'Inventario', 'Contabilidad', 'Facturacion'],
+  VENDEDOR: ['Dashboard', 'Ventas'],
+  AUDITOR: ['Dashboard', 'Inventario'],
+  GERENTE_ZONA: ['Dashboard', 'Ventas', 'Gerencia'],
+  AGENTE_SOPORTE: ['Dashboard'],
+  SUPERVISOR_SOPORTE: ['Dashboard'],
+  RESPONSABLE_GARANTIAS: ['Dashboard'],
+  RESPONSABLE_CALIDAD: ['Dashboard'],
+};
+
 // Perfiles internos gestionables desde Seguridad (coinciden con ROLES_ERP_GESTIONABLES).
 const PERFILES_GESTIONABLES = [
   'ADMIN',
@@ -278,8 +293,8 @@ function ContenidoAplicacion(): JSX.Element {
         ultimosClientes: clientes.slice(0, 5),
       });
     } catch {
-      // El resumen es solo del Dashboard; no contaminar otros modulos con su error.
-      if (moduloActivo === 'Dashboard') setMensaje('No se pudo cargar el resumen');
+      // El resumen consume datos de otros modulos segun el rol; si no hay permiso
+      // los KPIs quedan en cero en silencio (sin contaminar la interfaz).
     }
   }
 
@@ -814,6 +829,11 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  // Solo se muestran en el menu los modulos habilitados para el rol de la sesion.
+  const modulosVisibles = usuarioSesion
+    ? MODULOS_POR_ROL[usuarioSesion.rol] || ['Dashboard']
+    : MODULOS;
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
@@ -888,7 +908,7 @@ function ContenidoAplicacion(): JSX.Element {
           )}
           {token && (
             <nav className="side-nav">
-              {MODULOS.map(function (modulo) {
+              {modulosVisibles.map(function (modulo) {
                 return (
                   <a
                     key={modulo}
