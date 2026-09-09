@@ -514,6 +514,52 @@ export const nominas = pgTable('nominas', {
   pagadaEn: timestamp('pagada_en', { withTimezone: true }),
 });
 
+// Comercial B2B (CU-CM-001/004/007): clientes ERP, vendedores (usuarios VENDEDOR) y ordenes corporativas.
+export const clientesEmpresa = pgTable('clientes_empresa', {
+  id: serial('id').primaryKey(),
+  nit: text('nit').notNull().unique(),
+  razonSocial: text('razon_social').notNull(),
+  contacto: text('contacto'),
+  telefono: text('telefono'),
+  correo: text('correo'),
+  cupoCreditoCentavos: bigint('cupo_credito_centavos', { mode: 'number' }).notNull().default(0),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const ordenesVentaB2b = pgTable('ordenes_venta_b2b', {
+  id: serial('id').primaryKey(),
+  folio: text('folio').notNull().unique(),
+  clienteEmpresaId: integer('cliente_empresa_id')
+    .notNull()
+    .references(() => clientesEmpresa.id),
+  vendedorId: text('vendedor_id').notNull(),
+  bodegaId: integer('bodega_id')
+    .notNull()
+    .references(() => bodegas.id),
+  formaPago: text('forma_pago').notNull().default('credito'),
+  subtotalCentavos: bigint('subtotal_centavos', { mode: 'number' }).notNull(),
+  totalCentavos: bigint('total_centavos', { mode: 'number' }).notNull(),
+  moneda: text('moneda').notNull().default('COP'),
+  estado: text('estado').notNull().default('confirmada'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const ordenVentaB2bArticulos = pgTable('orden_venta_b2b_articulos', {
+  id: serial('id').primaryKey(),
+  ordenId: integer('orden_id')
+    .notNull()
+    .references(() => ordenesVentaB2b.id),
+  productoId: integer('producto_id')
+    .notNull()
+    .references(() => productos.id),
+  cantidad: integer('cantidad').notNull(),
+  precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }).notNull(),
+  subtotalCentavos: bigint('subtotal_centavos', { mode: 'number' }).notNull(),
+});
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
