@@ -183,6 +183,17 @@ export const VENTA_B2B_CONFIRMADA = 'confirmada';
 export const VENTA_B2B_PAGADA = 'pagada';
 export const VENTA_B2B_ANULADA = 'anulada';
 export const EVENTO_VENTA_B2B_CREADA = 'com.cuchostool.ventab2b.creada';
+// Facturacion / Contabilidad (CU-FC-001..004, CU-CT-001).
+export const FACTURA_EMITIDA = 'emitida';
+export const FACTURA_PAGADA = 'pagada';
+export const FACTURA_ANULADA = 'anulada';
+export const NOTA_CREDITO = 'credito';
+export const NOTA_DEBITO = 'debito';
+export const NATURALEZA_DEBITO = 'debito';
+export const NATURALEZA_CREDITO = 'credito';
+export const EVENTO_FACTURA_EMITIDA = 'com.cuchostool.factura.emitida';
+export const TIPOS_IMPUESTO = ['iva', 'retencion', 'otro'] as const;
+export const TARIFA_BPS_MAXIMA = 10000;
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

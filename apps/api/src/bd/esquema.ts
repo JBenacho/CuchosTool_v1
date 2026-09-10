@@ -560,6 +560,78 @@ export const ordenVentaB2bArticulos = pgTable('orden_venta_b2b_articulos', {
   subtotalCentavos: bigint('subtotal_centavos', { mode: 'number' }).notNull(),
 });
 
+// Facturacion y Contabilidad (CU-FC-001..004, CU-CT-001): impuestos, facturas, notas, PUC y asientos.
+export const impuestos = pgTable('impuestos', {
+  id: serial('id').primaryKey(),
+  nombre: text('nombre').notNull().unique(),
+  tipo: text('tipo').notNull().default('iva'),
+  // Tarifa en puntos basicos: 1900 = 19,00% (RN-FC-01: 0..100%).
+  tarifaBps: integer('tarifa_bps').notNull().default(0),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const facturas = pgTable('facturas', {
+  id: serial('id').primaryKey(),
+  numero: text('numero').notNull().unique(),
+  clienteEmpresaId: integer('cliente_empresa_id')
+    .notNull()
+    .references(() => clientesEmpresa.id),
+  ordenB2bId: integer('orden_b2b_id')
+    .references(() => ordenesVentaB2b.id)
+    .unique(),
+  impuestoId: integer('impuesto_id').references(() => impuestos.id),
+  baseCentavos: bigint('base_centavos', { mode: 'number' }).notNull(),
+  impuestoCentavos: bigint('impuesto_centavos', { mode: 'number' }).notNull().default(0),
+  totalCentavos: bigint('total_centavos', { mode: 'number' }).notNull(),
+  moneda: text('moneda').notNull().default('COP'),
+  estado: text('estado').notNull().default('emitida'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  anuladoEn: timestamp('anulado_en', { withTimezone: true }),
+});
+
+export const notasFactura = pgTable('notas_factura', {
+  id: serial('id').primaryKey(),
+  facturaId: integer('factura_id')
+    .notNull()
+    .references(() => facturas.id),
+  tipo: text('tipo').notNull(),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  motivo: text('motivo').notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const cuentasContables = pgTable('cuentas_contables', {
+  id: serial('id').primaryKey(),
+  codigo: text('codigo').notNull().unique(),
+  nombre: text('nombre').notNull(),
+  naturaleza: text('naturaleza').notNull().default('debito'),
+  estado: text('estado').notNull().default('ACTIVO'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const asientosContables = pgTable('asientos_contables', {
+  id: serial('id').primaryKey(),
+  referencia: text('referencia').notNull().unique(),
+  descripcion: text('descripcion').notNull(),
+  fecha: timestamp('fecha', { withTimezone: true }).notNull().defaultNow(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const asientoLineas = pgTable('asiento_lineas', {
+  id: serial('id').primaryKey(),
+  asientoId: integer('asiento_id')
+    .notNull()
+    .references(() => asientosContables.id),
+  cuentaId: integer('cuenta_id')
+    .notNull()
+    .references(() => cuentasContables.id),
+  debitoCentavos: bigint('debito_centavos', { mode: 'number' }).notNull().default(0),
+  creditoCentavos: bigint('credito_centavos', { mode: 'number' }).notNull().default(0),
+});
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
