@@ -1,7 +1,10 @@
 // Pruebas unitarias del modulo ERP de proveedores (CU-ERP-001, F5).
 // Cubre la normalizacion/validacion pura (sin BD) de los datos de un proveedor.
 import { describe, it, expect } from 'vitest';
-import { normalizarDatosProveedor } from '../src/modulos/erp/proveedores.servicio';
+import {
+  normalizarDatosProveedor,
+  normalizarTarifaIva,
+} from '../src/modulos/erp/proveedores.servicio';
 
 describe('normalizarDatosProveedor (CU-ERP-001)', function () {
   it('acepta un proveedor valido y recorta espacios', function () {
@@ -18,6 +21,7 @@ describe('normalizarDatosProveedor (CU-ERP-001)', function () {
       correo: null,
       direccion: null,
       sitioWeb: null,
+      tarifaIvaBps: 1900,
     });
   });
 
@@ -64,5 +68,41 @@ describe('normalizarDatosProveedor (CU-ERP-001)', function () {
     expect(normalizarDatosProveedor({ nit: '900123456', nombre: '' })).toEqual({
       error: 'datos_incompletos',
     });
+  });
+
+  it('acepta la tarifa de IVA pactada con el proveedor (CU-ERP-003)', function () {
+    const resultado = normalizarDatosProveedor({
+      nit: '900123456',
+      nombre: 'X',
+      tarifaIvaBps: 500,
+    });
+    expect(resultado.datos).toMatchObject({ tarifaIvaBps: 500 });
+  });
+
+  it('rechaza tarifas de IVA fuera de rango (tarifa_iva_invalida)', function () {
+    expect(normalizarDatosProveedor({ nit: '1', nombre: 'X', tarifaIvaBps: 10001 })).toEqual({
+      error: 'tarifa_iva_invalida',
+    });
+    expect(normalizarDatosProveedor({ nit: '1', nombre: 'X', tarifaIvaBps: -1 })).toEqual({
+      error: 'tarifa_iva_invalida',
+    });
+  });
+});
+
+describe('normalizarTarifaIva (CU-ERP-003)', function () {
+  it('usa 19,00% cuando no se informa la tarifa', function () {
+    expect(normalizarTarifaIva(undefined)).toEqual({ tarifa: 1900 });
+    expect(normalizarTarifaIva('')).toEqual({ tarifa: 1900 });
+  });
+
+  it('acepta tarifas enteras entre 0 y 10000 puntos basicos', function () {
+    expect(normalizarTarifaIva(0)).toEqual({ tarifa: 0 });
+    expect(normalizarTarifaIva(1900)).toEqual({ tarifa: 1900 });
+    expect(normalizarTarifaIva(10000)).toEqual({ tarifa: 10000 });
+  });
+
+  it('rechaza tarifas no enteras o fuera de rango', function () {
+    expect(normalizarTarifaIva(19.5)).toEqual({ error: 'tarifa_iva_invalida' });
+    expect(normalizarTarifaIva(20000)).toEqual({ error: 'tarifa_iva_invalida' });
   });
 });

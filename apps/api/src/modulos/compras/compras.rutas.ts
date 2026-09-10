@@ -21,9 +21,17 @@ type CuerpoOrden = {
   solicitudId?: number;
   proveedorId: number;
   bodegaDestinoId: number;
+  // Modo de una linea (compatibilidad) o multi-linea con renglones (CU-ERP-003).
   productoId?: number;
   cantidad?: number;
-  precioUnitarioCentavos: number;
+  precioUnitarioCentavos?: number;
+  lineas?: { productoId: number; cantidad: number; precioUnitarioCentavos: number }[];
+};
+type CuerpoRecepcion = {
+  /** Recepcion por renglon (CU-ERP-007); obligatoria si la orden tiene varias lineas. */
+  lineas?: { lineaId: number; cantidad: number }[];
+  /** Cantidad suelta: solo valida en ordenes de un unico renglon. */
+  cantidadRecibida?: number;
 };
 
 function actorDe(solicitud: any): { id?: string; rol?: string } {
@@ -190,19 +198,24 @@ export async function rutasCompras(aplicacion: FastifyInstance): Promise<void> {
   );
 
   // Recepcion e ingreso a inventario (CU-ERP-007/008).
-  aplicacion.post<{ Params: { id: string }; Body: { cantidadRecibida: number } }>(
+  aplicacion.post<{ Params: { id: string }; Body: CuerpoRecepcion }>(
     '/compras/ordenes/:id/recepcion',
     {
       preHandler: requerirRol(almacen),
       schema: {
         tags: ['compras'],
-        summary: 'Registrar recepcion e ingreso a inventario (CU-ERP-007/008)',
+        summary: 'Registrar recepcion por linea e ingreso a inventario (CU-ERP-007/008)',
       },
     },
     async function (solicitud, respuesta) {
+      const cuerpo = solicitud.body || {};
+      // La recepcion puede venir por renglon (multi-linea) o como cantidad suelta (una linea).
+      const recepciones = Array.isArray(cuerpo.lineas)
+        ? cuerpo.lineas
+        : Number(cuerpo.cantidadRecibida);
       const resultado = await registrarRecepcionOrden(
         Number(solicitud.params.id),
-        Number((solicitud.body || {}).cantidadRecibida),
+        recepciones as any,
         actorDe(solicitud),
       );
       if (!resultado.ok)

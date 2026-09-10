@@ -1,21 +1,40 @@
-// Rutas de Logistica del ERP (CU-LG-001..006): transportistas, vehiculos y despachos.
+// Rutas de Logistica del ERP (CU-LG-001..006): transportistas, vehiculos, rutas y despachos.
+// CU-LG-005: la gestion de rutas queda restringida a logistica y administracion (RN-LG-04).
 import type { FastifyInstance } from 'fastify';
 import { ROL_ADMIN, ROL_ALMACENISTA, ROL_LOGISTICA } from '../../dominio/constantes';
 import { registrarAuditoria } from '../administracion/auditoria';
 import {
+  actualizarRuta,
+  asignarDespachosARuta,
+  cancelarRuta,
+  completarRuta,
   crearDespacho,
+  crearRuta,
   crearTransportista,
   crearVehiculo,
   despacharDespacho,
+  despachosConsolidables,
   devolverDespacho,
   entregarDespacho,
   inactivarTransportista,
   inactivarVehiculo,
+  iniciarRuta,
   listarDespachos,
+  listarRutas,
   listarTransportistas,
   listarVehiculos,
+  obtenerRuta,
   ventasDespachables,
 } from './logistica.servicio';
+
+/** Actor autenticado de la solicitud (id y rol) para auditoria. */
+function actorDe(solicitud: any): { id?: string; rol?: string } {
+  const usuario = solicitud.usuario;
+  return {
+    id: usuario ? String(usuario.sub || '') : undefined,
+    rol: usuario ? usuario.rol : undefined,
+  };
+}
 
 export async function rutasLogistica(aplicacion: FastifyInstance): Promise<void> {
   const requerirRol = (aplicacion as any).requerirRol as (roles: string[]) => any;
@@ -124,6 +143,170 @@ export async function rutasLogistica(aplicacion: FastifyInstance): Promise<void>
         'ok',
       );
       return { data: resultado.datos };
+    },
+  );
+
+  // Rutas de distribucion (CU-LG-005): codigo unico, paradas secuenciadas y consolidacion.
+  aplicacion.get(
+    '/logistica/rutas',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Listar rutas de distribucion (CU-LG-005)' },
+    },
+    async function () {
+      return { data: await listarRutas() };
+    },
+  );
+  aplicacion.get<{ Params: { id: string } }>(
+    '/logistica/rutas/:id',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Consultar ruta con sus paradas (CU-LG-005)' },
+    },
+    async function (solicitud, respuesta) {
+      const ruta = await obtenerRuta(Number(solicitud.params.id));
+      if (!ruta) return respuesta.code(404).send({ error: 'ruta_no_encontrada' });
+      return { data: ruta };
+    },
+  );
+  aplicacion.post(
+    '/logistica/rutas',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Planificar ruta de distribucion (CU-LG-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await crearRuta(solicitud.body || {}, actorDe(solicitud));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.crear_ruta',
+        'rutas',
+        String((resultado.datos as any).codigo),
+        'ok',
+      );
+      return respuesta.code(201).send({ data: resultado.datos });
+    },
+  );
+  aplicacion.patch(
+    '/logistica/rutas/:id',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Modificar ruta planificada (CU-LG-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await actualizarRuta(Number(solicitud.params.id), solicitud.body || {});
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.actualizar_ruta',
+        'rutas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.post(
+    '/logistica/rutas/:id/despachos',
+    {
+      preHandler: requerirRol(gestion),
+      schema: {
+        tags: ['logistica'],
+        summary: 'Consolidar despachos programados en la ruta (CU-LG-005)',
+      },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const cuerpo = solicitud.body || {};
+      const resultado = await asignarDespachosARuta(
+        Number(solicitud.params.id),
+        Array.isArray(cuerpo.despachoIds) ? cuerpo.despachoIds.map(Number) : [],
+      );
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.consolidar_despachos',
+        'rutas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.patch(
+    '/logistica/rutas/:id/iniciar',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Iniciar ejecucion de la ruta (CU-LG-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await iniciarRuta(Number(solicitud.params.id));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.iniciar_ruta',
+        'rutas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.patch(
+    '/logistica/rutas/:id/completar',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Completar ruta en ejecucion (CU-LG-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await completarRuta(Number(solicitud.params.id));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.completar_ruta',
+        'rutas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.patch(
+    '/logistica/rutas/:id/cancelar',
+    {
+      preHandler: requerirRol(gestion),
+      schema: { tags: ['logistica'], summary: 'Cancelar ruta planificada (CU-LG-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await cancelarRuta(Number(solicitud.params.id));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'logistica.cancelar_ruta',
+        'rutas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.get(
+    '/logistica/despachos-consolidables',
+    {
+      preHandler: requerirRol(gestion),
+      schema: {
+        tags: ['logistica'],
+        summary: 'Despachos programados disponibles para consolidar (CU-LG-005)',
+      },
+    },
+    async function () {
+      return { data: await despachosConsolidables() };
     },
   );
 

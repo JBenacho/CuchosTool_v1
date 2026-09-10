@@ -1,162 +1,121 @@
-// Reportes gerenciales del ERP (CU-GE base): consolidado de ventas, facturacion, inventario y casos.
+// Rutas de reportes gerenciales del ERP (CU-GE): resumen ejecutivo, series mensuales,
+// ranking de productos, cartera y exportacion CSV. RBAC: ADMIN y GERENTE_ZONA.
 import type { FastifyInstance } from 'fastify';
-import { and, eq, gte, lt, sql } from 'drizzle-orm';
-import { base } from '../../bd/base';
+import { REPORTES_GERENCIALES, ROL_ADMIN, ROL_GERENTE_ZONA } from '../../dominio/constantes';
 import {
-  casos,
-  comisiones,
-  facturas,
-  inventarioStock,
-  ordenesVentaB2b,
-  pedidos,
-} from '../../bd/esquema';
-import {
-  CASO_ABIERTO,
-  CASO_EN_PROCESO,
-  FACTURA_ANULADA,
-  PEDIDO_ENTREGADO,
-  PEDIDO_PAGADO,
-  ROL_ADMIN,
-  ROL_GERENTE_ZONA,
-  VENTA_B2B_PAGADA,
-} from '../../dominio/constantes';
+  cartera,
+  csvCartera,
+  csvRanking,
+  csvResumen,
+  csvSeries,
+  normalizarLimite,
+  normalizarMeses,
+  normalizarPeriodo,
+  rankingProductos,
+  resumenGerencial,
+  seriesMensuales,
+} from './gerencia.servicio';
 
-function rangoPeriodo(periodo: string): { inicio: Date; fin: Date } | null {
-  if (!/^\d{4}-\d{2}$/.test(periodo)) return null;
-  const [anio, mes] = periodo.split('-').map(Number);
-  return { inicio: new Date(Date.UTC(anio, mes - 1, 1)), fin: new Date(Date.UTC(anio, mes, 1)) };
+// Nombre del archivo CSV por tipo de reporte exportado.
+const ARCHIVOS_CSV: Record<string, string> = {
+  resumen: 'resumen-gerencial',
+  series: 'series-mensuales',
+  ranking: 'ranking-productos',
+  cartera: 'cartera',
+};
+
+/** Arma el periodo solicitado o responde 400 cuando el formato no es AAAA-MM. */
+function periodoDe(solicitud: any): { periodo?: string; error?: string } {
+  const periodo = normalizarPeriodo(solicitud.query && solicitud.query.periodo);
+  if (!periodo) return { error: 'periodo_invalido' };
+  return { periodo: periodo };
 }
 
 export async function rutasGerencia(aplicacion: FastifyInstance): Promise<void> {
   const requerirRol = (aplicacion as any).requerirRol as (roles: string[]) => any;
+  const gerencia = [ROL_ADMIN, ROL_GERENTE_ZONA];
 
   aplicacion.get(
     '/gerencia/resumen',
     {
-      preHandler: requerirRol([ROL_ADMIN, ROL_GERENTE_ZONA]),
-      schema: { tags: ['gerencia'], summary: 'Resumen gerencial consolidado (CU-GE base)' },
+      preHandler: requerirRol(gerencia),
+      schema: { tags: ['gerencia'], summary: 'Resumen gerencial consolidado (CU-GE)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const pedido = periodoDe(solicitud);
+      if (pedido.error) return respuesta.code(400).send({ error: pedido.error });
+      return { data: await resumenGerencial(pedido.periodo as string) };
+    },
+  );
+
+  aplicacion.get(
+    '/gerencia/series',
+    {
+      preHandler: requerirRol(gerencia),
+      schema: { tags: ['gerencia'], summary: 'Serie mensual de ventas y facturacion (CU-GE)' },
     },
     async function (solicitud: any) {
-      const periodo =
-        solicitud.query && solicitud.query.periodo
-          ? String(solicitud.query.periodo)
-          : new Date().toISOString().slice(0, 7);
-      const rango = rangoPeriodo(periodo);
+      const meses = normalizarMeses(solicitud.query && solicitud.query.meses);
+      return { data: await seriesMensuales(meses) };
+    },
+  );
 
-      // Canal E-Commerce: totales por estado y monto de ventas efectivas.
-      const pedidosFilas = await base
-        .select({ estado: pedidos.estado, totalCentavos: pedidos.totalCentavos })
-        .from(pedidos);
-      const canalPorEstado: Record<string, number> = {};
-      let canalEfectivoCentavos = 0;
-      for (const fila of pedidosFilas) {
-        canalPorEstado[fila.estado] = (canalPorEstado[fila.estado] || 0) + 1;
-        if (fila.estado === PEDIDO_PAGADO || fila.estado === PEDIDO_ENTREGADO)
-          canalEfectivoCentavos += fila.totalCentavos;
-      }
+  aplicacion.get(
+    '/gerencia/ranking-productos',
+    {
+      preHandler: requerirRol(gerencia),
+      schema: { tags: ['gerencia'], summary: 'Ranking de productos vendidos (CU-GE)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const pedido = periodoDe(solicitud);
+      if (pedido.error) return respuesta.code(400).send({ error: pedido.error });
+      const limite = normalizarLimite(solicitud.query && solicitud.query.limite);
+      return { data: await rankingProductos(pedido.periodo as string, limite) };
+    },
+  );
 
-      // Ventas B2B: estados y monto pagado del periodo.
-      const b2bConsulta = base
-        .select({
-          estado: ordenesVentaB2b.estado,
-          totalCentavos: ordenesVentaB2b.totalCentavos,
-          creadoEn: ordenesVentaB2b.creadoEn,
-        })
-        .from(ordenesVentaB2b);
-      const b2bFilas = rango
-        ? await b2bConsulta.where(
-            and(
-              gte(ordenesVentaB2b.creadoEn, rango.inicio),
-              lt(ordenesVentaB2b.creadoEn, rango.fin),
-            ),
-          )
-        : await b2bConsulta;
-      const b2bPorEstado: Record<string, number> = {};
-      let b2bPagadoCentavos = 0;
-      for (const fila of b2bFilas) {
-        b2bPorEstado[fila.estado] = (b2bPorEstado[fila.estado] || 0) + 1;
-        if (fila.estado === VENTA_B2B_PAGADA) b2bPagadoCentavos += fila.totalCentavos;
-      }
+  aplicacion.get(
+    '/gerencia/cartera',
+    {
+      preHandler: requerirRol(gerencia),
+      schema: { tags: ['gerencia'], summary: 'Cartera por pagar y por cobrar (CU-GE)' },
+    },
+    async function () {
+      return { data: await cartera() };
+    },
+  );
 
-      // Facturacion: total facturado (sin anuladas), IVA y facturas electronicas emitidas.
-      const facturasFilas = await base
-        .select({
-          estado: facturas.estado,
-          baseCentavos: facturas.baseCentavos,
-          impuestoCentavos: facturas.impuestoCentavos,
-          totalCentavos: facturas.totalCentavos,
-          estadoDian: facturas.estadoDian,
-        })
-        .from(facturas);
-      let facturadoCentavos = 0;
-      let ivaCentavos = 0;
-      let dianEmitidas = 0;
-      for (const fila of facturasFilas) {
-        if (fila.estado !== FACTURA_ANULADA) {
-          facturadoCentavos += fila.totalCentavos;
-          ivaCentavos += fila.impuestoCentavos;
-        }
-        if (fila.estadoDian !== 'no_enviada') dianEmitidas++;
-      }
+  // Exportacion CSV de los reportes gerenciales (descarga directa desde el navegador).
+  aplicacion.get(
+    '/gerencia/exportar',
+    {
+      preHandler: requerirRol(gerencia),
+      schema: {
+        tags: ['gerencia'],
+        summary: 'Exportar reporte gerencial en CSV (resumen, series, ranking o cartera)',
+      },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const reporte = String((solicitud.query && solicitud.query.reporte) || 'resumen');
+      if (!(REPORTES_GERENCIALES as unknown as string[]).includes(reporte))
+        return respuesta.code(400).send({ error: 'reporte_invalido' });
+      const pedido = periodoDe(solicitud);
+      if (pedido.error) return respuesta.code(400).send({ error: pedido.error });
+      const periodo = pedido.periodo as string;
+      const meses = normalizarMeses(solicitud.query && solicitud.query.meses);
+      const limite = normalizarLimite(solicitud.query && solicitud.query.limite);
 
-      // Inventario: referencias bajo minimo.
-      const stockBajoMinimo = await base
-        .select({ total: sql<number>`count(*)::int` })
-        .from(inventarioStock)
-        .where(sql`cantidad < stock_minimo`);
+      let contenido = '';
+      if (reporte === 'resumen') contenido = csvResumen(await resumenGerencial(periodo));
+      if (reporte === 'series') contenido = csvSeries(await seriesMensuales(meses));
+      if (reporte === 'ranking') contenido = csvRanking(await rankingProductos(periodo, limite));
+      if (reporte === 'cartera') contenido = csvCartera(await cartera());
 
-      // Casos abiertos en proceso.
-      const casosAbiertos = await base
-        .select({ total: sql<number>`count(*)::int` })
-        .from(casos)
-        .where(eq(casos.estado, CASO_ABIERTO));
-      const casosEnProceso = await base
-        .select({ total: sql<number>`count(*)::int` })
-        .from(casos)
-        .where(eq(casos.estado, CASO_EN_PROCESO));
-
-      // Comisiones del periodo.
-      const comisionesFilas = await base
-        .select({ estado: comisiones.estado, montoCentavos: comisiones.montoCentavos })
-        .from(comisiones)
-        .where(eq(comisiones.periodo, periodo));
-      let comisionesCalculadasCentavos = 0;
-      let comisionesPagadasCentavos = 0;
-      for (const fila of comisionesFilas) {
-        if (fila.estado === 'pagada') comisionesPagadasCentavos += fila.montoCentavos;
-        else comisionesCalculadasCentavos += fila.montoCentavos;
-      }
-
-      return {
-        data: {
-          periodo: periodo,
-          canal: {
-            porEstado: canalPorEstado,
-            totalPedidos: pedidosFilas.length,
-            montoEfectivoCentavos: canalEfectivoCentavos,
-          },
-          b2b: {
-            porEstado: b2bPorEstado,
-            totalOrdenes: b2bFilas.length,
-            montoPagadoCentavos: b2bPagadoCentavos,
-          },
-          facturacion: {
-            totalFacturas: facturasFilas.length,
-            facturadoCentavos: facturadoCentavos,
-            ivaCentavos: ivaCentavos,
-            dianEmitidas: dianEmitidas,
-          },
-          inventario: { referenciasBajoMinimo: stockBajoMinimo[0] ? stockBajoMinimo[0].total : 0 },
-          casos: {
-            abiertos: casosAbiertos[0] ? casosAbiertos[0].total : 0,
-            enProceso: casosEnProceso[0] ? casosEnProceso[0].total : 0,
-          },
-          comisiones: {
-            calculadasCentavos: comisionesCalculadasCentavos,
-            pagadasCentavos: comisionesPagadasCentavos,
-          },
-        },
-      };
+      const archivo = ARCHIVOS_CSV[reporte] + '-' + periodo + '.csv';
+      return respuesta
+        .header('Content-Type', 'text/csv; charset=utf-8')
+        .header('Content-Disposition', 'attachment; filename="' + archivo + '"')
+        .send(contenido);
     },
   );
 }

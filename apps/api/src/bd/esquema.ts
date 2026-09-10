@@ -303,6 +303,8 @@ export const proveedores = pgTable('proveedores', {
   correo: text('correo'),
   direccion: text('direccion'),
   sitioWeb: text('sitio_web'),
+  // IVA pactado con el proveedor en puntos basicos (1900 = 19,00%, CU-ERP-003).
+  tarifaIvaBps: integer('tarifa_iva_bps').notNull().default(1900),
   estado: text('estado').notNull().default('ACTIVO'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
@@ -365,7 +367,7 @@ export const movimientosInventario = pgTable(
   ],
 );
 
-// Compras avanzado (CU-ERP-002..008): solicitudes y ordenes de compra de una linea (MVP).
+// Compras avanzado (CU-ERP-002..008): solicitudes y ordenes de compra multi-linea.
 export const solicitudesCompra = pgTable('solicitudes_compra', {
   id: serial('id').primaryKey(),
   referencia: text('referencia').notNull().unique(),
@@ -387,20 +389,49 @@ export const ordenesCompra = pgTable('ordenes_compra', {
   proveedorId: integer('proveedor_id')
     .notNull()
     .references(() => proveedores.id),
-  productoId: integer('producto_id')
-    .notNull()
-    .references(() => productos.id),
+  // Producto unico del modo de una linea (compatibilidad); null en ordenes multi-linea.
+  productoId: integer('producto_id').references(() => productos.id),
   bodegaDestinoId: integer('bodega_destino_id')
     .notNull()
     .references(() => bodegas.id),
+  // Totales de la cabecera: suman todas las lineas de la orden (CU-ERP-003).
   cantidadPedida: integer('cantidad_pedida').notNull(),
   cantidadRecibida: integer('cantidad_recibida').notNull().default(0),
-  precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }).notNull(),
+  // Precio unico del modo de una linea; null cuando la orden tiene varias lineas.
+  precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }),
+  // IVA por proveedor congelado al crear la orden (puntos basicos) y montos resultantes.
+  tarifaIvaBps: integer('tarifa_iva_bps').notNull().default(0),
+  subtotalCentavos: bigint('subtotal_centavos', { mode: 'number' }).notNull().default(0),
+  impuestoCentavos: bigint('impuesto_centavos', { mode: 'number' }).notNull().default(0),
+  totalCentavos: bigint('total_centavos', { mode: 'number' }).notNull().default(0),
   estado: text('estado').notNull().default('pendiente_aprobacion'),
   creadoPorRol: text('creado_por_rol'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Lineas de la orden de compra (CU-ERP-003): producto, cantidad y precio negociado por renglon.
+export const ordenCompraLineas = pgTable(
+  'orden_compra_lineas',
+  {
+    id: serial('id').primaryKey(),
+    ordenId: integer('orden_id')
+      .notNull()
+      .references(() => ordenesCompra.id),
+    numeroLinea: integer('numero_linea').notNull(),
+    productoId: integer('producto_id')
+      .notNull()
+      .references(() => productos.id),
+    cantidadPedida: integer('cantidad_pedida').notNull(),
+    cantidadRecibida: integer('cantidad_recibida').notNull().default(0),
+    precioUnitarioCentavos: bigint('precio_unitario_centavos', { mode: 'number' }).notNull(),
+    creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    uniqueIndex('orden_compra_lineas_orden_numero_idx').on(tabla.ordenId, tabla.numeroLinea),
+    index('orden_compra_lineas_orden_idx').on(tabla.ordenId),
+  ],
+);
 
 // Cuentas por pagar de compras (CU-ERP-009): se causan al completar la recepcion.
 export const cuentasPorPagar = pgTable('cuentas_por_pagar', {
@@ -444,6 +475,26 @@ export const vehiculos = pgTable('vehiculos', {
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Rutas de distribucion del ERP (CU-LG-005): trayecto planificado con paradas secuenciadas.
+// RN-LG-01: codigo unico. RN-LG-02: paradas ordenadas y sin destinos repetidos.
+export const rutas = pgTable('rutas', {
+  id: serial('id').primaryKey(),
+  codigo: text('codigo').notNull().unique(),
+  nombre: text('nombre').notNull(),
+  transportistaId: integer('transportista_id')
+    .notNull()
+    .references(() => transportistas.id),
+  vehiculoId: integer('vehiculo_id')
+    .notNull()
+    .references(() => vehiculos.id),
+  estado: text('estado').notNull().default('planificada'),
+  creadoPorRol: text('creado_por_rol'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+  iniciadaEn: timestamp('iniciada_en', { withTimezone: true }),
+  completadaEn: timestamp('completada_en', { withTimezone: true }),
+});
+
 export const despachos = pgTable('despachos', {
   id: serial('id').primaryKey(),
   referencia: text('referencia').notNull().unique(),
@@ -458,12 +509,34 @@ export const despachos = pgTable('despachos', {
     .notNull()
     .references(() => vehiculos.id),
   guia: text('guia').notNull().unique(),
+  // Ruta planificada a la que se consolida el despacho (CU-LG-005); texto libre si no hay ruta.
   ruta: text('ruta'),
+  rutaId: integer('ruta_id').references(() => rutas.id),
   estado: text('estado').notNull().default('programado'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
   entregadoEn: timestamp('entregado_en', { withTimezone: true }),
 });
+
+// Paradas secuenciadas de una ruta (RN-LG-02): orden y destino unicos por ruta.
+export const rutaParadas = pgTable(
+  'ruta_paradas',
+  {
+    id: serial('id').primaryKey(),
+    rutaId: integer('ruta_id')
+      .notNull()
+      .references(() => rutas.id),
+    secuencia: integer('secuencia').notNull(),
+    destino: text('destino').notNull(),
+    // Despacho que se entrega en la parada (opcional, consolida varios despachos por ruta).
+    despachoId: integer('despacho_id').references(() => despachos.id),
+    creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    uniqueIndex('ruta_paradas_ruta_secuencia_idx').on(tabla.rutaId, tabla.secuencia),
+    uniqueIndex('ruta_paradas_ruta_destino_idx').on(tabla.rutaId, tabla.destino),
+  ],
+);
 
 // RRHH / Nomina (CU-RH-001/002/005/007): cargos, empleados, ausencias y proceso de nomina.
 export const cargos = pgTable('cargos', {

@@ -1,19 +1,23 @@
 // Servicio de Compras avanzado del ERP (CU-ERP-002..009).
 // Flujo: solicitud (PR) -> orden de compra (PO) -> aprobacion -> recepcion -> entrada a inventario -> cuenta por pagar.
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import {
   bodegas,
   cuentasPorPagar,
+  ordenCompraLineas,
   ordenesCompra,
   productos,
   proveedores,
   solicitudesCompra,
 } from '../../bd/esquema';
 import {
+  BASE_PUNTOS_BASICOS,
   CUENTA_PAGADA,
   CUENTA_PENDIENTE,
   ESTADO_ACTIVO,
+  MAXIMO_LINEAS_ORDEN,
+  TARIFA_IVA_BPS_POR_DEFECTO,
   ORDEN_APROBADA,
   ORDEN_CANCELADA,
   ORDEN_COMPLETADA,
@@ -39,13 +43,29 @@ export interface DatosSolicitud {
   motivo: string;
 }
 
+// Renglon de la orden de compra (CU-ERP-003): un producto con su cantidad y precio negociado.
+export interface LineaOrdenCompra {
+  productoId: number;
+  cantidad: number;
+  precioUnitarioCentavos: number;
+}
+
 export interface DatosOrdenCompra {
   solicitudId?: number;
   proveedorId: number;
   bodegaDestinoId: number;
+  // Modo de una linea (compatibilidad con el MVP de CU-ERP-003).
   productoId?: number;
   cantidad?: number;
-  precioUnitarioCentavos: number;
+  precioUnitarioCentavos?: number;
+  // Modo multi-linea: cada renglon con su producto, cantidad y precio.
+  lineas?: LineaOrdenCompra[];
+}
+
+// Recepcion por linea (CU-ERP-007): cantidad recibida de un renglon concreto.
+export interface RecepcionLinea {
+  lineaId: number;
+  cantidad: number;
 }
 
 export interface ActorSolicitud {
@@ -95,6 +115,22 @@ async function proveedorActivo(ejecutor: any, proveedorId: number): Promise<bool
   return filas[0] ? filas[0].estado === ESTADO_ACTIVO : false;
 }
 
+/**
+ * Lee la tarifa de IVA pactada con un proveedor (CU-ERP-003).
+ * Entrada: ejecutor (base o transaccion) y el id del proveedor.
+ * Salida: tarifa en puntos basicos; usa el valor por defecto si el proveedor no la define.
+ */
+async function tarifaIvaProveedor(ejecutor: any, proveedorId: number): Promise<number> {
+  const filas = await ejecutor
+    .select({ tarifaIvaBps: proveedores.tarifaIvaBps })
+    .from(proveedores)
+    .where(eq(proveedores.id, proveedorId))
+    .limit(1);
+  if (!filas[0] || filas[0].tarifaIvaBps === null || filas[0].tarifaIvaBps === undefined)
+    return TARIFA_IVA_BPS_POR_DEFECTO;
+  return Number(filas[0].tarifaIvaBps);
+}
+
 async function bodegaActiva(ejecutor: any, bodegaId: number): Promise<boolean> {
   const filas = await ejecutor.select().from(bodegas).where(eq(bodegas.id, bodegaId)).limit(1);
   return filas[0] ? filas[0].estado === ESTADO_ACTIVO : false;
@@ -103,6 +139,78 @@ async function bodegaActiva(ejecutor: any, bodegaId: number): Promise<boolean> {
 const anio = function () {
   return new Date().getFullYear();
 };
+
+/**
+ * Valida los renglones de una orden multi-linea (CU-ERP-003).
+ * Entrada: lineas crudas del cuerpo HTTP. Salida: codigo de error o null si son validas.
+ * Reglas: al menos un renglon, cantidades y precios enteros positivos, sin producto repetido.
+ */
+export function validarLineasOrden(lineas: LineaOrdenCompra[]): string | null {
+  if (!Array.isArray(lineas) || !lineas.length) return 'lineas_obligatorias';
+  if (lineas.length > MAXIMO_LINEAS_ORDEN) return 'demasiadas_lineas';
+  const vistos = new Set<number>();
+  for (const linea of lineas) {
+    if (!validarEnteroPositivo(Number(linea.productoId))) return 'producto_invalido';
+    if (!validarEnteroPositivo(Number(linea.cantidad))) return 'cantidad_invalida';
+    if (!validarEnteroPositivo(Number(linea.precioUnitarioCentavos))) return 'precio_invalido';
+    if (vistos.has(Number(linea.productoId))) return 'producto_duplicado_en_lineas';
+    vistos.add(Number(linea.productoId));
+  }
+  return null;
+}
+
+/**
+ * Calcula los totales de la orden a partir de sus renglones y el IVA del proveedor (CU-ERP-003).
+ * Entrada: lineas ya validadas y tarifa en puntos basicos (1900 = 19,00%).
+ * Salida: cantidad total de unidades, subtotal, IVA y total en centavos.
+ * Regla: el IVA se redondea al centavo mas cercano sobre el subtotal completo de la orden.
+ */
+export function calcularTotalesOrden(
+  lineas: LineaOrdenCompra[],
+  tarifaBps: number,
+): {
+  cantidadTotal: number;
+  subtotalCentavos: number;
+  impuestoCentavos: number;
+  totalCentavos: number;
+} {
+  let cantidadTotal = 0;
+  let subtotalCentavos = 0;
+  for (const linea of lineas) {
+    cantidadTotal += Number(linea.cantidad);
+    subtotalCentavos += Number(linea.cantidad) * Number(linea.precioUnitarioCentavos);
+  }
+  const impuestoCentavos = Math.round((subtotalCentavos * Number(tarifaBps)) / BASE_PUNTOS_BASICOS);
+  return {
+    cantidadTotal: cantidadTotal,
+    subtotalCentavos: subtotalCentavos,
+    impuestoCentavos: impuestoCentavos,
+    totalCentavos: subtotalCentavos + impuestoCentavos,
+  };
+}
+
+/**
+ * Normaliza las lineas recibidas del cuerpo HTTP (CU-ERP-003).
+ * Acepta el modo multi-linea y, por compatibilidad, el modo de una linea del MVP.
+ */
+export function normalizarLineasOrden(datos: DatosOrdenCompra): LineaOrdenCompra[] {
+  if (Array.isArray(datos.lineas) && datos.lineas.length) {
+    return datos.lineas.map(function (linea) {
+      return {
+        productoId: Number(linea.productoId),
+        cantidad: Number(linea.cantidad),
+        precioUnitarioCentavos: Number(linea.precioUnitarioCentavos),
+      };
+    });
+  }
+  return [
+    {
+      productoId: Number(datos.productoId),
+      cantidad: Number(datos.cantidad),
+      precioUnitarioCentavos: Number(datos.precioUnitarioCentavos),
+    },
+  ];
+}
 
 /**
  * Calcula la fecha de vencimiento de una cuenta por pagar (CU-ERP-009):
@@ -189,15 +297,18 @@ export async function cancelarSolicitudCompra(id: number): Promise<ResultadoComp
 }
 
 /**
- * Crea la orden de compra (CU-ERP-003): proveedor y bodega activos, precio negociado en centavos.
- * Si viene de una solicitud, toma su producto y cantidad y la marca como convertida.
+ * Crea la orden de compra multi-linea (CU-ERP-003).
+ * Entrada: proveedor, bodega destino y los renglones (producto, cantidad, precio negociado).
+ * Salida: id y referencia de la orden creada con sus totales.
+ * Reglas: proveedor y bodega activos; cada producto debe estar activo; sin producto repetido;
+ * el IVA se toma del proveedor (tarifa_iva_bps) y queda congelado en la orden;
+ * si viene de una solicitud (CU-ERP-002) se toma su producto y cantidad y se marca convertida.
  */
 export async function crearOrdenCompra(
   datos: DatosOrdenCompra,
   actor: ActorSolicitud,
 ): Promise<ResultadoCompras> {
-  let productoId = Number(datos.productoId);
-  let cantidad = Number(datos.cantidad);
+  let lineas = normalizarLineasOrden(datos);
   if (datos.solicitudId) {
     const filasSolicitud = await base
       .select()
@@ -207,20 +318,26 @@ export async function crearOrdenCompra(
     const solicitud = filasSolicitud[0];
     if (!solicitud || solicitud.estado !== SOLICITUD_PENDIENTE_REVISION)
       return { ok: false, codigoEstado: 409, error: 'solicitud_no_disponible' };
-    productoId = solicitud.productoId;
-    cantidad = solicitud.cantidad;
+    lineas = [
+      {
+        productoId: solicitud.productoId,
+        cantidad: solicitud.cantidad,
+        precioUnitarioCentavos: Number(datos.precioUnitarioCentavos),
+      },
+    ];
   }
-  if (!validarEnteroPositivo(cantidad) || !validarEnteroPositivo(productoId))
-    return { ok: false, codigoEstado: 400, error: 'cantidad_invalida' };
-  const precio = Number(datos.precioUnitarioCentavos);
-  if (!validarEnteroPositivo(precio))
-    return { ok: false, codigoEstado: 400, error: 'precio_invalido' };
+  const errorLineas = validarLineasOrden(lineas);
+  if (errorLineas) return { ok: false, codigoEstado: 400, error: errorLineas };
   if (!(await proveedorActivo(base, Number(datos.proveedorId))))
     return { ok: false, codigoEstado: 409, error: 'proveedor_inactivo' };
   if (!(await bodegaActiva(base, Number(datos.bodegaDestinoId))))
     return { ok: false, codigoEstado: 409, error: 'bodega_inactiva' };
-  if (!(await productoActivo(base, productoId)))
-    return { ok: false, codigoEstado: 409, error: 'producto_inactivo' };
+  for (const linea of lineas) {
+    if (!(await productoActivo(base, linea.productoId)))
+      return { ok: false, codigoEstado: 409, error: 'producto_inactivo' };
+  }
+  const tarifaBps = await tarifaIvaProveedor(base, Number(datos.proveedorId));
+  const totales = calcularTotalesOrden(lineas, tarifaBps);
 
   const referencia = await siguienteReferencia(base, 'OC', anio(), {
     referencia: ordenesCompra.referencia,
@@ -234,10 +351,15 @@ export async function crearOrdenCompra(
         referencia: referencia,
         solicitudId: datos.solicitudId ? Number(datos.solicitudId) : null,
         proveedorId: Number(datos.proveedorId),
-        productoId: productoId,
+        // En el modo multi-linea el producto vive en cada renglon, no en la cabecera.
+        productoId: lineas.length === 1 ? lineas[0].productoId : null,
         bodegaDestinoId: Number(datos.bodegaDestinoId),
-        cantidadPedida: cantidad,
-        precioUnitarioCentavos: precio,
+        cantidadPedida: totales.cantidadTotal,
+        precioUnitarioCentavos: lineas.length === 1 ? lineas[0].precioUnitarioCentavos : null,
+        tarifaIvaBps: tarifaBps,
+        subtotalCentavos: totales.subtotalCentavos,
+        impuestoCentavos: totales.impuestoCentavos,
+        totalCentavos: totales.totalCentavos,
         estado: ORDEN_PENDIENTE_APROBACION,
         creadoPorRol: actor.rol || null,
       })
@@ -247,6 +369,17 @@ export async function crearOrdenCompra(
         estado: ordenesCompra.estado,
       });
     ordenId = orden.id;
+    await transaccion.insert(ordenCompraLineas).values(
+      lineas.map(function (linea, indice) {
+        return {
+          ordenId: orden.id,
+          numeroLinea: indice + 1,
+          productoId: linea.productoId,
+          cantidadPedida: linea.cantidad,
+          precioUnitarioCentavos: linea.precioUnitarioCentavos,
+        };
+      }),
+    );
     if (datos.solicitudId) {
       await transaccion
         .update(solicitudesCompra)
@@ -254,7 +387,18 @@ export async function crearOrdenCompra(
         .where(eq(solicitudesCompra.id, Number(datos.solicitudId)));
     }
   });
-  return { ok: true, datos: { id: ordenId, referencia: referencia } };
+  return {
+    ok: true,
+    datos: {
+      id: ordenId,
+      referencia: referencia,
+      lineas: lineas.length,
+      tarifaIvaBps: tarifaBps,
+      subtotalCentavos: totales.subtotalCentavos,
+      impuestoCentavos: totales.impuestoCentavos,
+      totalCentavos: totales.totalCentavos,
+    },
+  };
 }
 
 const seleccionOrden = {
@@ -263,35 +407,74 @@ const seleccionOrden = {
   solicitudId: ordenesCompra.solicitudId,
   proveedorId: proveedores.id,
   proveedorNombre: proveedores.nombre,
-  productoId: productos.id,
-  productoNombre: productos.nombre,
+  proveedorTarifaIvaBps: proveedores.tarifaIvaBps,
   bodegaId: bodegas.id,
   bodegaNombre: bodegas.nombre,
   cantidadPedida: ordenesCompra.cantidadPedida,
   cantidadRecibida: ordenesCompra.cantidadRecibida,
-  precioUnitarioCentavos: ordenesCompra.precioUnitarioCentavos,
+  tarifaIvaBps: ordenesCompra.tarifaIvaBps,
+  subtotalCentavos: ordenesCompra.subtotalCentavos,
+  impuestoCentavos: ordenesCompra.impuestoCentavos,
+  totalCentavos: ordenesCompra.totalCentavos,
   estado: ordenesCompra.estado,
   creadoEn: ordenesCompra.creadoEn,
 };
 
-function conTotales(fila: any) {
-  const totalCentavos = fila.cantidadPedida * fila.precioUnitarioCentavos;
+/**
+ * Agrega los totales y el saldo pendiente a la cabecera de una orden.
+ */
+function conTotales(fila: any, lineas: any[] = []) {
   return {
     ...fila,
-    totalCentavos: totalCentavos,
+    lineas: lineas,
+    totalLineas: lineas.length,
     saldoPendiente: fila.cantidadPedida - fila.cantidadRecibida,
   };
 }
 
 /**
+ * Carga los renglones de un conjunto de ordenes y los agrupa por orden (CU-ERP-003/006).
+ * Entrada: ids de orden. Salida: mapa ordenId -> lineas con su subtotal y saldo.
+ */
+async function lineasPorOrden(ids: number[]) {
+  const mapa = new Map<number, any[]>();
+  if (!ids.length) return mapa;
+  const filas = await base
+    .select({
+      id: ordenCompraLineas.id,
+      ordenId: ordenCompraLineas.ordenId,
+      numeroLinea: ordenCompraLineas.numeroLinea,
+      productoId: productos.id,
+      productoNombre: productos.nombre,
+      cantidadPedida: ordenCompraLineas.cantidadPedida,
+      cantidadRecibida: ordenCompraLineas.cantidadRecibida,
+      precioUnitarioCentavos: ordenCompraLineas.precioUnitarioCentavos,
+    })
+    .from(ordenCompraLineas)
+    .innerJoin(productos, eq(ordenCompraLineas.productoId, productos.id))
+    .where(inArray(ordenCompraLineas.ordenId, ids))
+    .orderBy(asc(ordenCompraLineas.ordenId), asc(ordenCompraLineas.numeroLinea));
+  for (const fila of filas) {
+    const lista = mapa.get(fila.ordenId) || [];
+    lista.push({
+      ...fila,
+      subtotalCentavos: fila.cantidadPedida * fila.precioUnitarioCentavos,
+      saldoPendiente: fila.cantidadPedida - fila.cantidadRecibida,
+    });
+    mapa.set(fila.ordenId, lista);
+  }
+  return mapa;
+}
+
+/**
  * Construye la consulta de ordenes con sus relaciones (fresca por llamada, evita builders compartidos).
+ * El producto no se une aqui: vive en cada renglon de la orden (CU-ERP-003).
  */
 function consultaOrdenes() {
   return base
     .select(seleccionOrden)
     .from(ordenesCompra)
     .innerJoin(proveedores, eq(ordenesCompra.proveedorId, proveedores.id))
-    .innerJoin(productos, eq(ordenesCompra.productoId, productos.id))
     .innerJoin(bodegas, eq(ordenesCompra.bodegaDestinoId, bodegas.id));
 }
 
@@ -300,15 +483,24 @@ function consultaOrdenes() {
  */
 export async function listarOrdenesCompra() {
   const filas = await consultaOrdenes().orderBy(desc(ordenesCompra.id));
-  return filas.map(conTotales);
+  const lineas = await lineasPorOrden(
+    filas.map(function (fila) {
+      return fila.id;
+    }),
+  );
+  return filas.map(function (fila) {
+    return conTotales(fila, lineas.get(fila.id) || []);
+  });
 }
 
 /**
- * Consulta una orden de compra por id (CU-ERP-006).
+ * Consulta una orden de compra por id con sus renglones (CU-ERP-006).
  */
 export async function obtenerOrdenCompra(id: number) {
   const filas = await consultaOrdenes().where(eq(ordenesCompra.id, id)).limit(1);
-  return filas[0] ? conTotales(filas[0]) : null;
+  if (!filas[0]) return null;
+  const lineas = await lineasPorOrden([id]);
+  return conTotales(filas[0], lineas.get(id) || []);
 }
 
 /**
@@ -346,13 +538,50 @@ export async function cancelarOrdenCompra(id: number): Promise<ResultadoCompras>
 }
 
 /**
- * Registra la recepcion de mercancia (CU-ERP-007) e ingresa al inventario (CU-ERP-008).
- * Reglas: la orden debe estar aprobada; la cantidad recibida no puede exceder el saldo pendiente;
- * al completar la recepcion se causa la cuenta por pagar (CU-ERP-009).
+ * Convierte el cuerpo de la recepcion en renglones a recibir (CU-ERP-007).
+ * Entrada: recepciones por linea o la cantidad suelta del modo de una linea.
+ * Salida: renglones a recibir o el codigo de error correspondiente.
+ * Regla: el modo de cantidad suelta solo aplica a ordenes de un unico renglon.
+ */
+function normalizarRecepciones(
+  lineas: { id: number; cantidadPedida: number; cantidadRecibida: number }[],
+  recepciones: RecepcionLinea[] | number,
+): { error?: string; codigoEstado?: number; items?: { linea: any; cantidad: number }[] } {
+  if (typeof recepciones === 'number') {
+    if (lineas.length !== 1) return { error: 'recepcion_por_linea_requerida', codigoEstado: 400 };
+    return { items: [{ linea: lineas[0], cantidad: recepciones }] };
+  }
+  if (!Array.isArray(recepciones) || !recepciones.length)
+    return { error: 'recepcion_sin_lineas', codigoEstado: 400 };
+  const items: { linea: any; cantidad: number }[] = [];
+  const vistas = new Set<number>();
+  for (const recepcion of recepciones) {
+    const linea = lineas.filter(function (fila) {
+      return fila.id === Number(recepcion.lineaId);
+    })[0];
+    if (!linea) return { error: 'linea_no_encontrada', codigoEstado: 404 };
+    if (vistas.has(linea.id)) return { error: 'linea_duplicada', codigoEstado: 400 };
+    vistas.add(linea.id);
+    const cantidad = Number(recepcion.cantidad);
+    if (!validarEnteroPositivo(cantidad)) return { error: 'cantidad_invalida', codigoEstado: 400 };
+    if (cantidad > linea.cantidadPedida - linea.cantidadRecibida)
+      return { error: 'cantidad_excede_saldo', codigoEstado: 422 };
+    items.push({ linea: linea, cantidad: cantidad });
+  }
+  return { items: items };
+}
+
+/**
+ * Registra la recepcion de mercancia por linea (CU-ERP-007) e ingresa al inventario (CU-ERP-008).
+ * Entrada: id de la orden, renglones recibidos (lineaId + cantidad) y el actor autenticado.
+ * Salida: cantidades acumuladas, estado de la orden, movimientos de inventario y cuenta por pagar.
+ * Reglas: la orden debe estar aprobada o parcialmente recibida; ninguna linea puede exceder su saldo;
+ * la orden se completa cuando todas las lineas llegan a su cantidad pedida y entonces se causa
+ * la cuenta por pagar por el total con IVA (CU-ERP-009).
  */
 export async function registrarRecepcionOrden(
   id: number,
-  cantidadRecibida: number,
+  recepciones: RecepcionLinea[] | number,
   actor: ActorSolicitud,
 ): Promise<ResultadoCompras> {
   const filas = await base.select().from(ordenesCompra).where(eq(ordenesCompra.id, id)).limit(1);
@@ -360,33 +589,65 @@ export async function registrarRecepcionOrden(
   if (!orden) return { ok: false, codigoEstado: 404, error: 'orden_no_encontrada' };
   if (orden.estado !== ORDEN_APROBADA && orden.estado !== ORDEN_RECIBIDA_PARCIAL)
     return { ok: false, codigoEstado: 409, error: 'orden_no_recibible' };
-  const cantidad = Number(cantidadRecibida);
-  const saldo = orden.cantidadPedida - orden.cantidadRecibida;
-  if (!validarEnteroPositivo(cantidad) || cantidad > saldo)
-    return { ok: false, codigoEstado: 422, error: 'cantidad_excede_saldo' };
-  const entrada = await registrarEntrada(
-    {
-      bodegaId: orden.bodegaDestinoId,
-      productoId: orden.productoId,
-      cantidad: cantidad,
-      motivo: 'Recepcion ' + orden.referencia,
-      referencia: orden.referencia,
-    },
-    actor,
-  );
-  if (!entrada.ok) return entrada as ResultadoCompras;
+  const lineas = await base
+    .select()
+    .from(ordenCompraLineas)
+    .where(eq(ordenCompraLineas.ordenId, id))
+    .orderBy(asc(ordenCompraLineas.numeroLinea));
+  if (!lineas.length) return { ok: false, codigoEstado: 409, error: 'orden_sin_lineas' };
+  const normalizado = normalizarRecepciones(lineas, recepciones);
+  if (normalizado.error)
+    return {
+      ok: false,
+      codigoEstado: normalizado.codigoEstado || 400,
+      error: normalizado.error,
+    };
 
-  const nuevaRecibida = orden.cantidadRecibida + cantidad;
-  const completa = nuevaRecibida === orden.cantidadPedida;
-  const estadoNuevo = completa ? ORDEN_COMPLETADA : ORDEN_RECIBIDA_PARCIAL;
-  await base
-    .update(ordenesCompra)
-    .set({ cantidadRecibida: nuevaRecibida, estado: estadoNuevo, actualizadoEn: new Date() })
-    .where(eq(ordenesCompra.id, id));
+  const movimientos: unknown[] = [];
+  const recibidoPorLinea = new Map<number, number>();
+  for (const item of normalizado.items || []) {
+    const entrada = await registrarEntrada(
+      {
+        bodegaId: orden.bodegaDestinoId,
+        productoId: item.linea.productoId,
+        cantidad: item.cantidad,
+        motivo: 'Recepcion ' + orden.referencia + ' linea ' + item.linea.numeroLinea,
+        referencia: orden.referencia,
+      },
+      actor,
+    );
+    if (!entrada.ok) return entrada as ResultadoCompras;
+    movimientos.push(entrada.datos);
+    recibidoPorLinea.set(item.linea.id, item.cantidad);
+  }
+
+  let nuevaRecibida = 0;
+  let completa = true;
+  await base.transaction(async function (transaccion) {
+    for (const linea of lineas) {
+      const cantidad = recibidoPorLinea.get(linea.id) || 0;
+      const acumulada = linea.cantidadRecibida + cantidad;
+      nuevaRecibida += acumulada;
+      if (acumulada !== linea.cantidadPedida) completa = false;
+      if (cantidad > 0) {
+        await transaccion
+          .update(ordenCompraLineas)
+          .set({ cantidadRecibida: acumulada })
+          .where(eq(ordenCompraLineas.id, linea.id));
+      }
+    }
+    await transaccion
+      .update(ordenesCompra)
+      .set({
+        cantidadRecibida: nuevaRecibida,
+        estado: completa ? ORDEN_COMPLETADA : ORDEN_RECIBIDA_PARCIAL,
+        actualizadoEn: new Date(),
+      })
+      .where(eq(ordenesCompra.id, id));
+  });
 
   let cuenta: unknown = null;
   if (completa) {
-    const monto = nuevaRecibida * orden.precioUnitarioCentavos;
     const vence = calcularFechaVencimiento(TERMINO_PAGO_DIAS_POR_DEFECTO);
     const existente = await base
       .select()
@@ -399,7 +660,8 @@ export async function registrarRecepcionOrden(
         .values({
           ordenId: id,
           proveedorId: orden.proveedorId,
-          montoCentavos: monto,
+          // El importe a pagar es el total de la orden con el IVA del proveedor (CU-ERP-009).
+          montoCentavos: orden.totalCentavos,
           venceEn: vence,
           estado: CUENTA_PENDIENTE,
         })
@@ -412,8 +674,8 @@ export async function registrarRecepcionOrden(
     datos: {
       ordenId: id,
       cantidadRecibida: nuevaRecibida,
-      estado: estadoNuevo,
-      movimientoInventario: entrada.datos,
+      estado: completa ? ORDEN_COMPLETADA : ORDEN_RECIBIDA_PARCIAL,
+      movimientosInventario: movimientos,
       cuentaPorPagar: cuenta,
     },
   };
