@@ -26,5 +26,8 @@ Documentos Consulta/
 
 # Cache npm local (sandbox)
 .cache/
+# Evidencias locales (fallback de Cloud Storage en desarrollo)
+.evidencias/
+apps/api/.evidencias/
 # Drizzle
 apps/api/bd/migraciones/meta/_journal.json.bak

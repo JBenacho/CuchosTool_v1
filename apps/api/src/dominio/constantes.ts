@@ -48,6 +48,10 @@ export const PAGO_RECHAZADO = 'rechazado';
 export const EVENTO_PEDIDO_PAGADO = 'com.cuchostool.pedido.pagado';
 export const TOPICO_PEDIDOS = 'pedidos';
 export const TOPICO_GENERAL = 'general';
+// Topicos Pub/Sub por dominio (F5-GCP): enrutan eventos a su suscriptor natural.
+export const TOPICO_INVENTARIO = 'inventario';
+export const TOPICO_FACTURACION = 'facturacion';
+export const TOPICO_COMERCIAL = 'comercial';
 // Roles adicionales de F4 (CU-SEC-001/002, CU-EM, CU-SGC).
 export const ROL_EMPRENDEDOR = 'EMPRENDEDOR';
 export const ROL_AGENTE = 'AGENTE_SOPORTE';
@@ -197,6 +201,9 @@ export const TARIFA_BPS_MAXIMA = 10000;
 // Metas y comisiones comerciales (CU-CM-005/006).
 export const COMISION_CALCULADA = 'calculada';
 export const COMISION_PAGADA = 'pagada';
+// Factura electronica DIAN (simulada en local, CU-FC-001).
+export const DIAN_NO_ENVIADA = 'no_enviada';
+export const DIAN_ACEPTADA = 'aceptada_simulada';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

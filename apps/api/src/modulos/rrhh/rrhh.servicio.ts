@@ -1,7 +1,7 @@
 // Servicio de RRHH / Nomina (CU-RH-001/002/005/007, F5).
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
-import { ausencias, cargos, empleados, nominas } from '../../bd/esquema';
+import { ausencias, cargos, empleados, horarios, nominas, novedadesNomina } from '../../bd/esquema';
 import {
   AUSENCIA_JUSTIFICADA,
   AUSENCIA_REGISTRADA,
@@ -167,12 +167,29 @@ export async function generarNomina(periodo: string): Promise<ResultadoRrhh> {
       .where(and(eq(nominas.periodo, periodoLimpio), eq(nominas.empleadoId, empleado.id)))
       .limit(1);
     if (!existente[0]) {
+      // Novedades del periodo (CU-RH-006): devengos suman y deducciones restan al neto.
+      const novedades = await base
+        .select()
+        .from(novedadesNomina)
+        .where(
+          and(
+            eq(novedadesNomina.empleadoId, empleado.id),
+            eq(novedadesNomina.periodo, periodoLimpio),
+          ),
+        );
+      let devengos = 0;
+      let deducciones = 0;
+      for (const novedad of novedades) {
+        if (novedad.tipo === 'deduccion') deducciones += novedad.montoCentavos;
+        else devengos += novedad.montoCentavos;
+      }
+      const neto = empleado.salarioBaseCentavos + devengos - deducciones;
       await base.insert(nominas).values({
         periodo: periodoLimpio,
         empleadoId: empleado.id,
         salarioBaseCentavos: empleado.salarioBaseCentavos,
-        deduccionesCentavos: 0,
-        netoCentavos: empleado.salarioBaseCentavos,
+        deduccionesCentavos: deducciones,
+        netoCentavos: neto < 0 ? 0 : neto,
         estado: NOMINA_GENERADA,
       });
       generadas++;
@@ -216,4 +233,102 @@ export async function pagarNomina(id: number): Promise<ResultadoRrhh> {
     .set({ estado: NOMINA_PAGADA, pagadaEn: new Date() })
     .where(eq(nominas.id, id));
   return { ok: true, datos: { id: id, estado: NOMINA_PAGADA } };
+}
+// ------------------------------- Horarios (CU-RH-004) -------------------------------
+export async function listarHorarios(empleadoId?: number) {
+  const consulta = base
+    .select({
+      id: horarios.id,
+      empleadoId: empleados.id,
+      empleadoNombre: empleados.nombre,
+      diaSemana: horarios.diaSemana,
+      horaInicio: horarios.horaInicio,
+      horaFin: horarios.horaFin,
+    })
+    .from(horarios)
+    .innerJoin(empleados, eq(horarios.empleadoId, empleados.id));
+  return empleadoId
+    ? consulta.where(eq(horarios.empleadoId, empleadoId)).orderBy(asc(horarios.diaSemana))
+    : consulta.orderBy(asc(empleados.nombre), asc(horarios.diaSemana));
+}
+
+export async function crearHorario(datos: any): Promise<ResultadoRrhh> {
+  const empleadoId = Number(datos.empleadoId);
+  const diaSemana = Number(datos.diaSemana);
+  const horaInicio = limpiar(datos.horaInicio);
+  const horaFin = limpiar(datos.horaFin);
+  const patronHora = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!empleadoId || !Number.isInteger(diaSemana) || diaSemana < 1 || diaSemana > 7)
+    return { ok: false, codigoEstado: 400, error: 'datos_incompletos' };
+  if (!patronHora.test(horaInicio) || !patronHora.test(horaFin) || horaInicio >= horaFin)
+    return { ok: false, codigoEstado: 400, error: 'horario_invalido' };
+  const empleado = await base.select().from(empleados).where(eq(empleados.id, empleadoId)).limit(1);
+  if (!empleado[0] || empleado[0].estado !== ESTADO_ACTIVO)
+    return { ok: false, codigoEstado: 409, error: 'empleado_inactivo' };
+  const [creado] = await base
+    .insert(horarios)
+    .values({
+      empleadoId: empleadoId,
+      diaSemana: diaSemana,
+      horaInicio: horaInicio,
+      horaFin: horaFin,
+    })
+    .returning({ id: horarios.id, diaSemana: horarios.diaSemana });
+  return { ok: true, datos: creado };
+}
+
+// ------------------------------- Novedades (CU-RH-006) -------------------------------
+export async function listarNovedades(periodo?: string) {
+  const consulta = base
+    .select({
+      id: novedadesNomina.id,
+      empleadoId: empleados.id,
+      empleadoNombre: empleados.nombre,
+      periodo: novedadesNomina.periodo,
+      tipo: novedadesNomina.tipo,
+      concepto: novedadesNomina.concepto,
+      montoCentavos: novedadesNomina.montoCentavos,
+    })
+    .from(novedadesNomina)
+    .innerJoin(empleados, eq(novedadesNomina.empleadoId, empleados.id));
+  return periodo
+    ? consulta.where(eq(novedadesNomina.periodo, periodo)).orderBy(asc(empleados.nombre))
+    : consulta.orderBy(desc(novedadesNomina.periodo), asc(empleados.nombre));
+}
+
+export async function crearNovedad(datos: any): Promise<ResultadoRrhh> {
+  const empleadoId = Number(datos.empleadoId);
+  const periodo = limpiar(datos.periodo);
+  const tipo =
+    datos.tipo === 'deduccion' ? 'deduccion' : datos.tipo === 'devengo' ? 'devengo' : null;
+  const concepto = limpiar(datos.concepto);
+  const montoCentavos = Number(datos.montoCentavos);
+  if (!empleadoId || !tipo || !concepto || !/^\d{4}-\d{2}$/.test(periodo))
+    return { ok: false, codigoEstado: 400, error: 'datos_incompletos' };
+  if (!Number.isInteger(montoCentavos) || montoCentavos <= 0)
+    return { ok: false, codigoEstado: 400, error: 'monto_invalido' };
+  const empleado = await base.select().from(empleados).where(eq(empleados.id, empleadoId)).limit(1);
+  if (!empleado[0] || empleado[0].estado !== ESTADO_ACTIVO)
+    return { ok: false, codigoEstado: 409, error: 'empleado_inactivo' };
+  const nominaGenerada = await base
+    .select()
+    .from(nominas)
+    .where(and(eq(nominas.empleadoId, empleadoId), eq(nominas.periodo, periodo)))
+    .limit(1);
+  if (nominaGenerada[0]) return { ok: false, codigoEstado: 409, error: 'nomina_ya_generada' };
+  const [creada] = await base
+    .insert(novedadesNomina)
+    .values({
+      empleadoId: empleadoId,
+      periodo: periodo,
+      tipo: tipo,
+      concepto: concepto,
+      montoCentavos: montoCentavos,
+    })
+    .returning({
+      id: novedadesNomina.id,
+      tipo: novedadesNomina.tipo,
+      montoCentavos: novedadesNomina.montoCentavos,
+    });
+  return { ok: true, datos: creada };
 }

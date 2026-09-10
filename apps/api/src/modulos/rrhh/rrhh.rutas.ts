@@ -5,6 +5,8 @@ import { registrarAuditoria } from '../administracion/auditoria';
 import {
   crearCargo,
   crearEmpleado,
+  crearHorario,
+  crearNovedad,
   generarNomina,
   inactivarCargo,
   inactivarEmpleado,
@@ -12,7 +14,9 @@ import {
   listarAusencias,
   listarCargos,
   listarEmpleados,
+  listarHorarios,
   listarNominas,
+  listarNovedades,
   pagarNomina,
   registrarAusencia,
 } from './rrhh.servicio';
@@ -182,6 +186,68 @@ export async function rutasRrhh(aplicacion: FastifyInstance): Promise<void> {
         'ok',
       );
       return { data: resultado.datos };
+    },
+  );
+
+  // Horarios (CU-RH-004).
+  aplicacion.get(
+    '/rrhh/horarios',
+    {
+      preHandler: requerirRol(rrhh),
+      schema: { tags: ['rrhh'], summary: 'Listar horarios (CU-RH-004)' },
+    },
+    async function (solicitud: any) {
+      return {
+        data: await listarHorarios(
+          solicitud.query && solicitud.query.empleadoId
+            ? Number(solicitud.query.empleadoId)
+            : undefined,
+        ),
+      };
+    },
+  );
+  aplicacion.post(
+    '/rrhh/horarios',
+    {
+      preHandler: requerirRol(rrhh),
+      schema: { tags: ['rrhh'], summary: 'Crear horario (CU-RH-004)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await crearHorario(solicitud.body || {});
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(solicitud, 'rrhh.crear_horario', 'horarios', 'nuevo', 'ok');
+      return respuesta.code(201).send({ data: resultado.datos });
+    },
+  );
+
+  // Novedades de nomina (CU-RH-006).
+  aplicacion.get(
+    '/rrhh/novedades',
+    {
+      preHandler: requerirRol(rrhh),
+      schema: { tags: ['rrhh'], summary: 'Listar novedades (CU-RH-006)' },
+    },
+    async function (solicitud: any) {
+      return {
+        data: await listarNovedades(
+          solicitud.query && solicitud.query.periodo ? String(solicitud.query.periodo) : undefined,
+        ),
+      };
+    },
+  );
+  aplicacion.post(
+    '/rrhh/novedades',
+    {
+      preHandler: requerirRol(rrhh),
+      schema: { tags: ['rrhh'], summary: 'Registrar novedad de nomina (CU-RH-006)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await crearNovedad(solicitud.body || {});
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(solicitud, 'rrhh.crear_novedad', 'novedades_nomina', 'nueva', 'ok');
+      return respuesta.code(201).send({ data: resultado.datos });
     },
   );
 }

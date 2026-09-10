@@ -11,6 +11,7 @@ import {
   ROL_SUPERVISOR,
 } from '../../dominio/constantes';
 import { registrarAuditoria } from '../administracion/auditoria';
+import { guardarEvidencia } from '../../proveedores/almacenamiento';
 import {
   agregarMensajeCaso,
   asignarCaso,
@@ -299,6 +300,44 @@ export async function rutasCasos(aplicacion: FastifyInstance): Promise<void> {
       if (!resultado.ok)
         return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
       return { data: resultado.datos };
+    },
+  );
+
+  // Subida de archivo de evidencia (CU-SGC-006, F5-GCP): Cloud Storage o disco local.
+  aplicacion.post<{
+    Params: { referencia: string };
+    Body: {
+      tipo: string;
+      nombreArchivo: string;
+      contenidoBase64: string;
+      tipoContenido?: string;
+      descripcion?: string;
+    };
+  }>(
+    '/casos/:referencia/evidencias/archivo',
+    {
+      preHandler: autenticar,
+      schema: { tags: ['casos'], summary: 'Subir archivo de evidencia (CU-SGC-006)' },
+    },
+    async function (solicitud, respuesta) {
+      const cuerpo = solicitud.body || ({} as any);
+      if (!cuerpo.contenidoBase64 || !cuerpo.nombreArchivo)
+        return respuesta.code(400).send({ error: 'archivo_incompleto' });
+      const guardado = await guardarEvidencia(
+        cuerpo.nombreArchivo,
+        cuerpo.contenidoBase64,
+        cuerpo.tipoContenido || 'application/octet-stream',
+      );
+      const resultado = await registrarEvidencia(solicitud.params.referencia, {
+        tipo: cuerpo.tipo || 'documento',
+        url: guardado.url,
+        descripcion: cuerpo.descripcion,
+      });
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      return respuesta
+        .code(201)
+        .send({ data: { ...(resultado.datos as any), proveedor: guardado.proveedor } });
     },
   );
 

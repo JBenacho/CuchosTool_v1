@@ -9,6 +9,7 @@ import {
   crearImpuesto,
   crearNotaFactura,
   emitirFactura,
+  emitirFacturaDian,
   inactivarCuenta,
   inactivarImpuesto,
   listarAsientos,
@@ -115,6 +116,29 @@ export async function rutasFinanzas(aplicacion: FastifyInstance): Promise<void> 
         'ok',
       );
       return respuesta.code(201).send({ data: resultado.datos });
+    },
+  );
+  aplicacion.patch(
+    '/facturacion/facturas/:id/dian',
+    {
+      preHandler: requerirRol(contable),
+      schema: {
+        tags: ['facturacion'],
+        summary: 'Emitir factura electronica DIAN simulada (CU-FC-001)',
+      },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await emitirFacturaDian(Number(solicitud.params.id));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'facturacion.emitir_dian',
+        'facturas',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
     },
   );
   aplicacion.patch(

@@ -5,7 +5,14 @@ import { randomUUID } from 'crypto';
 import { asc, eq, isNull } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { eventosBuzon, eventosFallidos, eventosPublicados } from '../../bd/esquema';
-import { TOPICO_GENERAL, TOPICO_PEDIDOS } from '../../dominio/constantes';
+import { config } from '../../config';
+import {
+  TOPICO_COMERCIAL,
+  TOPICO_FACTURACION,
+  TOPICO_GENERAL,
+  TOPICO_INVENTARIO,
+  TOPICO_PEDIDOS,
+} from '../../dominio/constantes';
 
 export interface DatosEvento {
   tipoAgregado: string;
@@ -63,8 +70,15 @@ export async function encolarEvento(ejecutor: any, evento: DatosEvento): Promise
  * Regla: los topicos se derivan del prefijo del tipo; nuevos dominios agregan su caso.
  */
 export function topicoDeEvento(tipoEvento: string): string {
-  if (tipoEvento.startsWith('com.cuchostool.pedido.')) return TOPICO_PEDIDOS;
-  return TOPICO_GENERAL;
+  if (tipoEvento.startsWith('com.cuchostool.pedido.'))
+    return config.pubsubTopicoPedidos || TOPICO_PEDIDOS;
+  if (tipoEvento.startsWith('com.cuchostool.inventario.'))
+    return config.pubsubTopicoInventario || TOPICO_INVENTARIO;
+  if (tipoEvento.startsWith('com.cuchostool.factura.'))
+    return config.pubsubTopicoFacturacion || TOPICO_FACTURACION;
+  if (tipoEvento.startsWith('com.cuchostool.ventab2b.'))
+    return config.pubsubTopicoComercial || TOPICO_COMERCIAL;
+  return config.pubsubTopicoGeneral || TOPICO_GENERAL;
 }
 
 /**

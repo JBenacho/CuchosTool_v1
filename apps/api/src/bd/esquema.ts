@@ -587,6 +587,10 @@ export const facturas = pgTable('facturas', {
   totalCentavos: bigint('total_centavos', { mode: 'number' }).notNull(),
   moneda: text('moneda').notNull().default('COP'),
   estado: text('estado').notNull().default('emitida'),
+  // Factura electronica DIAN (simulada en local): CUFE unico y estado de envio.
+  cufe: text('cufe').unique(),
+  estadoDian: text('estado_dian').notNull().default('no_enviada'),
+  dianEmitidaEn: timestamp('dian_emitida_en', { withTimezone: true }),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   anuladoEn: timestamp('anulado_en', { withTimezone: true }),
 });
@@ -660,6 +664,30 @@ export const comisiones = pgTable('comisiones', {
   estado: text('estado').notNull().default('calculada'),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   pagadaEn: timestamp('pagada_en', { withTimezone: true }),
+});
+
+// RRHH: horarios (CU-RH-004) y novedades de nomina (CU-RH-006).
+export const horarios = pgTable('horarios', {
+  id: serial('id').primaryKey(),
+  empleadoId: integer('empleado_id')
+    .notNull()
+    .references(() => empleados.id),
+  diaSemana: integer('dia_semana').notNull(),
+  horaInicio: text('hora_inicio').notNull(),
+  horaFin: text('hora_fin').notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const novedadesNomina = pgTable('novedades_nomina', {
+  id: serial('id').primaryKey(),
+  empleadoId: integer('empleado_id')
+    .notNull()
+    .references(() => empleados.id),
+  periodo: text('periodo').notNull(),
+  tipo: text('tipo').notNull().default('devengo'),
+  concepto: text('concepto').notNull(),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).

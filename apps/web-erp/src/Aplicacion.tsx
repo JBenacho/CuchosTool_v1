@@ -248,6 +248,8 @@ interface FacturaFin {
   impuestoCentavos: number;
   totalCentavos: number;
   estado: string;
+  estadoDian?: string;
+  cufe?: string | null;
   creadoEn: string;
 }
 
@@ -301,6 +303,38 @@ interface ComisionComercial {
   porcentajeBps: number;
   montoCentavos: number;
   estado: string;
+}
+
+interface HorarioRrhh {
+  id: number;
+  empleadoNombre: string;
+  diaSemana: number;
+  horaInicio: string;
+  horaFin: string;
+}
+
+interface NovedadRrhh {
+  id: number;
+  empleadoNombre: string;
+  periodo: string;
+  tipo: string;
+  concepto: string;
+  montoCentavos: number;
+}
+
+interface ResumenGerencia {
+  periodo: string;
+  canal: { totalPedidos: number; montoEfectivoCentavos: number; porEstado: Record<string, number> };
+  b2b: { totalOrdenes: number; montoPagadoCentavos: number; porEstado: Record<string, number> };
+  facturacion: {
+    totalFacturas: number;
+    facturadoCentavos: number;
+    ivaCentavos: number;
+    dianEmitidas: number;
+  };
+  inventario: { referenciasBajoMinimo: number };
+  casos: { abiertos: number; enProceso: number };
+  comisiones: { calculadasCentavos: number; pagadasCentavos: number };
 }
 
 const MODULOS = [
@@ -494,6 +528,20 @@ function ContenidoAplicacion(): JSX.Element {
   const [vendedorComisionSel, setVendedorComisionSel] = useState('');
   const [porcentajeComisionPct, setPorcentajeComisionPct] = useState('5');
   const [periodoComision, setPeriodoComision] = useState('');
+  // Horarios y novedades RRHH (CU-RH-004/006) y reportes de Gerencia.
+  const [horariosRrhh, setHorariosRrhh] = useState<HorarioRrhh[]>([]);
+  const [novedadesRrhh, setNovedadesRrhh] = useState<NovedadRrhh[]>([]);
+  const [empleadoHorarioSel, setEmpleadoHorarioSel] = useState('');
+  const [diaSemanaHorario, setDiaSemanaHorario] = useState('1');
+  const [horaInicioHorario, setHoraInicioHorario] = useState('08:00');
+  const [horaFinHorario, setHoraFinHorario] = useState('17:00');
+  const [empleadoNovedadSel, setEmpleadoNovedadSel] = useState('');
+  const [periodoNovedad, setPeriodoNovedad] = useState('');
+  const [tipoNovedad, setTipoNovedad] = useState('devengo');
+  const [conceptoNovedad, setConceptoNovedad] = useState('');
+  const [montoNovedadPesos, setMontoNovedadPesos] = useState('');
+  const [resumenGerencia, setResumenGerencia] = useState<ResumenGerencia | null>(null);
+  const [periodoGerencia, setPeriodoGerencia] = useState('');
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -1263,6 +1311,81 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarMetasComisiones(token, periodoComision.trim());
   }
 
+  // Horarios y novedades RRHH (CU-RH-004/006).
+  async function cargarHorariosNovedades(tokenActivo: string): Promise<void> {
+    const horResp = await peticion('/rrhh/horarios', tokenActivo);
+    if (horResp.ok) setHorariosRrhh(((await horResp.json()).data as HorarioRrhh[]) || []);
+    const novResp = await peticion('/rrhh/novedades', tokenActivo);
+    if (novResp.ok) setNovedadesRrhh(((await novResp.json()).data as NovedadRrhh[]) || []);
+  }
+
+  async function crearHorarioUI(): Promise<void> {
+    if (!token) return;
+    const empleadoId = Number(empleadoHorarioSel);
+    if (!empleadoId) {
+      setMensaje('Seleccione el empleado del horario');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/horarios', token, 'POST', {
+      empleadoId: empleadoId,
+      diaSemana: Number(diaSemanaHorario),
+      horaInicio: horaInicioHorario,
+      horaFin: horaFinHorario,
+    });
+    if (!respuesta.ok) {
+      setMensaje('Horario invalido (dia 1-7 y horas HH:MM con inicio < fin)');
+      return;
+    }
+    await cargarHorariosNovedades(token);
+  }
+
+  async function crearNovedadUI(): Promise<void> {
+    if (!token) return;
+    const empleadoId = Number(empleadoNovedadSel);
+    const montoCentavos = Math.round((Number(montoNovedadPesos) || 0) * 100);
+    if (!empleadoId || !periodoNovedad.trim() || !conceptoNovedad.trim() || montoCentavos <= 0) {
+      setMensaje('Complete empleado, periodo, concepto y monto (COP)');
+      return;
+    }
+    const respuesta = await peticion('/rrhh/novedades', token, 'POST', {
+      empleadoId: empleadoId,
+      periodo: periodoNovedad.trim(),
+      tipo: tipoNovedad,
+      concepto: conceptoNovedad.trim(),
+      montoCentavos: montoCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo registrar la novedad (nomina ya generada?)');
+      return;
+    }
+    setConceptoNovedad('');
+    setMontoNovedadPesos('');
+    await cargarHorariosNovedades(token);
+  }
+
+  // Reportes gerenciales (CU-GE base).
+  async function cargarGerencia(tokenActivo: string, periodo: string): Promise<void> {
+    const ruta = periodo ? '/gerencia/resumen?periodo=' + periodo : '/gerencia/resumen';
+    const respuesta = await peticion(ruta, tokenActivo);
+    if (!respuesta.ok) {
+      setResumenGerencia(null);
+      setMensaje('Requiere rol ADMIN o GERENTE_ZONA');
+      return;
+    }
+    const json = await respuesta.json();
+    setResumenGerencia((json.data as ResumenGerencia) || null);
+  }
+
+  async function emitirDianUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/facturacion/facturas/' + id + '/dian', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo emitir la factura electronica (DIAN)');
+      return;
+    }
+    await cargarFinanzas(token);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -1639,6 +1762,7 @@ function ContenidoAplicacion(): JSX.Element {
     function () {
       if (token && moduloActivo === 'RRHH / Nomina') {
         cargarRrhh(token);
+        cargarHorariosNovedades(token);
       }
     },
     [moduloActivo, token],
@@ -1662,6 +1786,15 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Gerencia') {
+        cargarGerencia(token, periodoGerencia.trim());
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
@@ -1671,6 +1804,7 @@ function ContenidoAplicacion(): JSX.Element {
   const esRrhh = moduloActivo === 'RRHH / Nomina';
   const esFacturacion = moduloActivo === 'Facturacion';
   const esContabilidad = moduloActivo === 'Contabilidad';
+  const esGerencia = moduloActivo === 'Gerencia';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -3595,6 +3729,172 @@ function ContenidoAplicacion(): JSX.Element {
                   </tbody>
                 </table>
               </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Horarios (CU-RH-004)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={empleadoHorarioSel}
+                    onChange={function (e) {
+                      setEmpleadoHorarioSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Empleado...</option>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <option key={em.id} value={em.id}>
+                          {em.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={diaSemanaHorario}
+                    onChange={function (e) {
+                      setDiaSemanaHorario(e.target.value);
+                    }}
+                  >
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miercoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sabado</option>
+                    <option value="7">Domingo</option>
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Hora inicio (HH:MM)"
+                    value={horaInicioHorario}
+                    onChange={function (e) {
+                      setHoraInicioHorario(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Hora fin (HH:MM)"
+                    value={horaFinHorario}
+                    onChange={function (e) {
+                      setHoraFinHorario(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearHorarioUI}>
+                    Crear horario
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Empleado</th>
+                      <th>Dia</th>
+                      <th>Inicio</th>
+                      <th>Fin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {horariosRrhh.map(function (h) {
+                      return (
+                        <tr key={h.id}>
+                          <td>{h.empleadoNombre}</td>
+                          <td>{h.diaSemana}</td>
+                          <td>{h.horaInicio}</td>
+                          <td>{h.horaFin}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Novedades de nomina (CU-RH-006)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={empleadoNovedadSel}
+                    onChange={function (e) {
+                      setEmpleadoNovedadSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Empleado...</option>
+                    {empleadosRrhh.map(function (em) {
+                      return (
+                        <option key={em.id} value={em.id}>
+                          {em.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoNovedad}
+                    onChange={function (e) {
+                      setPeriodoNovedad(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={tipoNovedad}
+                    onChange={function (e) {
+                      setTipoNovedad(e.target.value);
+                    }}
+                  >
+                    <option value="devengo">Devengo</option>
+                    <option value="deduccion">Deduccion</option>
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Concepto"
+                    value={conceptoNovedad}
+                    onChange={function (e) {
+                      setConceptoNovedad(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Monto (COP)"
+                    value={montoNovedadPesos}
+                    onChange={function (e) {
+                      setMontoNovedadPesos(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearNovedadUI}>
+                    Registrar novedad
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Empleado</th>
+                      <th>Periodo</th>
+                      <th>Tipo</th>
+                      <th>Concepto</th>
+                      <th>Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {novedadesRrhh.map(function (nv) {
+                      return (
+                        <tr key={nv.id}>
+                          <td>{nv.empleadoNombre}</td>
+                          <td>{nv.periodo}</td>
+                          <td>{nv.tipo}</td>
+                          <td>{nv.concepto}</td>
+                          <td>{formatearPesos(nv.montoCentavos)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
             </>
           )}
           {esFacturacion && (
@@ -3763,6 +4063,7 @@ function ContenidoAplicacion(): JSX.Element {
                       <th>Impuesto</th>
                       <th>Total</th>
                       <th>Estado</th>
+                      <th>DIAN</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -3776,8 +4077,19 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{formatearPesos(f.impuestoCentavos)}</td>
                           <td>{formatearPesos(f.totalCentavos)}</td>
                           <td>{f.estado}</td>
+                          <td>{f.estadoDian || '-'}</td>
                           <td>
                             <div className="acciones-fila">
+                              {f.estado === 'emitida' && f.estadoDian === 'no_enviada' && (
+                                <button
+                                  className="btn btn--primary btn--sm"
+                                  onClick={function () {
+                                    emitirDianUI(f.id);
+                                  }}
+                                >
+                                  Emitir DIAN
+                                </button>
+                              )}
                               {f.estado === 'emitida' && (
                                 <button
                                   className="btn btn--warm btn--sm"
@@ -3963,6 +4275,104 @@ function ContenidoAplicacion(): JSX.Element {
               </section>
             </>
           )}
+          {esGerencia && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Resumen gerencial (CU-GE base)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoGerencia}
+                    onChange={function (e) {
+                      setPeriodoGerencia(e.target.value);
+                    }}
+                  />
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      if (token) cargarGerencia(token, periodoGerencia.trim());
+                    }}
+                  >
+                    Consultar periodo
+                  </button>
+                </div>
+                {resumenGerencia && (
+                  <>
+                    <section className="kpi-grid">
+                      <article className="kpi-card">
+                        <span className="muted">Ventas canal (efectivas)</span>
+                        <strong>
+                          {formatearPesos(resumenGerencia.canal.montoEfectivoCentavos)}
+                        </strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Ventas B2B pagadas</span>
+                        <strong>{formatearPesos(resumenGerencia.b2b.montoPagadoCentavos)}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Facturado (sin anuladas)</span>
+                        <strong>
+                          {formatearPesos(resumenGerencia.facturacion.facturadoCentavos)}
+                        </strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">IVA causado</span>
+                        <strong>{formatearPesos(resumenGerencia.facturacion.ivaCentavos)}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Referencias bajo minimo</span>
+                        <strong>{resumenGerencia.inventario.referenciasBajoMinimo}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Casos abiertos / en proceso</span>
+                        <strong>
+                          {resumenGerencia.casos.abiertos} / {resumenGerencia.casos.enProceso}
+                        </strong>
+                      </article>
+                    </section>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Indicador</th>
+                          <th>Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Pedidos del canal</td>
+                          <td>{resumenGerencia.canal.totalPedidos}</td>
+                        </tr>
+                        <tr>
+                          <td>Ordenes B2B del periodo</td>
+                          <td>{resumenGerencia.b2b.totalOrdenes}</td>
+                        </tr>
+                        <tr>
+                          <td>Facturas emitidas</td>
+                          <td>{resumenGerencia.facturacion.totalFacturas}</td>
+                        </tr>
+                        <tr>
+                          <td>Facturas electronicas (DIAN)</td>
+                          <td>{resumenGerencia.facturacion.dianEmitidas}</td>
+                        </tr>
+                        <tr>
+                          <td>Comisiones por liquidar</td>
+                          <td>{formatearPesos(resumenGerencia.comisiones.calculadasCentavos)}</td>
+                        </tr>
+                        <tr>
+                          <td>Comisiones liquidadas</td>
+                          <td>{formatearPesos(resumenGerencia.comisiones.pagadasCentavos)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </section>
+            </>
+          )}
           {!esDashboard &&
             !esCompras &&
             !esInventario &&
@@ -3971,7 +4381,8 @@ function ContenidoAplicacion(): JSX.Element {
             !esLogistica &&
             !esRrhh &&
             !esFacturacion &&
-            !esContabilidad && (
+            !esContabilidad &&
+            !esGerencia && (
               <section className="panel">
                 <div className="panel-head">
                   <h2>{moduloActivo}</h2>
