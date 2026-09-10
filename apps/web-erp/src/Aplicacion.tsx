@@ -273,6 +273,36 @@ interface AsientoContable {
   fecha: string;
 }
 
+interface VendedorComercial {
+  id: number;
+  correo: string;
+}
+
+interface MetaComercial {
+  id: number;
+  vendedorId: string;
+  periodo: string;
+  montoMetaCentavos: number;
+}
+
+interface CumplimientoMeta {
+  vendedorId: string;
+  periodo: string;
+  montoMetaCentavos: number;
+  avanceCentavos: number;
+  cumplimientoPct: number;
+}
+
+interface ComisionComercial {
+  id: number;
+  vendedorId: string;
+  periodo: string;
+  baseCentavos: number;
+  porcentajeBps: number;
+  montoCentavos: number;
+  estado: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -453,6 +483,17 @@ function ContenidoAplicacion(): JSX.Element {
   const [cuentaDebeSel, setCuentaDebeSel] = useState('');
   const [cuentaHaberSel, setCuentaHaberSel] = useState('');
   const [montoAsientoPesos, setMontoAsientoPesos] = useState('');
+  // Metas y comisiones comerciales (CU-CM-005/006).
+  const [vendedoresCom, setVendedoresCom] = useState<VendedorComercial[]>([]);
+  const [metasCom, setMetasCom] = useState<MetaComercial[]>([]);
+  const [cumplimientoCom, setCumplimientoCom] = useState<CumplimientoMeta[]>([]);
+  const [comisionesCom, setComisionesCom] = useState<ComisionComercial[]>([]);
+  const [vendedorMetaSel, setVendedorMetaSel] = useState('');
+  const [periodoMeta, setPeriodoMeta] = useState('');
+  const [montoMetaPesos, setMontoMetaPesos] = useState('');
+  const [vendedorComisionSel, setVendedorComisionSel] = useState('');
+  const [porcentajeComisionPct, setPorcentajeComisionPct] = useState('5');
+  const [periodoComision, setPeriodoComision] = useState('');
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -1141,6 +1182,87 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarContabilidad(token);
   }
 
+  // Metas y comisiones comerciales (CU-CM-005/006).
+  async function cargarMetasComisiones(tokenActivo: string, periodo: string): Promise<void> {
+    const vdResp = await peticion('/comercial/vendedores', tokenActivo);
+    if (vdResp.ok) setVendedoresCom(((await vdResp.json()).data as VendedorComercial[]) || []);
+    const metResp = await peticion('/comercial/metas', tokenActivo);
+    if (metResp.ok) setMetasCom(((await metResp.json()).data as MetaComercial[]) || []);
+    const comResp = await peticion('/comercial/comisiones', tokenActivo);
+    if (comResp.ok) setComisionesCom(((await comResp.json()).data as ComisionComercial[]) || []);
+    if (periodo) {
+      const cumResp = await peticion(
+        '/comercial/metas/cumplimiento?periodo=' + periodo,
+        tokenActivo,
+      );
+      if (cumResp.ok) setCumplimientoCom(((await cumResp.json()).data as CumplimientoMeta[]) || []);
+    }
+  }
+
+  async function crearMetaUI(): Promise<void> {
+    if (!token) return;
+    const montoCentavos = Math.round((Number(montoMetaPesos) || 0) * 100);
+    if (!vendedorMetaSel || !periodoMeta.trim() || montoCentavos <= 0) {
+      setMensaje('Seleccione vendedor, periodo (YYYY-MM) y monto (COP)');
+      return;
+    }
+    const respuesta = await peticion('/comercial/metas', token, 'POST', {
+      vendedorId: vendedorMetaSel,
+      periodo: periodoMeta.trim(),
+      montoMetaCentavos: montoCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear la meta (unica por vendedor y periodo)');
+      return;
+    }
+    setMontoMetaPesos('');
+    await cargarMetasComisiones(token, periodoMeta.trim());
+  }
+
+  async function configurarComisionUI(): Promise<void> {
+    if (!token) return;
+    const bps = Math.round((Number(porcentajeComisionPct) || 0) * 100);
+    if (!vendedorComisionSel || bps < 0 || bps > 10000) {
+      setMensaje('Seleccione vendedor y porcentaje 0-100%');
+      return;
+    }
+    const respuesta = await peticion('/comercial/comisiones/config', token, 'POST', {
+      vendedorId: vendedorComisionSel,
+      porcentajeBps: bps,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo configurar la comision');
+      return;
+    }
+    await cargarMetasComisiones(token, periodoComision.trim());
+  }
+
+  async function calcularComisionesUI(): Promise<void> {
+    if (!token) return;
+    if (!periodoComision.trim()) {
+      setMensaje('Indique el periodo (YYYY-MM)');
+      return;
+    }
+    const respuesta = await peticion('/comercial/comisiones/calcular', token, 'POST', {
+      periodo: periodoComision.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudieron calcular las comisiones');
+      return;
+    }
+    await cargarMetasComisiones(token, periodoComision.trim());
+  }
+
+  async function pagarComisionUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/comercial/comisiones/' + id + '/pagar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo liquidar la comision');
+      return;
+    }
+    await cargarMetasComisiones(token, periodoComision.trim());
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -1484,6 +1606,7 @@ function ContenidoAplicacion(): JSX.Element {
       if (token && moduloActivo === 'Ventas') {
         cargarVentas(token);
         cargarB2b(token);
+        cargarMetasComisiones(token, periodoComision.trim());
       }
     },
     [moduloActivo, token, filtroEstadoVenta],
@@ -2618,6 +2741,183 @@ function ContenidoAplicacion(): JSX.Element {
                                 </button>
                               )}
                             </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Metas comerciales (CU-CM-005)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={vendedorMetaSel}
+                    onChange={function (e) {
+                      setVendedorMetaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Vendedor...</option>
+                    {vendedoresCom.map(function (v) {
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.correo}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoMeta}
+                    onChange={function (e) {
+                      setPeriodoMeta(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Meta (COP)"
+                    value={montoMetaPesos}
+                    onChange={function (e) {
+                      setMontoMetaPesos(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearMetaUI}>
+                    Crear meta
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Vendedor</th>
+                      <th>Periodo</th>
+                      <th>Meta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metasCom.map(function (m) {
+                      return (
+                        <tr key={m.id}>
+                          <td>{m.vendedorId}</td>
+                          <td>{m.periodo}</td>
+                          <td>{formatearPesos(m.montoMetaCentavos)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Vendedor</th>
+                      <th>Periodo</th>
+                      <th>Meta</th>
+                      <th>Avance</th>
+                      <th>Cumplimiento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cumplimientoCom.map(function (c) {
+                      return (
+                        <tr key={c.vendedorId + c.periodo}>
+                          <td>{c.vendedorId}</td>
+                          <td>{c.periodo}</td>
+                          <td>{formatearPesos(c.montoMetaCentavos)}</td>
+                          <td>{formatearPesos(c.avanceCentavos)}</td>
+                          <td>{c.cumplimientoPct.toFixed(2)}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Comisiones (CU-CM-006)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={vendedorComisionSel}
+                    onChange={function (e) {
+                      setVendedorComisionSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Vendedor...</option>
+                    {vendedoresCom.map(function (v) {
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.correo}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Comision %"
+                    value={porcentajeComisionPct}
+                    onChange={function (e) {
+                      setPorcentajeComisionPct(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--line" onClick={configurarComisionUI}>
+                    Configurar comision
+                  </button>
+                  <input
+                    className="input"
+                    placeholder="Periodo (YYYY-MM)"
+                    value={periodoComision}
+                    onChange={function (e) {
+                      setPeriodoComision(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={calcularComisionesUI}>
+                    Calcular comisiones
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Vendedor</th>
+                      <th>Periodo</th>
+                      <th>Base</th>
+                      <th>Comision</th>
+                      <th>Monto</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comisionesCom.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.vendedorId}</td>
+                          <td>{c.periodo}</td>
+                          <td>{formatearPesos(c.baseCentavos)}</td>
+                          <td>{(c.porcentajeBps / 100).toFixed(2)}%</td>
+                          <td>{formatearPesos(c.montoCentavos)}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            {c.estado === 'calculada' && (
+                              <button
+                                className="btn btn--warm btn--sm"
+                                onClick={function () {
+                                  pagarComisionUI(c.id);
+                                }}
+                              >
+                                Liquidar
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );

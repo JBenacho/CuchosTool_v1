@@ -632,6 +632,36 @@ export const asientoLineas = pgTable('asiento_lineas', {
   creditoCentavos: bigint('credito_centavos', { mode: 'number' }).notNull().default(0),
 });
 
+// Metas y comisiones comerciales (CU-CM-005/006).
+export const metasComerciales = pgTable('metas_comerciales', {
+  id: serial('id').primaryKey(),
+  vendedorId: text('vendedor_id').notNull(),
+  zonaId: text('zona_id'),
+  periodo: text('periodo').notNull(),
+  montoMetaCentavos: bigint('monto_meta_centavos', { mode: 'number' }).notNull(),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const comisionesVendedor = pgTable('comisiones_vendedor', {
+  id: serial('id').primaryKey(),
+  vendedorId: text('vendedor_id').notNull().unique(),
+  porcentajeBps: integer('porcentaje_bps').notNull().default(0),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  actualizadoEn: timestamp('actualizado_en', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const comisiones = pgTable('comisiones', {
+  id: serial('id').primaryKey(),
+  vendedorId: text('vendedor_id').notNull(),
+  periodo: text('periodo').notNull(),
+  baseCentavos: bigint('base_centavos', { mode: 'number' }).notNull(),
+  porcentajeBps: integer('porcentaje_bps').notNull(),
+  montoCentavos: bigint('monto_centavos', { mode: 'number' }).notNull(),
+  estado: text('estado').notNull().default('calculada'),
+  creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  pagadaEn: timestamp('pagada_en', { withTimezone: true }),
+});
+
 // Usuarios internos (RBAC/ABAC, CU-SEC-001..007).
 export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),

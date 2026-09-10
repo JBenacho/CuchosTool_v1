@@ -70,7 +70,12 @@ export async function inactivarClienteEmpresa(id: number): Promise<ResultadoCome
   const pendiente = await base
     .select()
     .from(ordenesVentaB2b)
-    .where(and(eq(ordenesVentaB2b.clienteEmpresaId, id), eq(ordenesVentaB2b.estado, VENTA_B2B_CONFIRMADA)))
+    .where(
+      and(
+        eq(ordenesVentaB2b.clienteEmpresaId, id),
+        eq(ordenesVentaB2b.estado, VENTA_B2B_CONFIRMADA),
+      ),
+    )
     .limit(1);
   if (pendiente[0]) return { ok: false, codigoEstado: 409, error: 'cliente_con_cartera' };
   await base
@@ -106,7 +111,12 @@ export async function cupoDisponibleCliente(clienteId: number): Promise<number> 
   const abiertas = await base
     .select({ totalCentavos: ordenesVentaB2b.totalCentavos })
     .from(ordenesVentaB2b)
-    .where(and(eq(ordenesVentaB2b.clienteEmpresaId, clienteId), eq(ordenesVentaB2b.estado, VENTA_B2B_CONFIRMADA)));
+    .where(
+      and(
+        eq(ordenesVentaB2b.clienteEmpresaId, clienteId),
+        eq(ordenesVentaB2b.estado, VENTA_B2B_CONFIRMADA),
+      ),
+    );
   const usado = abiertas.reduce(function (s, o) {
     return s + o.totalCentavos;
   }, 0);
