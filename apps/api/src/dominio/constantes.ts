@@ -178,6 +178,11 @@ export const NOMINA_GENERADA = 'generada';
 export const NOMINA_PAGADA = 'pagada';
 export const AUSENCIA_REGISTRADA = 'registrada';
 export const AUSENCIA_JUSTIFICADA = 'justificada';
+// Comercial B2B (CU-CM-001/004/007): estados de la orden de venta corporativa.
+export const VENTA_B2B_CONFIRMADA = 'confirmada';
+export const VENTA_B2B_PAGADA = 'pagada';
+export const VENTA_B2B_ANULADA = 'anulada';
+export const EVENTO_VENTA_B2B_CREADA = 'com.cuchostool.ventab2b.creada';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

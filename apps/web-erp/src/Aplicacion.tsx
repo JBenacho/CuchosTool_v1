@@ -212,6 +212,26 @@ interface NominaRrhh {
   creadoEn: string;
 }
 
+interface ClienteEmpresa {
+  id: number;
+  nit: string;
+  razonSocial: string;
+  contacto: string | null;
+  cupoCreditoCentavos: number;
+  estado: string;
+}
+
+interface OrdenB2b {
+  id: number;
+  folio: string;
+  clienteRazonSocial: string;
+  bodegaNombre: string;
+  formaPago: string;
+  totalCentavos: number;
+  estado: string;
+  creadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -358,6 +378,18 @@ function ContenidoAplicacion(): JSX.Element {
   const [fechaAusencia, setFechaAusencia] = useState('');
   const [motivoAusencia, setMotivoAusencia] = useState('');
   const [periodoNomina, setPeriodoNomina] = useState('');
+  // Comercial B2B (CU-CM-004/007).
+  const [clientesEmpresaB2b, setClientesEmpresaB2b] = useState<ClienteEmpresa[]>([]);
+  const [ordenesB2b, setOrdenesB2b] = useState<OrdenB2b[]>([]);
+  const [productosB2b, setProductosB2b] = useState<ProductoCorto[]>([]);
+  const [bodegasB2b, setBodegasB2b] = useState<BodegaInv[]>([]);
+  const [nitClienteB2b, setNitClienteB2b] = useState('');
+  const [razonClienteB2b, setRazonClienteB2b] = useState('');
+  const [cupoClienteB2b, setCupoClienteB2b] = useState('');
+  const [clienteB2bSel, setClienteB2bSel] = useState('');
+  const [productoB2bSel, setProductoB2bSel] = useState('');
+  const [cantidadB2b, setCantidadB2b] = useState('');
+  const [formaPagoB2b, setFormaPagoB2b] = useState('credito');
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -812,6 +844,97 @@ function ContenidoAplicacion(): JSX.Element {
     setDetalleVenta((json.data as DetalleVenta) || null);
   }
 
+  // Comercial B2B (CU-CM-004/007): carga clientes, ordenes, catalogo y bodegas.
+  async function cargarB2b(tokenActivo: string): Promise<void> {
+    const clResp = await peticion('/comercial/clientes-empresa', tokenActivo);
+    if (clResp.ok) setClientesEmpresaB2b(((await clResp.json()).data as ClienteEmpresa[]) || []);
+    const orResp = await peticion('/comercial/ordenes', tokenActivo);
+    if (orResp.ok) setOrdenesB2b(((await orResp.json()).data as OrdenB2b[]) || []);
+    const caResp = await peticion('/catalogo/productos', tokenActivo);
+    if (caResp.ok) setProductosB2b(((await caResp.json()).data as ProductoCorto[]) || []);
+    const boResp = await peticion('/inventario/bodegas', tokenActivo);
+    if (boResp.ok) setBodegasB2b(((await boResp.json()).data as BodegaInv[]) || []);
+  }
+
+  async function crearClienteEmpresaUI(): Promise<void> {
+    if (!token) return;
+    const cupoCentavos = Math.round((Number(cupoClienteB2b) || 0) * 100);
+    if (!nitClienteB2b.trim() || !razonClienteB2b.trim()) {
+      setMensaje('NIT y razon social son obligatorios');
+      return;
+    }
+    const respuesta = await peticion('/comercial/clientes-empresa', token, 'POST', {
+      nit: nitClienteB2b.trim(),
+      razonSocial: razonClienteB2b.trim(),
+      cupoCreditoCentavos: cupoCentavos,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el cliente ERP');
+      return;
+    }
+    setNitClienteB2b('');
+    setRazonClienteB2b('');
+    setCupoClienteB2b('');
+    await cargarB2b(token);
+  }
+
+  async function inactivarClienteEmpresaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion(
+      '/comercial/clientes-empresa/' + id + '/inactivar',
+      token,
+      'PATCH',
+    );
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar el cliente ERP');
+      return;
+    }
+    await cargarB2b(token);
+  }
+
+  async function crearOrdenB2bUI(): Promise<void> {
+    if (!token) return;
+    const clienteId = Number(clienteB2bSel);
+    const productoId = Number(productoB2bSel);
+    const cantidad = Number(cantidadB2b);
+    const bodegaId = bodegasB2b[0] ? bodegasB2b[0].id : 0;
+    if (!clienteId || !productoId || !cantidad || cantidad <= 0 || !bodegaId) {
+      setMensaje('Seleccione cliente, producto y cantidad');
+      return;
+    }
+    const respuesta = await peticion('/comercial/ordenes', token, 'POST', {
+      clienteEmpresaId: clienteId,
+      bodegaId: bodegaId,
+      formaPago: formaPagoB2b,
+      lineas: [{ productoId: productoId, cantidad: cantidad }],
+    });
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        json.error === 'cupo_insuficiente'
+          ? 'Cupo de credito insuficiente'
+          : 'No se pudo crear la orden B2B',
+      );
+      return;
+    }
+    setClienteB2bSel('');
+    setProductoB2bSel('');
+    setCantidadB2b('');
+    await Promise.all([cargarB2b(token), cargarVentas(token)]);
+  }
+
+  async function accionOrdenB2bUI(id: number, accion: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/comercial/ordenes/' + id + '/' + accion, token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo ' + accion + ' la orden B2B');
+      return;
+    }
+    await Promise.all([cargarB2b(token), cargarVentas(token)]);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -1154,6 +1277,7 @@ function ContenidoAplicacion(): JSX.Element {
     function () {
       if (token && moduloActivo === 'Ventas') {
         cargarVentas(token);
+        cargarB2b(token);
       }
     },
     [moduloActivo, token, filtroEstadoVenta],
@@ -2101,6 +2225,180 @@ function ContenidoAplicacion(): JSX.Element {
                   </table>
                 </section>
               )}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ventas corporativas B2B (CU-CM-004/007)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="NIT cliente"
+                    value={nitClienteB2b}
+                    onChange={function (e) {
+                      setNitClienteB2b(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Razon social"
+                    value={razonClienteB2b}
+                    onChange={function (e) {
+                      setRazonClienteB2b(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Cupo credito (COP)"
+                    value={cupoClienteB2b}
+                    onChange={function (e) {
+                      setCupoClienteB2b(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearClienteEmpresaUI}>
+                    Crear cliente ERP
+                  </button>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={clienteB2bSel}
+                    onChange={function (e) {
+                      setClienteB2bSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Cliente ERP...</option>
+                    {clientesEmpresaB2b.map(function (c) {
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.razonSocial}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={productoB2bSel}
+                    onChange={function (e) {
+                      setProductoB2bSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Producto...</option>
+                    {productosB2b.map(function (p) {
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    placeholder="Cantidad"
+                    value={cantidadB2b}
+                    onChange={function (e) {
+                      setCantidadB2b(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={formaPagoB2b}
+                    onChange={function (e) {
+                      setFormaPagoB2b(e.target.value);
+                    }}
+                  >
+                    <option value="credito">Credito</option>
+                    <option value="contado">Contado</option>
+                  </select>
+                  <button className="btn btn--primary" onClick={crearOrdenB2bUI}>
+                    Crear orden B2B
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Cupo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientesEmpresaB2b.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.razonSocial}</td>
+                          <td>{formatearPesos(c.cupoCreditoCentavos)}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarClienteEmpresaUI(c.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Folio</th>
+                      <th>Cliente</th>
+                      <th>Pago</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ordenesB2b.map(function (o) {
+                      return (
+                        <tr key={o.id}>
+                          <td>{o.folio}</td>
+                          <td>{o.clienteRazonSocial}</td>
+                          <td>{o.formaPago}</td>
+                          <td>{formatearPesos(o.totalCentavos)}</td>
+                          <td>{o.estado}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              {o.estado === 'confirmada' && (
+                                <button
+                                  className="btn btn--warm btn--sm"
+                                  onClick={function () {
+                                    accionOrdenB2bUI(o.id, 'pagar');
+                                  }}
+                                >
+                                  Pagar
+                                </button>
+                              )}
+                              {o.estado === 'confirmada' && (
+                                <button
+                                  className="btn btn--line btn--sm"
+                                  onClick={function () {
+                                    accionOrdenB2bUI(o.id, 'anular');
+                                  }}
+                                >
+                                  Anular
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
             </>
           )}
           {esSeguridad && (
