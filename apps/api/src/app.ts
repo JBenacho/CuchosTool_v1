@@ -25,6 +25,7 @@ import { rutasLogistica } from './modulos/logistica/logistica.rutas';
 import { rutasRrhh } from './modulos/rrhh/rrhh.rutas';
 import { rutasComercial } from './modulos/comercial/comercial.rutas';
 import { rutasFinanzas } from './modulos/finanzas/finanzas.rutas';
+import { rutasGerencia } from './modulos/gerencia/gerencia.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -109,6 +110,11 @@ export async function construirAplicacion(opciones?: {
           description: 'Contabilidad ERP (F5): plan de cuentas y asientos contables (CU-CT-001)',
         },
         {
+          name: 'gerencia',
+          description:
+            'Reportes gerenciales (F5): consolidado de ventas, facturacion, inventario y casos',
+        },
+        {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
         },
@@ -177,6 +183,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasRrhh);
   await aplicacion.register(rutasComercial);
   await aplicacion.register(rutasFinanzas);
+  await aplicacion.register(rutasGerencia);
 
   aplicacion.get('/', async function () {
     return {

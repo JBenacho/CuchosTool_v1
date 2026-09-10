@@ -32,6 +32,11 @@ export const config = {
   gcpProyectoId: process.env.GCP_PROYECTO_ID || '',
   pubsubTopicoPedidos: process.env.PUBSUB_TOPICO_PEDIDOS || 'pedidos',
   pubsubTopicoGeneral: process.env.PUBSUB_TOPICO_GENERAL || 'general',
+  pubsubTopicoInventario: process.env.PUBSUB_TOPICO_INVENTARIO || 'inventario',
+  pubsubTopicoFacturacion: process.env.PUBSUB_TOPICO_FACTURACION || 'facturacion',
+  pubsubTopicoComercial: process.env.PUBSUB_TOPICO_COMERCIAL || 'comercial',
+  // Cloud Storage para evidencias (F5-GCP): vacio = almacenamiento local de desarrollo.
+  gcpBucketEvidencias: process.env.GCP_BUCKET_EVIDENCIAS || '',
 };
 
 export type ConfiguracionAplicacion = typeof config;

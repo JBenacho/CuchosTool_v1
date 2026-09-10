@@ -17,6 +17,7 @@
     "@fastify/swagger": "^9.8.1",
     "@fastify/swagger-ui": "^6.1.1",
     "@google-cloud/pubsub": "^6.0.1",
+    "@google-cloud/storage": "^8.1.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
     "drizzle-orm": "*",
