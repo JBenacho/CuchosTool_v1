@@ -24,6 +24,7 @@ import { rutasVentas } from './modulos/ventas/ventas.rutas';
 import { rutasLogistica } from './modulos/logistica/logistica.rutas';
 import { rutasRrhh } from './modulos/rrhh/rrhh.rutas';
 import { rutasComercial } from './modulos/comercial/comercial.rutas';
+import { rutasFinanzas } from './modulos/finanzas/finanzas.rutas';
 import { config } from './config';
 
 // Informacion del contrato OpenAPI (BL-015 / CU-INT-010).
@@ -99,6 +100,15 @@ export async function construirAplicacion(opciones?: {
             'Comercial B2B (F5): clientes ERP, cupo de credito y ordenes corporativas (CU-CM-001/004/007)',
         },
         {
+          name: 'facturacion',
+          description:
+            'Facturacion ERP (F5): impuestos, facturas y notas credito/debito (CU-FC-001..004)',
+        },
+        {
+          name: 'contabilidad',
+          description: 'Contabilidad ERP (F5): plan de cuentas y asientos contables (CU-CT-001)',
+        },
+        {
           name: 'administracion',
           description: 'Consola administrativa RBAC/ABAC (CU-SEC-001..015)',
         },
@@ -166,6 +176,7 @@ export async function construirAplicacion(opciones?: {
   await aplicacion.register(rutasLogistica);
   await aplicacion.register(rutasRrhh);
   await aplicacion.register(rutasComercial);
+  await aplicacion.register(rutasFinanzas);
 
   aplicacion.get('/', async function () {
     return {

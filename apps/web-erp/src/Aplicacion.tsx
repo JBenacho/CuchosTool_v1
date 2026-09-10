@@ -232,6 +232,47 @@ interface OrdenB2b {
   creadoEn: string;
 }
 
+interface ImpuestoFin {
+  id: number;
+  nombre: string;
+  tipo: string;
+  tarifaBps: number;
+  estado: string;
+}
+
+interface FacturaFin {
+  id: number;
+  numero: string;
+  clienteRazonSocial: string;
+  baseCentavos: number;
+  impuestoCentavos: number;
+  totalCentavos: number;
+  estado: string;
+  creadoEn: string;
+}
+
+interface OrdenPorFacturar {
+  id: number;
+  folio: string;
+  clienteRazonSocial: string;
+  totalCentavos: number;
+}
+
+interface CuentaContable {
+  id: number;
+  codigo: string;
+  nombre: string;
+  naturaleza: string;
+  estado: string;
+}
+
+interface AsientoContable {
+  id: number;
+  referencia: string;
+  descripcion: string;
+  fecha: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -390,6 +431,28 @@ function ContenidoAplicacion(): JSX.Element {
   const [productoB2bSel, setProductoB2bSel] = useState('');
   const [cantidadB2b, setCantidadB2b] = useState('');
   const [formaPagoB2b, setFormaPagoB2b] = useState('credito');
+  // Facturacion y Contabilidad (CU-FC / CU-CT).
+  const [impuestosFin, setImpuestosFin] = useState<ImpuestoFin[]>([]);
+  const [facturasFin, setFacturasFin] = useState<FacturaFin[]>([]);
+  const [porFacturarFin, setPorFacturarFin] = useState<OrdenPorFacturar[]>([]);
+  const [cuentasFin, setCuentasFin] = useState<CuentaContable[]>([]);
+  const [asientosFin, setAsientosFin] = useState<AsientoContable[]>([]);
+  const [nombreImpuesto, setNombreImpuesto] = useState('');
+  const [tarifaImpuestoPct, setTarifaImpuestoPct] = useState('19');
+  const [tipoImpuesto, setTipoImpuesto] = useState('iva');
+  const [ordenFacturarSel, setOrdenFacturarSel] = useState('');
+  const [impuestoFacturaSel, setImpuestoFacturaSel] = useState('');
+  const [facturaNotaSel, setFacturaNotaSel] = useState('');
+  const [tipoNota, setTipoNota] = useState('credito');
+  const [montoNotaPesos, setMontoNotaPesos] = useState('');
+  const [motivoNota, setMotivoNota] = useState('');
+  const [codigoCuenta, setCodigoCuenta] = useState('');
+  const [nombreCuenta, setNombreCuenta] = useState('');
+  const [naturalezaCuenta, setNaturalezaCuenta] = useState('debito');
+  const [descripcionAsiento, setDescripcionAsiento] = useState('');
+  const [cuentaDebeSel, setCuentaDebeSel] = useState('');
+  const [cuentaHaberSel, setCuentaHaberSel] = useState('');
+  const [montoAsientoPesos, setMontoAsientoPesos] = useState('');
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -935,6 +998,149 @@ function ContenidoAplicacion(): JSX.Element {
     await Promise.all([cargarB2b(token), cargarVentas(token)]);
   }
 
+  // Facturacion y Contabilidad (CU-FC / CU-CT).
+  async function cargarFinanzas(tokenActivo: string): Promise<void> {
+    const impResp = await peticion('/facturacion/impuestos', tokenActivo);
+    if (impResp.ok) setImpuestosFin(((await impResp.json()).data as ImpuestoFin[]) || []);
+    const facResp = await peticion('/facturacion/facturas', tokenActivo);
+    if (facResp.ok) setFacturasFin(((await facResp.json()).data as FacturaFin[]) || []);
+    const penResp = await peticion('/facturacion/ordenes-por-facturar', tokenActivo);
+    if (penResp.ok) setPorFacturarFin(((await penResp.json()).data as OrdenPorFacturar[]) || []);
+  }
+
+  async function cargarContabilidad(tokenActivo: string): Promise<void> {
+    const cueResp = await peticion('/contabilidad/cuentas', tokenActivo);
+    if (cueResp.ok) setCuentasFin(((await cueResp.json()).data as CuentaContable[]) || []);
+    const asiResp = await peticion('/contabilidad/asientos', tokenActivo);
+    if (asiResp.ok) setAsientosFin(((await asiResp.json()).data as AsientoContable[]) || []);
+  }
+
+  async function crearImpuestoUI(): Promise<void> {
+    if (!token) return;
+    const bps = Math.round((Number(tarifaImpuestoPct) || 0) * 100);
+    if (!nombreImpuesto.trim()) {
+      setMensaje('El nombre del impuesto es obligatorio');
+      return;
+    }
+    const respuesta = await peticion('/facturacion/impuestos', token, 'POST', {
+      nombre: nombreImpuesto.trim(),
+      tipo: tipoImpuesto,
+      tarifaBps: bps,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el impuesto (tarifa 0-100%)');
+      return;
+    }
+    setNombreImpuesto('');
+    await cargarFinanzas(token);
+  }
+
+  async function emitirFacturaUI(): Promise<void> {
+    if (!token) return;
+    const ordenB2bId = Number(ordenFacturarSel);
+    if (!ordenB2bId) {
+      setMensaje('Seleccione la orden B2B a facturar');
+      return;
+    }
+    const respuesta = await peticion('/facturacion/facturas', token, 'POST', {
+      ordenB2bId: ordenB2bId,
+      impuestoId: impuestoFacturaSel ? Number(impuestoFacturaSel) : undefined,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo emitir la factura');
+      return;
+    }
+    setOrdenFacturarSel('');
+    await cargarFinanzas(token);
+  }
+
+  async function accionFacturaUI(id: number, accion: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/facturacion/facturas/' + id + '/' + accion, token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo ' + accion + ' la factura');
+      return;
+    }
+    await cargarFinanzas(token);
+  }
+
+  async function crearNotaUI(): Promise<void> {
+    if (!token) return;
+    const facturaId = Number(facturaNotaSel);
+    const montoCentavos = Math.round((Number(montoNotaPesos) || 0) * 100);
+    if (!facturaId || !motivoNota.trim() || montoCentavos <= 0) {
+      setMensaje('Seleccione factura, monto (COP) y motivo');
+      return;
+    }
+    const respuesta = await peticion('/facturacion/notas', token, 'POST', {
+      facturaId: facturaId,
+      tipo: tipoNota,
+      montoCentavos: montoCentavos,
+      motivo: motivoNota.trim(),
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear la nota (revise el monto)');
+      return;
+    }
+    setMontoNotaPesos('');
+    setMotivoNota('');
+  }
+
+  async function crearCuentaUI(): Promise<void> {
+    if (!token) return;
+    if (!codigoCuenta.trim() || !nombreCuenta.trim()) {
+      setMensaje('Codigo y nombre de la cuenta son obligatorios');
+      return;
+    }
+    const respuesta = await peticion('/contabilidad/cuentas', token, 'POST', {
+      codigo: codigoCuenta.trim(),
+      nombre: nombreCuenta.trim(),
+      naturaleza: naturalezaCuenta,
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear la cuenta contable');
+      return;
+    }
+    setCodigoCuenta('');
+    setNombreCuenta('');
+    await cargarContabilidad(token);
+  }
+
+  async function inactivarCuentaUI(id: number): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/contabilidad/cuentas/' + id + '/inactivar', token, 'PATCH');
+    if (!respuesta.ok) {
+      setMensaje('No se pudo inactivar la cuenta (puede tener movimientos)');
+      return;
+    }
+    await cargarContabilidad(token);
+  }
+
+  async function crearAsientoUI(): Promise<void> {
+    if (!token) return;
+    const debe = Number(cuentaDebeSel);
+    const haber = Number(cuentaHaberSel);
+    const montoCentavos = Math.round((Number(montoAsientoPesos) || 0) * 100);
+    if (!descripcionAsiento.trim() || !debe || !haber || montoCentavos <= 0) {
+      setMensaje('Complete descripcion, cuentas y monto (COP)');
+      return;
+    }
+    const respuesta = await peticion('/contabilidad/asientos', token, 'POST', {
+      descripcion: descripcionAsiento.trim(),
+      lineas: [
+        { cuentaId: debe, debitoCentavos: montoCentavos, creditoCentavos: 0 },
+        { cuentaId: haber, debitoCentavos: 0, creditoCentavos: montoCentavos },
+      ],
+    });
+    if (!respuesta.ok) {
+      setMensaje('No se pudo crear el asiento');
+      return;
+    }
+    setDescripcionAsiento('');
+    setMontoAsientoPesos('');
+    await cargarContabilidad(token);
+  }
+
   async function ingresar(): Promise<void> {
     setMensaje('');
     const respuesta = await peticion('/autenticacion/ingreso-interno', '', 'POST', {
@@ -1315,6 +1521,24 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Facturacion') {
+        cargarFinanzas(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
+  useEffect(
+    function () {
+      if (token && moduloActivo === 'Contabilidad') {
+        cargarContabilidad(token);
+      }
+    },
+    [moduloActivo, token],
+  );
+
   const esDashboard = moduloActivo === 'Dashboard';
   const esCompras = moduloActivo === 'Compras';
   const esInventario = moduloActivo === 'Inventario';
@@ -1322,6 +1546,8 @@ function ContenidoAplicacion(): JSX.Element {
   const esSeguridad = moduloActivo === 'Seguridad';
   const esLogistica = moduloActivo === 'Logistica';
   const esRrhh = moduloActivo === 'RRHH / Nomina';
+  const esFacturacion = moduloActivo === 'Facturacion';
+  const esContabilidad = moduloActivo === 'Contabilidad';
   const termino = terminoBusqueda.trim().toLowerCase();
   const proveedoresFiltrados = termino
     ? proveedores.filter(function (proveedor) {
@@ -3071,13 +3297,381 @@ function ContenidoAplicacion(): JSX.Element {
               </section>
             </>
           )}
+          {esFacturacion && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Impuestos (CU-FC-004)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Nombre (ej. IVA 19%)"
+                    value={nombreImpuesto}
+                    onChange={function (e) {
+                      setNombreImpuesto(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={tipoImpuesto}
+                    onChange={function (e) {
+                      setTipoImpuesto(e.target.value);
+                    }}
+                  >
+                    <option value="iva">IVA</option>
+                    <option value="retencion">Retencion</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Tarifa %"
+                    value={tarifaImpuestoPct}
+                    onChange={function (e) {
+                      setTarifaImpuestoPct(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearImpuestoUI}>
+                    Crear impuesto
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Impuesto</th>
+                      <th>Tipo</th>
+                      <th>Tarifa</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {impuestosFin.map(function (i) {
+                      return (
+                        <tr key={i.id}>
+                          <td>{i.nombre}</td>
+                          <td>{i.tipo}</td>
+                          <td>{(i.tarifaBps / 100).toFixed(2)}%</td>
+                          <td>{i.estado}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Facturas (CU-FC-001/003) y notas (CU-FC-002)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={ordenFacturarSel}
+                    onChange={function (e) {
+                      setOrdenFacturarSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Orden B2B por facturar...</option>
+                    {porFacturarFin.map(function (o) {
+                      return (
+                        <option key={o.id} value={o.id}>
+                          {o.folio} - {o.clienteRazonSocial}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={impuestoFacturaSel}
+                    onChange={function (e) {
+                      setImpuestoFacturaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Sin impuesto</option>
+                    {impuestosFin.map(function (i) {
+                      return (
+                        <option key={i.id} value={i.id}>
+                          {i.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button className="btn btn--primary" onClick={emitirFacturaUI}>
+                    Emitir factura
+                  </button>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={facturaNotaSel}
+                    onChange={function (e) {
+                      setFacturaNotaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Factura...</option>
+                    {facturasFin.map(function (f) {
+                      return (
+                        <option key={f.id} value={f.id}>
+                          {f.numero}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={tipoNota}
+                    onChange={function (e) {
+                      setTipoNota(e.target.value);
+                    }}
+                  >
+                    <option value="credito">Nota credito</option>
+                    <option value="debito">Nota debito</option>
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Monto (COP)"
+                    value={montoNotaPesos}
+                    onChange={function (e) {
+                      setMontoNotaPesos(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Motivo"
+                    value={motivoNota}
+                    onChange={function (e) {
+                      setMotivoNota(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--line" onClick={crearNotaUI}>
+                    Crear nota
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Numero</th>
+                      <th>Cliente</th>
+                      <th>Base</th>
+                      <th>Impuesto</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {facturasFin.map(function (f) {
+                      return (
+                        <tr key={f.id}>
+                          <td>{f.numero}</td>
+                          <td>{f.clienteRazonSocial}</td>
+                          <td>{formatearPesos(f.baseCentavos)}</td>
+                          <td>{formatearPesos(f.impuestoCentavos)}</td>
+                          <td>{formatearPesos(f.totalCentavos)}</td>
+                          <td>{f.estado}</td>
+                          <td>
+                            <div className="acciones-fila">
+                              {f.estado === 'emitida' && (
+                                <button
+                                  className="btn btn--warm btn--sm"
+                                  onClick={function () {
+                                    accionFacturaUI(f.id, 'pagar');
+                                  }}
+                                >
+                                  Pagar
+                                </button>
+                              )}
+                              {f.estado === 'emitida' && (
+                                <button
+                                  className="btn btn--line btn--sm"
+                                  onClick={function () {
+                                    accionFacturaUI(f.id, 'anular');
+                                  }}
+                                >
+                                  Anular
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+          {esContabilidad && (
+            <>
+              {mensaje && <p className="alerta">{mensaje}</p>}
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Plan unico de cuentas (CU-CT-001)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Codigo (PUC)"
+                    value={codigoCuenta}
+                    onChange={function (e) {
+                      setCodigoCuenta(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Nombre de la cuenta"
+                    value={nombreCuenta}
+                    onChange={function (e) {
+                      setNombreCuenta(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={naturalezaCuenta}
+                    onChange={function (e) {
+                      setNaturalezaCuenta(e.target.value);
+                    }}
+                  >
+                    <option value="debito">Debito</option>
+                    <option value="credito">Credito</option>
+                  </select>
+                  <button className="btn btn--primary" onClick={crearCuentaUI}>
+                    Crear cuenta
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Codigo</th>
+                      <th>Cuenta</th>
+                      <th>Naturaleza</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cuentasFin.map(function (c) {
+                      return (
+                        <tr key={c.id}>
+                          <td>{c.codigo}</td>
+                          <td>{c.nombre}</td>
+                          <td>{c.naturaleza}</td>
+                          <td>{c.estado}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                inactivarCuentaUI(c.id);
+                              }}
+                            >
+                              Inactivar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Asientos contables (CU-CT-002 base)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Descripcion"
+                    value={descripcionAsiento}
+                    onChange={function (e) {
+                      setDescripcionAsiento(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={cuentaDebeSel}
+                    onChange={function (e) {
+                      setCuentaDebeSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Cuenta debito...</option>
+                    {cuentasFin.map(function (c) {
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.codigo} {c.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={cuentaHaberSel}
+                    onChange={function (e) {
+                      setCuentaHaberSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Cuenta credito...</option>
+                    {cuentasFin.map(function (c) {
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.codigo} {c.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Monto (COP)"
+                    value={montoAsientoPesos}
+                    onChange={function (e) {
+                      setMontoAsientoPesos(e.target.value);
+                    }}
+                  />
+                  <button className="btn btn--primary" onClick={crearAsientoUI}>
+                    Crear asiento
+                  </button>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Descripcion</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {asientosFin.map(function (a) {
+                      return (
+                        <tr key={a.id}>
+                          <td>{a.referencia}</td>
+                          <td>{a.descripcion}</td>
+                          <td>{a.fecha.slice(0, 10)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
           {!esDashboard &&
             !esCompras &&
             !esInventario &&
             !esVentas &&
             !esSeguridad &&
             !esLogistica &&
-            !esRrhh && (
+            !esRrhh &&
+            !esFacturacion &&
+            !esContabilidad && (
               <section className="panel">
                 <div className="panel-head">
                   <h2>{moduloActivo}</h2>
