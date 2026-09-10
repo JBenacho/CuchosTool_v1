@@ -507,17 +507,30 @@ const MODULOS_POR_ROL: Record<string, readonly string[]> = {
   ADMIN: [...MODULOS],
   COMPRAS: ['Dashboard', 'Compras', 'Inventario'],
   ALMACENISTA: ['Dashboard', 'Inventario', 'Compras', 'Logistica'],
-  LOGISTICA: ['Dashboard', 'Logistica', 'Inventario'],
+  // CU-LG-005: la gestion de rutas esta aislada del kardex de inventario, por eso el perfil
+  // de logistica no incluye el modulo Inventario (la API tambien lo deniega con 403).
+  LOGISTICA: ['Dashboard', 'Logistica'],
   RRHH: ['Dashboard', 'RRHH / Nomina'],
   CONTADOR: ['Dashboard', 'Compras', 'Inventario', 'Contabilidad', 'Facturacion'],
   VENDEDOR: ['Dashboard', 'Ventas'],
   AUDITOR: ['Dashboard', 'Inventario'],
-  GERENTE_ZONA: ['Dashboard', 'Ventas', 'Gerencia'],
+  // La API de ventas del canal solo admite VENDEDOR y ADMIN; el gerente de zona conserva
+  // los reportes consolidados de Gerencia para no ofrecer un modulo que la API deniega.
+  GERENTE_ZONA: ['Dashboard', 'Gerencia'],
   AGENTE_SOPORTE: ['Dashboard'],
   SUPERVISOR_SOPORTE: ['Dashboard'],
   RESPONSABLE_GARANTIAS: ['Dashboard'],
   RESPONSABLE_CALIDAD: ['Dashboard'],
 };
+
+/**
+ * Indica si el perfil puede planificar rutas de distribucion (RN-LG-04, Default Deny).
+ * Entrada: rol de la sesion. Salida: true solo para logistica y administracion; el resto de
+ * perfiles que ven el modulo Logistica opera transportistas, vehiculos y despachos.
+ */
+function puedeGestionarRutas(rol: string | undefined): boolean {
+  return rol === 'LOGISTICA' || rol === 'ADMIN';
+}
 
 // Perfiles internos gestionables desde Seguridad (coinciden con ROLES_ERP_GESTIONABLES).
 const PERFILES_GESTIONABLES = [
@@ -764,6 +777,21 @@ async function peticion(
     },
     body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
   });
+}
+
+/**
+ * Lee una lista de la API y devuelve [] cuando la respuesta no es correcta o no trae datos.
+ * Entrada: ruta relativa de la API y token de la sesion.
+ * Salida: arreglo tipado; vacio ante 403/404/500 para que la pantalla nunca reciba undefined
+ * (antes un modulo sin permiso dejaba la lista en undefined y rompia el render).
+ */
+async function leerLista<T>(ruta: string, tokenActivo: string): Promise<T[]> {
+  const respuesta = await peticion(ruta, tokenActivo);
+  if (!respuesta.ok) return [];
+  const json = await respuesta.json().catch(function () {
+    return {};
+  });
+  return Array.isArray(json.data) ? (json.data as T[]) : [];
 }
 
 function ContenidoAplicacion(): JSX.Element {
@@ -1096,31 +1124,33 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarProveedores(token);
   }
 
+  /**
+   * Carga bodegas, catalogo, stock y kardex del modulo Inventario (CU-INV-005..008).
+   * Entrada: token de la sesion.
+   * Efectos: llena las listas del modulo; si el perfil no tiene permiso (403) se avisa y las
+   * listas quedan vacias en lugar de romper la pantalla.
+   */
   async function cargarInventario(tokenActivo: string): Promise<void> {
-    try {
-      const bodegasJson = await (await peticion('/inventario/bodegas', tokenActivo)).json();
-      setBodegasInv(bodegasJson.data as BodegaInv[]);
-    } catch {
-      setMensaje('No se pudieron cargar las bodegas');
+    const sondeo = await peticion('/inventario/bodegas', tokenActivo);
+    if (!sondeo.ok) {
+      setBodegasInv([]);
+      setProductosInv([]);
+      setStockInv([]);
+      setKardexInv([]);
+      setMensaje(
+        sondeo.status === 403
+          ? 'Su perfil no tiene permiso para consultar el inventario'
+          : 'No se pudo cargar el inventario',
+      );
+      return;
     }
-    try {
-      const catalogoJson = await (await peticion('/catalogo/productos', tokenActivo)).json();
-      setProductosInv(catalogoJson.data as ProductoCorto[]);
-    } catch {
-      setMensaje('No se pudo cargar el catalogo');
-    }
-    try {
-      const stockJson = await (await peticion('/inventario/stock', tokenActivo)).json();
-      setStockInv(stockJson.data as FilaStock[]);
-    } catch {
-      setMensaje('No se pudo cargar el stock');
-    }
-    try {
-      const kardexJson = await (await peticion('/inventario/kardex', tokenActivo)).json();
-      setKardexInv(kardexJson.data as FilaKardex[]);
-    } catch {
-      setMensaje('No se pudo cargar el kardex');
-    }
+    const bodegasJson = await sondeo.json().catch(function () {
+      return {};
+    });
+    setBodegasInv(Array.isArray(bodegasJson.data) ? (bodegasJson.data as BodegaInv[]) : []);
+    setProductosInv(await leerLista<ProductoCorto>('/catalogo/productos', tokenActivo));
+    setStockInv(await leerLista<FilaStock>('/inventario/stock', tokenActivo));
+    setKardexInv(await leerLista<FilaKardex>('/inventario/kardex', tokenActivo));
   }
 
   // Registra entrada/salida (CU-INV-001/002) o ajuste por conteo fisico (CU-INV-003).
@@ -1994,6 +2024,8 @@ function ContenidoAplicacion(): JSX.Element {
     const json = await respuesta.json();
     const tokenNuevo = json.data.token as string;
     setToken(tokenNuevo);
+    // Cada ingreso abre en Dashboard: evita heredar el modulo del usuario anterior.
+    setModuloActivo('Dashboard');
     const usuarioNuevo = json.data.usuario as { id?: number; correo?: string; rol?: string };
     setUsuarioSesion({
       id: usuarioNuevo.id || 0,
@@ -2035,7 +2067,9 @@ function ContenidoAplicacion(): JSX.Element {
     if (vdResp.ok) setVentasDesp(((await vdResp.json()).data as VentaDespachable[]) || []);
     const dpResp = await peticion('/logistica/despachos', tokenActivo);
     if (dpResp.ok) setDespachosLog(((await dpResp.json()).data as DespachoLog[]) || []);
-    await cargarRutasLog(tokenActivo);
+    // Las rutas solo se consultan si el perfil puede gestionarlas (RN-LG-04): se evita el 403.
+    if (puedeGestionarRutas(usuarioSesion ? usuarioSesion.rol : undefined))
+      await cargarRutasLog(tokenActivo);
   }
 
   // Carga las rutas de distribucion y los despachos consolidables (CU-LG-005).
@@ -2471,15 +2505,7 @@ function ContenidoAplicacion(): JSX.Element {
     [moduloActivo, token],
   );
 
-  useEffect(
-    function () {
-      if (token && moduloActivo === 'Inventario') {
-        cargarInventario(token);
-      }
-    },
-    [moduloActivo, token],
-  );
-
+  // Inventario (CU-INV-001..008).
   useEffect(
     function () {
       if (token && moduloActivo === 'Inventario') {
@@ -2513,6 +2539,15 @@ function ContenidoAplicacion(): JSX.Element {
   const modulosVisibles = usuarioSesion
     ? MODULOS_POR_ROL[usuarioSesion.rol] || ['Dashboard']
     : MODULOS;
+
+  // RBAC de navegacion: si el modulo activo dejo de estar habilitado (cambio de usuario o de
+  // perfil) se regresa a Dashboard en lugar de consultar un modulo sin permiso.
+  useEffect(
+    function () {
+      if (token && modulosVisibles.indexOf(moduloActivo) < 0) setModuloActivo('Dashboard');
+    },
+    [token, moduloActivo, usuarioSesion],
+  );
 
   useEffect(
     function () {
@@ -2566,6 +2601,8 @@ function ContenidoAplicacion(): JSX.Element {
   const esVentas = moduloActivo === 'Ventas';
   const esSeguridad = moduloActivo === 'Seguridad';
   const esLogistica = moduloActivo === 'Logistica';
+  // Los paneles de rutas solo se dibujan para perfiles con permiso (RN-LG-04).
+  const gestionaRutas = puedeGestionarRutas(usuarioSesion ? usuarioSesion.rol : undefined);
   const esRrhh = moduloActivo === 'RRHH / Nomina';
   const esFacturacion = moduloActivo === 'Facturacion';
   const esContabilidad = moduloActivo === 'Contabilidad';
@@ -4440,309 +4477,324 @@ function ContenidoAplicacion(): JSX.Element {
                   </tbody>
                 </table>
               </section>
-              <section className="panel">
-                <div className="panel-head">
-                  <h2>Rutas de distribucion (CU-LG-005)</h2>
-                </div>
-                <div className="form-grid">
-                  <input
-                    className="input"
-                    placeholder="Codigo (opcional, ej. RT-2025-001)"
-                    title="4 a 20 caracteres alfanumericos; vacio lo genera la API"
-                    value={codigoRutaNueva}
-                    onChange={function (e) {
-                      setCodigoRutaNueva(e.target.value);
-                    }}
-                  />
-                  <input
-                    className="input"
-                    placeholder="Nombre de la ruta"
-                    value={nombreRutaNueva}
-                    onChange={function (e) {
-                      setNombreRutaNueva(e.target.value);
-                    }}
-                  />
-                  <select
-                    className="input"
-                    value={vehiculoRutaSel}
-                    onChange={function (e) {
-                      setVehiculoRutaSel(e.target.value);
-                    }}
-                  >
-                    <option value="">Vehiculo...</option>
-                    {vehiculosLog.map(function (v) {
-                      return (
-                        <option key={v.id} value={v.id}>
-                          {v.placa} - {v.transportistaNombre} ({v.estadoOperativo})
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button className="btn btn--primary" onClick={crearRutaLogUI}>
-                    Planificar ruta
-                  </button>
-                </div>
-                <div className="form-grid">
-                  <input
-                    className="input"
-                    placeholder="Destino de la parada (ej. Bogota - Cali)"
-                    value={destinoParada}
-                    onChange={function (e) {
-                      setDestinoParada(e.target.value);
-                    }}
-                  />
-                  <select
-                    className="input"
-                    value={despachoParadaSel}
-                    onChange={function (e) {
-                      setDespachoParadaSel(e.target.value);
-                    }}
-                  >
-                    <option value="">Despacho de la parada (opcional)</option>
-                    {despachosConsolidablesLog.map(function (d) {
-                      return (
-                        <option key={d.id} value={d.id}>
-                          {d.referencia} - {d.guia}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button className="btn btn--line" onClick={agregarParadaRutaUI}>
-                    Agregar parada
-                  </button>
-                </div>
-                <table className="table table--compacta">
-                  <thead>
-                    <tr>
-                      <th>Secuencia</th>
-                      <th>Destino</th>
-                      <th>Despacho</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paradasRuta.map(function (parada, indice) {
-                      return (
-                        <tr key={parada.destino}>
-                          <td>{indice + 1}</td>
-                          <td>{parada.destino}</td>
-                          <td>
-                            {parada.despachoId
-                              ? 'Despacho ' + parada.despachoId
-                              : 'Sin despacho asociado'}
-                          </td>
-                          <td>
-                            <button
-                              className="btn btn--warm btn--sm"
-                              onClick={function () {
-                                quitarParadaRutaUI(indice);
-                              }}
-                            >
-                              Quitar
-                            </button>
-                          </td>
+              {gestionaRutas && (
+                <>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <h2>Rutas de distribucion (CU-LG-005)</h2>
+                    </div>
+                    <div className="form-grid">
+                      <input
+                        className="input"
+                        placeholder="Codigo (opcional, ej. RT-2025-001)"
+                        title="4 a 20 caracteres alfanumericos; vacio lo genera la API"
+                        value={codigoRutaNueva}
+                        onChange={function (e) {
+                          setCodigoRutaNueva(e.target.value);
+                        }}
+                      />
+                      <input
+                        className="input"
+                        placeholder="Nombre de la ruta"
+                        value={nombreRutaNueva}
+                        onChange={function (e) {
+                          setNombreRutaNueva(e.target.value);
+                        }}
+                      />
+                      <select
+                        className="input"
+                        value={vehiculoRutaSel}
+                        onChange={function (e) {
+                          setVehiculoRutaSel(e.target.value);
+                        }}
+                      >
+                        <option value="">Vehiculo...</option>
+                        {vehiculosLog.map(function (v) {
+                          return (
+                            <option key={v.id} value={v.id}>
+                              {v.placa} - {v.transportistaNombre} ({v.estadoOperativo})
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <button className="btn btn--primary" onClick={crearRutaLogUI}>
+                        Planificar ruta
+                      </button>
+                    </div>
+                    <div className="form-grid">
+                      <input
+                        className="input"
+                        placeholder="Destino de la parada (ej. Bogota - Cali)"
+                        value={destinoParada}
+                        onChange={function (e) {
+                          setDestinoParada(e.target.value);
+                        }}
+                      />
+                      <select
+                        className="input"
+                        value={despachoParadaSel}
+                        onChange={function (e) {
+                          setDespachoParadaSel(e.target.value);
+                        }}
+                      >
+                        <option value="">Despacho de la parada (opcional)</option>
+                        {despachosConsolidablesLog.map(function (d) {
+                          return (
+                            <option key={d.id} value={d.id}>
+                              {d.referencia} - {d.guia}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <button className="btn btn--line" onClick={agregarParadaRutaUI}>
+                        Agregar parada
+                      </button>
+                    </div>
+                    <table className="table table--compacta">
+                      <thead>
+                        <tr>
+                          <th>Secuencia</th>
+                          <th>Destino</th>
+                          <th>Despacho</th>
+                          <th>Acciones</th>
                         </tr>
-                      );
-                    })}
-                    {paradasRuta.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="muted" style={{ padding: '12px 16px' }}>
-                          Sin paradas: la ruta necesita al menos un destino.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Codigo</th>
-                      <th>Nombre</th>
-                      <th>Transportista</th>
-                      <th>Vehiculo</th>
-                      <th>Paradas</th>
-                      <th>Despachos</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rutasLog.map(function (ruta) {
-                      const modificable = ruta.estado === 'planificada';
-                      return (
-                        <tr key={ruta.id}>
-                          <td>{ruta.codigo}</td>
-                          <td>{ruta.nombre}</td>
-                          <td>{ruta.transportistaNombre}</td>
-                          <td>
-                            {ruta.placa} ({ruta.capacidadKg} kg)
-                          </td>
-                          <td>{ruta.totalParadas}</td>
-                          <td>{ruta.totalDespachos}</td>
-                          <td>
-                            <span className={claseBadgeEstado(ruta.estado)}>{ruta.estado}</span>
-                          </td>
-                          <td>
-                            <div className="acciones-fila">
-                              <button
-                                className="btn btn--line btn--sm"
-                                onClick={function () {
-                                  verDetalleRutaUI(ruta.id);
-                                }}
-                              >
-                                {detalleRutaLog && detalleRutaLog.id === ruta.id
-                                  ? 'Ocultar paradas'
-                                  : 'Ver paradas'}
-                              </button>
-                              {modificable && (
-                                <button
-                                  className="btn btn--primary btn--sm"
-                                  onClick={function () {
-                                    accionRutaUI(ruta.id, 'iniciar');
-                                  }}
-                                >
-                                  Iniciar
-                                </button>
-                              )}
-                              {ruta.estado === 'en_progreso' && (
+                      </thead>
+                      <tbody>
+                        {paradasRuta.map(function (parada, indice) {
+                          return (
+                            <tr key={parada.destino}>
+                              <td>{indice + 1}</td>
+                              <td>{parada.destino}</td>
+                              <td>
+                                {parada.despachoId
+                                  ? 'Despacho ' + parada.despachoId
+                                  : 'Sin despacho asociado'}
+                              </td>
+                              <td>
                                 <button
                                   className="btn btn--warm btn--sm"
                                   onClick={function () {
-                                    accionRutaUI(ruta.id, 'completar');
+                                    quitarParadaRutaUI(indice);
                                   }}
                                 >
-                                  Completar
+                                  Quitar
                                 </button>
-                              )}
-                              {modificable && (
-                                <button
-                                  className="btn btn--line btn--sm"
-                                  onClick={function () {
-                                    accionRutaUI(ruta.id, 'cancelar');
-                                  }}
-                                >
-                                  Cancelar
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {rutasLog.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
-                          Sin rutas de distribucion.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                {detalleRutaLog && (
-                  <table className="table table--compacta">
-                    <thead>
-                      <tr>
-                        <th>Secuencia</th>
-                        <th>Destino</th>
-                        <th>Guia del despacho</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detalleRutaLog.paradas.map(function (parada) {
-                        return (
-                          <tr key={parada.id}>
-                            <td>{parada.secuencia}</td>
-                            <td>{parada.destino}</td>
-                            <td>{parada.guia || 'Sin despacho asociado'}</td>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {paradasRuta.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="muted" style={{ padding: '12px 16px' }}>
+                              Sin paradas: la ruta necesita al menos un destino.
+                            </td>
                           </tr>
-                        );
-                      })}
-                      {detalleRutaLog.paradas.length === 0 && (
+                        )}
+                      </tbody>
+                    </table>
+                    <table className="table">
+                      <thead>
                         <tr>
-                          <td colSpan={3} className="muted" style={{ padding: '12px 16px' }}>
-                            La ruta no tiene paradas registradas.
-                          </td>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Transportista</th>
+                          <th>Vehiculo</th>
+                          <th>Paradas</th>
+                          <th>Despachos</th>
+                          <th>Estado</th>
+                          <th>Acciones</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </section>
-              <section className="panel">
-                <div className="panel-head">
-                  <h2>Consolidar despachos programados (CU-LG-005/006)</h2>
-                </div>
-                <div className="form-grid">
-                  <select
-                    className="input"
-                    value={rutaConsolidarSel}
-                    onChange={function (e) {
-                      setRutaConsolidarSel(e.target.value);
-                    }}
-                  >
-                    <option value="">Ruta destino...</option>
-                    {rutasLog
-                      .filter(function (ruta) {
-                        return ruta.estado === 'planificada';
-                      })
-                      .map(function (ruta) {
-                        return (
-                          <option key={ruta.id} value={ruta.id}>
-                            {ruta.codigo} - {ruta.nombre}
-                          </option>
-                        );
-                      })}
-                  </select>
-                  <button className="btn btn--primary" onClick={consolidarDespachosUI}>
-                    Consolidar despachos
-                  </button>
-                  <span className="muted">
-                    Marcados: {despachosConsolidar.length} de {despachosConsolidablesLog.length}
-                  </span>
-                </div>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Consolidar</th>
-                      <th>Despacho</th>
-                      <th>Guia</th>
-                      <th>Venta</th>
-                      <th>Cliente</th>
-                      <th>Ruta asignada</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {despachosConsolidablesLog.map(function (despacho) {
-                      return (
-                        <tr key={despacho.id}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              aria-label={'Consolidar despacho ' + despacho.referencia}
-                              checked={despachosConsolidar.indexOf(String(despacho.id)) >= 0}
-                              onChange={function (e) {
-                                alternarDespachoConsolidar(despacho.id, e.target.checked);
-                              }}
-                            />
-                          </td>
-                          <td>{despacho.referencia}</td>
-                          <td>{despacho.guia}</td>
-                          <td>{despacho.referenciaPedido}</td>
-                          <td>{despacho.clienteNombre || '-'}</td>
-                          <td>{despacho.rutaId ? 'Ruta ' + despacho.rutaId : 'Sin ruta'}</td>
-                        </tr>
-                      );
-                    })}
-                    {despachosConsolidablesLog.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
-                          Sin despachos programados disponibles para consolidar.
-                        </td>
-                      </tr>
+                      </thead>
+                      <tbody>
+                        {rutasLog.map(function (ruta) {
+                          const modificable = ruta.estado === 'planificada';
+                          return (
+                            <tr key={ruta.id}>
+                              <td>{ruta.codigo}</td>
+                              <td>{ruta.nombre}</td>
+                              <td>{ruta.transportistaNombre}</td>
+                              <td>
+                                {ruta.placa} ({ruta.capacidadKg} kg)
+                              </td>
+                              <td>{ruta.totalParadas}</td>
+                              <td>{ruta.totalDespachos}</td>
+                              <td>
+                                <span className={claseBadgeEstado(ruta.estado)}>{ruta.estado}</span>
+                              </td>
+                              <td>
+                                <div className="acciones-fila">
+                                  <button
+                                    className="btn btn--line btn--sm"
+                                    onClick={function () {
+                                      verDetalleRutaUI(ruta.id);
+                                    }}
+                                  >
+                                    {detalleRutaLog && detalleRutaLog.id === ruta.id
+                                      ? 'Ocultar paradas'
+                                      : 'Ver paradas'}
+                                  </button>
+                                  {modificable && (
+                                    <button
+                                      className="btn btn--primary btn--sm"
+                                      onClick={function () {
+                                        accionRutaUI(ruta.id, 'iniciar');
+                                      }}
+                                    >
+                                      Iniciar
+                                    </button>
+                                  )}
+                                  {ruta.estado === 'en_progreso' && (
+                                    <button
+                                      className="btn btn--warm btn--sm"
+                                      onClick={function () {
+                                        accionRutaUI(ruta.id, 'completar');
+                                      }}
+                                    >
+                                      Completar
+                                    </button>
+                                  )}
+                                  {modificable && (
+                                    <button
+                                      className="btn btn--line btn--sm"
+                                      onClick={function () {
+                                        accionRutaUI(ruta.id, 'cancelar');
+                                      }}
+                                    >
+                                      Cancelar
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {rutasLog.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                              Sin rutas de distribucion.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    {detalleRutaLog && (
+                      <table className="table table--compacta">
+                        <thead>
+                          <tr>
+                            <th>Secuencia</th>
+                            <th>Destino</th>
+                            <th>Guia del despacho</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detalleRutaLog.paradas.map(function (parada) {
+                            return (
+                              <tr key={parada.id}>
+                                <td>{parada.secuencia}</td>
+                                <td>{parada.destino}</td>
+                                <td>{parada.guia || 'Sin despacho asociado'}</td>
+                              </tr>
+                            );
+                          })}
+                          {detalleRutaLog.paradas.length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="muted" style={{ padding: '12px 16px' }}>
+                                La ruta no tiene paradas registradas.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     )}
-                  </tbody>
-                </table>
-              </section>
+                  </section>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <h2>Consolidar despachos programados (CU-LG-005/006)</h2>
+                    </div>
+                    <div className="form-grid">
+                      <select
+                        className="input"
+                        value={rutaConsolidarSel}
+                        onChange={function (e) {
+                          setRutaConsolidarSel(e.target.value);
+                        }}
+                      >
+                        <option value="">Ruta destino...</option>
+                        {rutasLog
+                          .filter(function (ruta) {
+                            return ruta.estado === 'planificada';
+                          })
+                          .map(function (ruta) {
+                            return (
+                              <option key={ruta.id} value={ruta.id}>
+                                {ruta.codigo} - {ruta.nombre}
+                              </option>
+                            );
+                          })}
+                      </select>
+                      <button className="btn btn--primary" onClick={consolidarDespachosUI}>
+                        Consolidar despachos
+                      </button>
+                      <span className="muted">
+                        Marcados: {despachosConsolidar.length} de {despachosConsolidablesLog.length}
+                      </span>
+                    </div>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Consolidar</th>
+                          <th>Despacho</th>
+                          <th>Guia</th>
+                          <th>Venta</th>
+                          <th>Cliente</th>
+                          <th>Ruta asignada</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {despachosConsolidablesLog.map(function (despacho) {
+                          return (
+                            <tr key={despacho.id}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  aria-label={'Consolidar despacho ' + despacho.referencia}
+                                  checked={despachosConsolidar.indexOf(String(despacho.id)) >= 0}
+                                  onChange={function (e) {
+                                    alternarDespachoConsolidar(despacho.id, e.target.checked);
+                                  }}
+                                />
+                              </td>
+                              <td>{despacho.referencia}</td>
+                              <td>{despacho.guia}</td>
+                              <td>{despacho.referenciaPedido}</td>
+                              <td>{despacho.clienteNombre || '-'}</td>
+                              <td>{despacho.rutaId ? 'Ruta ' + despacho.rutaId : 'Sin ruta'}</td>
+                            </tr>
+                          );
+                        })}
+                        {despachosConsolidablesLog.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                              Sin despachos programados disponibles para consolidar.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </section>
+                </>
+              )}
+              {!gestionaRutas && (
+                <section className="panel">
+                  <div className="panel-head">
+                    <h2>Rutas de distribucion (CU-LG-005)</h2>
+                  </div>
+                  <p className="muted">
+                    La planificacion de rutas esta reservada al perfil LOGISTICA (RN-LG-04). Su
+                    perfil opera transportistas, vehiculos y despachos.
+                  </p>
+                </section>
+              )}
             </>
           )}
           {esRrhh && (
