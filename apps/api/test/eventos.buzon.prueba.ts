@@ -8,7 +8,13 @@ describe('topicoDeEvento', function () {
     expect(topicoDeEvento('com.cuchostool.pedido.pagado')).toBe('pedidos');
   });
 
-  it('eventos de otros dominios van al topico general', function () {
-    expect(topicoDeEvento('com.cuchostool.inventario.actualizado')).toBe('general');
+  it('inventario, facturacion y comercial tienen topico propio (F5-GCP)', function () {
+    expect(topicoDeEvento('com.cuchostool.inventario.stock_actualizado')).toBe('inventario');
+    expect(topicoDeEvento('com.cuchostool.factura.emitida')).toBe('facturacion');
+    expect(topicoDeEvento('com.cuchostool.ventab2b.creada')).toBe('comercial');
+  });
+
+  it('eventos de dominios desconocidos van al topico general', function () {
+    expect(topicoDeEvento('com.cuchostool.otro.evento')).toBe('general');
   });
 });

@@ -175,16 +175,14 @@ export async function calcularComisiones(periodo: string): Promise<ResultadoMeta
       .limit(1);
     if (existente[0]) continue;
     const monto = Math.round((baseCentavos * config.porcentajeBps) / TARIFA_BPS_MAXIMA);
-    await base
-      .insert(comisiones)
-      .values({
-        vendedorId: config.vendedorId,
-        periodo: periodo,
-        baseCentavos: baseCentavos,
-        porcentajeBps: config.porcentajeBps,
-        montoCentavos: monto,
-        estado: COMISION_CALCULADA,
-      });
+    await base.insert(comisiones).values({
+      vendedorId: config.vendedorId,
+      periodo: periodo,
+      baseCentavos: baseCentavos,
+      porcentajeBps: config.porcentajeBps,
+      montoCentavos: monto,
+      estado: COMISION_CALCULADA,
+    });
     calculadas++;
   }
   return { ok: true, datos: { periodo: periodo, calculadas: calculadas } };

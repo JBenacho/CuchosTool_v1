@@ -1,6 +1,7 @@
 // Servicio de Facturacion y Contabilidad (CU-FC-001..004, CU-CT-001, F5).
 // Reglas: consecutivo fiscal, IVA/retenciones con tarifa en puntos basicos (0..100%),
 // inmutabilidad tras emitir (correcciones por nota credito/debito) y asientos cuadrados.
+import { createHash } from 'crypto';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import {
@@ -14,6 +15,8 @@ import {
   ordenesVentaB2b,
 } from '../../bd/esquema';
 import {
+  DIAN_ACEPTADA,
+  DIAN_NO_ENVIADA,
   ESTADO_ACTIVO,
   ESTADO_INACTIVO,
   EVENTO_FACTURA_EMITIDA,
@@ -311,11 +314,44 @@ export async function listarFacturas() {
       impuestoCentavos: facturas.impuestoCentavos,
       totalCentavos: facturas.totalCentavos,
       estado: facturas.estado,
+      estadoDian: facturas.estadoDian,
+      cufe: facturas.cufe,
       creadoEn: facturas.creadoEn,
     })
     .from(facturas)
     .innerJoin(clientesEmpresa, eq(facturas.clienteEmpresaId, clientesEmpresa.id))
     .orderBy(desc(facturas.id));
+}
+
+/**
+ * Emite la factura electronica DIAN (simulada): genera el CUFE (hash fiscal) y marca
+ * el estado de envio. Inmutable: una factura ya emitida a la DIAN no se re-emite (RN-FC-03).
+ */
+export async function emitirFacturaDian(id: number): Promise<ResultadoFinanzas> {
+  const filas = await base.select().from(facturas).where(eq(facturas.id, id)).limit(1);
+  if (!filas[0]) return { ok: false, codigoEstado: 404, error: 'factura_no_encontrada' };
+  const factura = filas[0];
+  if (factura.estado === FACTURA_ANULADA)
+    return { ok: false, codigoEstado: 409, error: 'factura_anulada' };
+  if (factura.estadoDian !== DIAN_NO_ENVIADA)
+    return { ok: false, codigoEstado: 409, error: 'factura_ya_enviada_dian' };
+  const cliente = await base
+    .select({ nit: clientesEmpresa.nit })
+    .from(clientesEmpresa)
+    .where(eq(clientesEmpresa.id, factura.clienteEmpresaId))
+    .limit(1);
+  const sello = [
+    factura.numero,
+    cliente[0] ? cliente[0].nit : '',
+    String(factura.totalCentavos),
+    factura.creadoEn.toISOString(),
+  ].join('|');
+  const cufe = createHash('sha256').update(sello).digest('hex');
+  await base
+    .update(facturas)
+    .set({ cufe: cufe, estadoDian: DIAN_ACEPTADA, dianEmitidaEn: new Date() })
+    .where(eq(facturas.id, id));
+  return { ok: true, datos: { id: id, cufe: cufe, estadoDian: DIAN_ACEPTADA } };
 }
 export async function obtenerFactura(id: number) {
   const fila = await base.select().from(facturas).where(eq(facturas.id, id)).limit(1);
