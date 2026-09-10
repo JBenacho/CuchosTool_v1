@@ -194,6 +194,9 @@ export const NATURALEZA_CREDITO = 'credito';
 export const EVENTO_FACTURA_EMITIDA = 'com.cuchostool.factura.emitida';
 export const TIPOS_IMPUESTO = ['iva', 'retencion', 'otro'] as const;
 export const TARIFA_BPS_MAXIMA = 10000;
+// Metas y comisiones comerciales (CU-CM-005/006).
+export const COMISION_CALCULADA = 'calculada';
+export const COMISION_PAGADA = 'pagada';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

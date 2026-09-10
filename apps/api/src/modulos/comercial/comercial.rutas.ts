@@ -1,6 +1,6 @@
-// Rutas Comercial B2B (CU-CM-001/004/007, F5).
+// Rutas Comercial B2B (CU-CM-001/004/007) y Metas/Comisiones (CU-CM-005/006), F5.
 import type { FastifyInstance } from 'fastify';
-import { ROL_ADMIN, ROL_VENDEDOR } from '../../dominio/constantes';
+import { ROL_ADMIN, ROL_CONTADOR, ROL_VENDEDOR } from '../../dominio/constantes';
 import { registrarAuditoria } from '../administracion/auditoria';
 import {
   anularOrdenB2b,
@@ -12,6 +12,17 @@ import {
   obtenerOrdenB2b,
   pagarOrdenB2b,
 } from './comercial.servicio';
+import {
+  calcularComisiones,
+  configurarComision,
+  crearMeta,
+  cumplimientoMetas,
+  listarComisiones,
+  listarConfigComisiones,
+  listarMetas,
+  listarVendedores,
+  pagarComision,
+} from './metas.servicio';
 
 export async function rutasComercial(aplicacion: FastifyInstance): Promise<void> {
   const requerirRol = (aplicacion as any).requerirRol as (roles: string[]) => any;
@@ -146,6 +157,150 @@ export async function rutasComercial(aplicacion: FastifyInstance): Promise<void>
         solicitud,
         'comercial.anular_orden_b2b',
         'ordenes_venta_b2b',
+        solicitud.params.id,
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+
+  // Metas comerciales (CU-CM-005).
+  aplicacion.get(
+    '/comercial/vendedores',
+    {
+      preHandler: requerirRol([ROL_ADMIN]),
+      schema: { tags: ['comercial'], summary: 'Listar vendedores (CU-CM-001)' },
+    },
+    async function () {
+      return { data: await listarVendedores() };
+    },
+  );
+  aplicacion.get(
+    '/comercial/metas',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_VENDEDOR]),
+      schema: { tags: ['comercial'], summary: 'Listar metas comerciales (CU-CM-005)' },
+    },
+    async function (solicitud: any) {
+      return {
+        data: await listarMetas(
+          solicitud.query && solicitud.query.periodo ? String(solicitud.query.periodo) : undefined,
+        ),
+      };
+    },
+  );
+  aplicacion.post(
+    '/comercial/metas',
+    {
+      preHandler: requerirRol([ROL_ADMIN]),
+      schema: { tags: ['comercial'], summary: 'Crear meta comercial (CU-CM-005)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await crearMeta(solicitud.body || {});
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'comercial.crear_meta',
+        'metas_comerciales',
+        'nueva',
+        'ok',
+      );
+      return respuesta.code(201).send({ data: resultado.datos });
+    },
+  );
+  aplicacion.get(
+    '/comercial/metas/cumplimiento',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_VENDEDOR]),
+      schema: { tags: ['comercial'], summary: 'Cumplimiento de metas del periodo (CU-CM-005)' },
+    },
+    async function (solicitud: any) {
+      const periodo =
+        solicitud.query && solicitud.query.periodo ? String(solicitud.query.periodo) : '';
+      return { data: await cumplimientoMetas(periodo) };
+    },
+  );
+
+  // Comisiones (CU-CM-006).
+  aplicacion.get(
+    '/comercial/comisiones/config',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_CONTADOR]),
+      schema: { tags: ['comercial'], summary: 'Listar configuracion de comisiones (CU-CM-006)' },
+    },
+    async function () {
+      return { data: await listarConfigComisiones() };
+    },
+  );
+  aplicacion.post(
+    '/comercial/comisiones/config',
+    {
+      preHandler: requerirRol([ROL_ADMIN]),
+      schema: { tags: ['comercial'], summary: 'Configurar porcentaje de comision (CU-CM-006)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await configurarComision(solicitud.body || {});
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'comercial.configurar_comision',
+        'comisiones_vendedor',
+        'config',
+        'ok',
+      );
+      return { data: resultado.datos };
+    },
+  );
+  aplicacion.post(
+    '/comercial/comisiones/calcular',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_CONTADOR]),
+      schema: { tags: ['comercial'], summary: 'Calcular comisiones del periodo (CU-CM-006)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await calcularComisiones(String((solicitud.body || {}).periodo || ''));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'comercial.calcular_comisiones',
+        'comisiones',
+        String((resultado.datos as any).periodo),
+        'ok',
+      );
+      return respuesta.code(201).send({ data: resultado.datos });
+    },
+  );
+  aplicacion.get(
+    '/comercial/comisiones',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_CONTADOR, ROL_VENDEDOR]),
+      schema: { tags: ['comercial'], summary: 'Listar comisiones (CU-CM-006)' },
+    },
+    async function (solicitud: any) {
+      return {
+        data: await listarComisiones(
+          solicitud.query && solicitud.query.periodo ? String(solicitud.query.periodo) : undefined,
+        ),
+      };
+    },
+  );
+  aplicacion.patch(
+    '/comercial/comisiones/:id/pagar',
+    {
+      preHandler: requerirRol([ROL_ADMIN, ROL_CONTADOR]),
+      schema: { tags: ['comercial'], summary: 'Liquidar/pagar comision (CU-CM-006)' },
+    },
+    async function (solicitud: any, respuesta: any) {
+      const resultado = await pagarComision(Number(solicitud.params.id));
+      if (!resultado.ok)
+        return respuesta.code(resultado.codigoEstado || 400).send({ error: resultado.error });
+      await registrarAuditoria(
+        solicitud,
+        'comercial.pagar_comision',
+        'comisiones',
         solicitud.params.id,
         'ok',
       );
