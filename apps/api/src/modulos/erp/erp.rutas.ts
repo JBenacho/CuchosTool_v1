@@ -17,6 +17,8 @@ type CuerpoProveedor = {
   correo?: string;
   direccion?: string;
   sitioWeb?: string;
+  /** IVA pactado en puntos basicos (1900 = 19,00%, CU-ERP-003). */
+  tarifaIvaBps?: number;
 };
 
 type CambiosProveedor = {
@@ -26,6 +28,7 @@ type CambiosProveedor = {
   correo?: string;
   direccion?: string;
   sitioWeb?: string;
+  tarifaIvaBps?: number;
 };
 
 export async function rutasErp(aplicacion: FastifyInstance): Promise<void> {

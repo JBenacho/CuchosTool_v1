@@ -197,13 +197,43 @@ export const NATURALEZA_DEBITO = 'debito';
 export const NATURALEZA_CREDITO = 'credito';
 export const EVENTO_FACTURA_EMITIDA = 'com.cuchostool.factura.emitida';
 export const TIPOS_IMPUESTO = ['iva', 'retencion', 'otro'] as const;
-export const TARIFA_BPS_MAXIMA = 10000;
+// Puntos basicos que representan el 100% de una tarifa (10000 bps = 100,00%).
+export const BASE_PUNTOS_BASICOS = 10000;
+export const TARIFA_BPS_MAXIMA = BASE_PUNTOS_BASICOS;
 // Metas y comisiones comerciales (CU-CM-005/006).
 export const COMISION_CALCULADA = 'calculada';
 export const COMISION_PAGADA = 'pagada';
 // Factura electronica DIAN (simulada en local, CU-FC-001).
 export const DIAN_NO_ENVIADA = 'no_enviada';
 export const DIAN_ACEPTADA = 'aceptada_simulada';
+// Rutas de distribucion (CU-LG-005): estados del trayecto logistico.
+// Trazabilidad con la ficha: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED.
+export const RUTA_PLANIFICADA = 'planificada';
+export const RUTA_EN_PROGRESO = 'en_progreso';
+export const RUTA_COMPLETADA = 'completada';
+export const RUTA_CANCELADA = 'cancelada';
+// Estados en los que una ruta ya no admite modificacion (RN-LG-03).
+export const RUTAS_NO_MODIFICABLES = [RUTA_EN_PROGRESO, RUTA_COMPLETADA, RUTA_CANCELADA] as const;
+// Estados de una ruta que mantienen el vehiculo tomado (estado operativo derivado).
+export const RUTAS_ACTIVAS = [RUTA_PLANIFICADA, RUTA_EN_PROGRESO] as const;
+// Estado operativo del vehiculo (CU-LG-005): derivado de las rutas, no persistido.
+export const VEHICULO_DISPONIBLE = 'disponible';
+export const VEHICULO_ASIGNADO = 'asignado';
+// Prefijo del codigo unico de ruta (RN-LG-01): RTE-AAAA-######.
+export const PREFIJO_RUTA = 'RTE';
+export const MAXIMO_PARADAS_RUTA = 50;
+// IVA por proveedor (CU-ERP-003): tarifa por defecto en puntos basicos (1900 = 19,00%).
+export const TARIFA_IVA_BPS_POR_DEFECTO = 1900;
+// Tope de renglones por orden de compra multi-linea (evita cuerpos HTTP desmedidos).
+export const MAXIMO_LINEAS_ORDEN = 50;
+// Reportes gerenciales (CU-GE): ventana de la serie mensual y topes de consulta.
+export const MESES_SERIE_DEFECTO = 6;
+export const MESES_SERIE_MAXIMO = 24;
+export const LIMITE_RANKING_DEFECTO = 5;
+export const LIMITE_RANKING_MAXIMO = 20;
+export const REPORTES_GERENCIALES = ['resumen', 'series', 'ranking', 'cartera'] as const;
+// Separador de columnas de los CSV exportados (Excel en espanol usa punto y coma).
+export const SEPARADOR_CSV = ';';
 // SLA por tipo de caso (CU-SGC-011): horas de primera respuesta segun el tipo.
 // Valores de dominio configurables aqui (unico punto de verdad); refinables por spike.
 export const SLA_HORAS_DEFECTO = 24;

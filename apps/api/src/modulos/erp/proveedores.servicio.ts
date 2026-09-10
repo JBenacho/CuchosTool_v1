@@ -4,7 +4,12 @@
 import { asc, eq } from 'drizzle-orm';
 import { base } from '../../bd/base';
 import { proveedores } from '../../bd/esquema';
-import { ESTADO_ACTIVO, ESTADO_INACTIVO } from '../../dominio/constantes';
+import {
+  ESTADO_ACTIVO,
+  ESTADO_INACTIVO,
+  TARIFA_BPS_MAXIMA,
+  TARIFA_IVA_BPS_POR_DEFECTO,
+} from '../../dominio/constantes';
 
 // Patron basico de correo electronico para validar entrada externa (no hardcodeado por ruta).
 const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,6 +29,8 @@ export interface DatosProveedor {
   correo?: string;
   direccion?: string;
   sitioWeb?: string;
+  /** IVA pactado con el proveedor en puntos basicos (1900 = 19,00%, CU-ERP-003). */
+  tarifaIvaBps?: number;
 }
 
 export interface ProveedorNormalizado {
@@ -34,6 +41,21 @@ export interface ProveedorNormalizado {
   correo: string | null;
   direccion: string | null;
   sitioWeb: string | null;
+  tarifaIvaBps: number;
+}
+
+/**
+ * Normaliza la tarifa de IVA de un proveedor (CU-ERP-003).
+ * Entrada: valor crudo del cuerpo HTTP. Salida: tarifa valida o codigo de error.
+ * Reglas: vacio usa el valor por defecto; debe ser entero entre 0 y 10000 bps (0%..100%).
+ */
+export function normalizarTarifaIva(valor: unknown): { error?: string; tarifa?: number } {
+  if (valor === undefined || valor === null || valor === '')
+    return { tarifa: TARIFA_IVA_BPS_POR_DEFECTO };
+  const tarifa = Number(valor);
+  if (!Number.isInteger(tarifa) || tarifa < 0 || tarifa > TARIFA_BPS_MAXIMA)
+    return { error: 'tarifa_iva_invalida' };
+  return { tarifa: tarifa };
 }
 
 /**
@@ -50,6 +72,8 @@ export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
   if (!nit || !nombre) return { error: 'datos_incompletos' };
   const correo = String(datos.correo || '').trim() || null;
   if (correo && !PATRON_CORREO.test(correo)) return { error: 'correo_invalido' };
+  const iva = normalizarTarifaIva(datos.tarifaIvaBps);
+  if (iva.error) return { error: iva.error };
   return {
     datos: {
       nit: nit,
@@ -59,6 +83,7 @@ export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
       correo: correo,
       direccion: String(datos.direccion || '').trim() || null,
       sitioWeb: String(datos.sitioWeb || '').trim() || null,
+      tarifaIvaBps: iva.tarifa as number,
     },
   };
 }
@@ -69,7 +94,7 @@ export function normalizarDatosProveedor(datos: Partial<DatosProveedor>): {
 export async function crearProveedor(datos: DatosProveedor): Promise<ResultadoProveedor> {
   const normalizado = normalizarDatosProveedor(datos);
   if (normalizado.error) return { ok: false, codigoEstado: 400, error: normalizado.error };
-  const { nit, nombre, contacto, telefono, correo, direccion, sitioWeb } =
+  const { nit, nombre, contacto, telefono, correo, direccion, sitioWeb, tarifaIvaBps } =
     normalizado.datos as ProveedorNormalizado;
   const existente = await base.select().from(proveedores).where(eq(proveedores.nit, nit)).limit(1);
   if (existente[0]) return { ok: false, codigoEstado: 409, error: 'nit_ya_existe' };
@@ -83,6 +108,7 @@ export async function crearProveedor(datos: DatosProveedor): Promise<ResultadoPr
       correo: correo,
       direccion: direccion,
       sitioWeb: sitioWeb,
+      tarifaIvaBps: tarifaIvaBps,
       estado: ESTADO_ACTIVO,
     })
     .returning({
@@ -92,6 +118,7 @@ export async function crearProveedor(datos: DatosProveedor): Promise<ResultadoPr
       correo: proveedores.correo,
       direccion: proveedores.direccion,
       sitioWeb: proveedores.sitioWeb,
+      tarifaIvaBps: proveedores.tarifaIvaBps,
       estado: proveedores.estado,
     });
   return { ok: true, datos: creado };
@@ -120,6 +147,7 @@ export async function actualizarProveedor(
     correo?: string;
     direccion?: string;
     sitioWeb?: string;
+    tarifaIvaBps?: number;
   },
 ): Promise<ResultadoProveedor> {
   const existente = await base.select().from(proveedores).where(eq(proveedores.id, id)).limit(1);
@@ -133,6 +161,10 @@ export async function actualizarProveedor(
     if (correo && !PATRON_CORREO.test(correo))
       return { ok: false, codigoEstado: 400, error: 'correo_invalido' };
   }
+  if (cambios.tarifaIvaBps !== undefined) {
+    const iva = normalizarTarifaIva(cambios.tarifaIvaBps);
+    if (iva.error) return { ok: false, codigoEstado: 400, error: iva.error };
+  }
   const actualizacion: {
     nombre?: string;
     contacto?: string | null;
@@ -140,6 +172,7 @@ export async function actualizarProveedor(
     correo?: string | null;
     direccion?: string | null;
     sitioWeb?: string | null;
+    tarifaIvaBps?: number;
     actualizadoEn: Date;
   } = { actualizadoEn: new Date() };
   if (cambios.nombre !== undefined) actualizacion.nombre = String(cambios.nombre).trim();
@@ -152,6 +185,8 @@ export async function actualizarProveedor(
     actualizacion.direccion = String(cambios.direccion).trim() || null;
   if (cambios.sitioWeb !== undefined)
     actualizacion.sitioWeb = String(cambios.sitioWeb).trim() || null;
+  if (cambios.tarifaIvaBps !== undefined)
+    actualizacion.tarifaIvaBps = normalizarTarifaIva(cambios.tarifaIvaBps).tarifa;
   await base.update(proveedores).set(actualizacion).where(eq(proveedores.id, id));
   return { ok: true, datos: { id: id } };
 }

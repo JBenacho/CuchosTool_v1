@@ -1,8 +1,35 @@
 // Sitio ERP (F5): login interno y dashboards con datos reales de la API.
-import { Component, useEffect, useState } from 'react';
+import { Component, Fragment, useEffect, useState } from 'react';
 import './Aplicacion.css';
 
 const API = '/api';
+
+// Topes y valores por defecto espejo de apps/api/src/dominio/constantes.ts.
+// El ERP no reimplementa reglas de negocio: solo evita enviar valores fuera de rango.
+const BASE_PUNTOS_BASICOS = 10000;
+const TARIFA_IVA_BPS_POR_DEFECTO = 1900;
+const MAXIMO_LINEAS_ORDEN = 50;
+const MAXIMO_PARADAS_RUTA = 50;
+const MESES_SERIE_DEFECTO = 6;
+const MESES_SERIE_MAXIMO = 24;
+const LIMITE_RANKING_DEFECTO = 5;
+const LIMITE_RANKING_MAXIMO = 20;
+
+// Abreviaturas de mes para etiquetar periodos AAAA-MM en tablas y graficas.
+const MESES_CORTOS = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+];
 
 interface Resumen {
   pedidos: number;
@@ -28,6 +55,7 @@ interface Proveedor {
   correo: string | null;
   direccion: string | null;
   sitioWeb: string | null;
+  tarifaIvaBps: number;
   estado: string;
 }
 
@@ -67,16 +95,41 @@ interface FilaKardex {
   creadoEn: string;
 }
 
+interface LineaOrdenCompra {
+  id: number;
+  ordenId: number;
+  numeroLinea: number;
+  productoId: number;
+  productoNombre: string;
+  cantidadPedida: number;
+  cantidadRecibida: number;
+  precioUnitarioCentavos: number;
+  subtotalCentavos: number;
+  saldoPendiente: number;
+}
+
 interface FilaOrden {
   id: number;
   referencia: string;
   proveedorNombre: string;
-  productoNombre: string;
+  bodegaNombre: string;
   cantidadPedida: number;
   cantidadRecibida: number;
   saldoPendiente: number;
+  tarifaIvaBps: number;
+  subtotalCentavos: number;
+  impuestoCentavos: number;
   totalCentavos: number;
+  lineas: LineaOrdenCompra[];
+  totalLineas: number;
   estado: string;
+}
+
+// Renglon en borrador de una orden multi-linea (CU-ERP-003): el precio se captura en COP.
+interface LineaOrdenBorrador {
+  productoId: string;
+  cantidad: string;
+  precioPesos: string;
 }
 
 interface FilaCuenta {
@@ -151,6 +204,8 @@ interface VehiculoLog {
   placa: string;
   capacidadKg: number;
   estado: string;
+  // Disponibilidad operativa derivada de las rutas vigentes (CU-LG-005).
+  estadoOperativo: string;
   transportistaId: number;
   transportistaNombre: string;
 }
@@ -173,6 +228,52 @@ interface DespachoLog {
   transportistaNombre: string;
   placa: string;
   creadoEn: string;
+}
+
+// Parada secuenciada de una ruta de distribucion (CU-LG-005).
+interface ParadaRutaLog {
+  id: number;
+  rutaId: number;
+  secuencia: number;
+  destino: string;
+  despachoId: number | null;
+  guia: string | null;
+}
+
+// Ruta de distribucion con sus paradas y despachos consolidados (CU-LG-005).
+interface RutaLog {
+  id: number;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  transportistaId: number;
+  transportistaNombre: string;
+  vehiculoId: number;
+  placa: string;
+  capacidadKg: number;
+  creadoEn: string;
+  iniciadaEn: string | null;
+  completadaEn: string | null;
+  paradas: ParadaRutaLog[];
+  totalParadas: number;
+  totalDespachos: number;
+}
+
+// Despacho programado disponible para consolidar en una ruta (CU-LG-005).
+interface DespachoConsolidableLog {
+  id: number;
+  referencia: string;
+  guia: string;
+  estado: string;
+  rutaId: number | null;
+  referenciaPedido: string;
+  clienteNombre: string | null;
+}
+
+// Parada en borrador antes de planificar la ruta.
+interface ParadaRutaBorrador {
+  destino: string;
+  despachoId: string;
 }
 
 interface CargoRrhh {
@@ -337,6 +438,57 @@ interface ResumenGerencia {
   comisiones: { calculadasCentavos: number; pagadasCentavos: number };
 }
 
+// Punto mensual de la serie gerencial (CU-GE): venta canal, B2B y facturacion.
+interface PuntoSerieGerencial {
+  periodo: string;
+  pedidos: number;
+  canalCentavos: number;
+  ordenesB2b: number;
+  b2bCentavos: number;
+  facturas: number;
+  facturadoCentavos: number;
+  ivaCentavos: number;
+  totalCentavos: number;
+}
+
+interface SerieGerencial {
+  meses: number;
+  serie: PuntoSerieGerencial[];
+  totales: {
+    canalCentavos: number;
+    b2bCentavos: number;
+    facturadoCentavos: number;
+    ivaCentavos: number;
+  };
+}
+
+interface FilaRankingGerencial {
+  productoId: number;
+  productoNombre: string;
+  unidades: number;
+  montoCentavos: number;
+  unidadesCanal: number;
+  montoCanalCentavos: number;
+  unidadesB2b: number;
+  montoB2bCentavos: number;
+}
+
+interface RankingGerencial {
+  periodo: string;
+  productos: FilaRankingGerencial[];
+}
+
+interface CarteraGerencial {
+  porPagar: {
+    totalCentavos: number;
+    vencidoCentavos: number;
+    cuentas: number;
+    vencidas: number;
+  };
+  porCobrar: { totalCentavos: number; facturas: number };
+  generadoEn: string;
+}
+
 const MODULOS = [
   'Dashboard',
   'Compras',
@@ -395,6 +547,208 @@ function formatearPesos(centavos: number): string {
   );
 }
 
+// Numero con dos decimales en formato es-CO (coma decimal), sin simbolo de moneda.
+function formatearDecimal(valor: number): string {
+  return Number(valor).toLocaleString('es-CO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// Tarifa en puntos basicos como porcentaje es-CO (1900 -> '19,00 %', 500 -> '5,00 %').
+function formatearPorcentaje(puntosBasicos: number): string {
+  return formatearDecimal(Number(puntosBasicos) / 100) + ' %';
+}
+
+// Etiqueta legible de un periodo AAAA-MM (ej. 2025-03 -> mar 2025).
+function etiquetaPeriodo(periodo: string): string {
+  const partes = String(periodo || '').split('-');
+  const indice = Number(partes[1]) - 1;
+  if (partes.length !== 2 || !MESES_CORTOS[indice]) return String(periodo || '');
+  return MESES_CORTOS[indice] + ' ' + partes[0];
+}
+
+// Importe abreviado para ejes y tarjetas (k = miles, M = millones de pesos).
+function formatearPesosCorto(centavos: number): string {
+  const pesos = centavos / 100;
+  if (Math.abs(pesos) >= 1000000)
+    return '$ ' + (pesos / 1000000).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' M';
+  if (Math.abs(pesos) >= 1000)
+    return '$ ' + (pesos / 1000).toLocaleString('es-CO', { maximumFractionDigits: 0 }) + ' k';
+  return formatearPesos(centavos);
+}
+
+// Clase visual del badge segun el estado del flujo: verde cerrado, naranja en curso, gris anulado.
+function claseBadgeEstado(estado: string): string {
+  const cerrados = ['completada', 'entregado', 'pagada', 'activo', 'aceptada_simulada'];
+  const anulados = ['cancelada', 'anulada', 'devuelto', 'inactivo'];
+  if (cerrados.indexOf(estado) >= 0) return 'badge badge--ok';
+  if (anulados.indexOf(estado) >= 0) return 'badge badge--muted';
+  return 'badge badge--warm';
+}
+
+// Traduce los codigos de error de la API (compras, logistica, gerencia) a mensajes para el usuario.
+function mensajeErrorApi(error: string): string {
+  const mensajes: Record<string, string> = {
+    lineas_obligatorias: 'La orden necesita al menos un renglon',
+    demasiadas_lineas: 'La orden admite maximo ' + MAXIMO_LINEAS_ORDEN + ' renglones',
+    producto_duplicado_en_lineas: 'Hay un producto repetido en los renglones',
+    cantidad_invalida: 'La cantidad debe ser un entero positivo',
+    precio_invalido: 'El precio unitario debe ser un entero positivo en centavos',
+    producto_invalido: 'El producto del renglon no es valido',
+    producto_inactivo: 'El producto esta inactivo',
+    proveedor_inactivo: 'El proveedor esta inactivo',
+    bodega_inactiva: 'La bodega destino esta inactiva',
+    orden_no_recibible: 'La orden ya no admite recepcion en su estado actual',
+    recepcion_por_linea_requerida: 'Orden multi-linea: registre la recepcion por renglon',
+    recepcion_sin_lineas: 'Indique las cantidades a recibir',
+    linea_no_encontrada: 'El renglon indicado no pertenece a la orden',
+    linea_duplicada: 'Hay un renglon repetido en la recepcion',
+    cantidad_excede_saldo: 'La cantidad excede el saldo pendiente del renglon',
+    ruta_no_modificable: 'La ruta ya no admite cambios en su estado actual',
+    ruta_no_iniciable: 'Solo una ruta planificada puede iniciarse',
+    ruta_no_completable: 'Solo una ruta en progreso puede completarse',
+    ruta_no_cancelable: 'Solo una ruta planificada puede cancelarse',
+    codigo_ruta_duplicado: 'El codigo de ruta ya existe',
+    codigo_ruta_invalido: 'Codigo de ruta invalido (4 a 20 caracteres alfanumericos)',
+    nombre_obligatorio: 'El nombre de la ruta es obligatorio',
+    paradas_obligatorias: 'Agregue al menos una parada a la ruta',
+    demasiadas_paradas: 'La ruta admite maximo ' + MAXIMO_PARADAS_RUTA + ' paradas',
+    destino_obligatorio: 'Cada parada necesita un destino',
+    destino_duplicado: 'Hay destinos repetidos en la ruta',
+    vehiculo_en_ruta: 'El vehiculo ya tiene otra ruta vigente',
+    vehiculo_no_disponible: 'El vehiculo no esta disponible',
+    vehiculo_no_encontrado: 'El vehiculo seleccionado no existe',
+    despacho_ya_asignado: 'El despacho ya pertenece a otra ruta',
+    despacho_no_encontrado: 'El despacho seleccionado no existe',
+    despacho_no_asignable: 'El despacho no esta en un estado consolidable',
+    reporte_invalido: 'Reporte no soportado (resumen, series, ranking o cartera)',
+    periodo_invalido: 'El periodo debe tener formato AAAA-MM',
+    datos_incompletos: 'Complete todos los datos obligatorios',
+    tarifa_iva_invalida: 'El IVA del proveedor debe estar entre 0 y 100%',
+  };
+  return (
+    mensajes[error] || 'No se pudo completar la operacion (' + (error || 'error desconocido') + ')'
+  );
+}
+
+// Extrae el nombre del archivo de la cabecera Content-Disposition de la exportacion CSV.
+function nombreDesdeCabecera(cabecera: string | null, porDefecto: string): string {
+  if (!cabecera) return porDefecto;
+  const coincidencia = /filename="([^"]+)"/.exec(cabecera);
+  return coincidencia ? coincidencia[1] : porDefecto;
+}
+
+// Serie mensual en barras agrupadas dibujada con SVG nativo (sin dependencias externas).
+// Entrada: puntos de la serie con venta canal, B2B y facturado en centavos. Salida: grafica del panel.
+function GraficaSeriesGerencial({ puntos }: { puntos: PuntoSerieGerencial[] }): JSX.Element {
+  const ancho = 760;
+  const alto = 280;
+  const margen = { arriba: 18, derecha: 12, abajo: 34, izquierda: 78 };
+  const anchoUtil = ancho - margen.izquierda - margen.derecha;
+  const altoUtil = alto - margen.arriba - margen.abajo;
+  const maximo = puntos.reduce(function (mayor, punto) {
+    return Math.max(mayor, punto.canalCentavos, punto.b2bCentavos, punto.facturadoCentavos);
+  }, 0);
+  const techo = maximo > 0 ? maximo : 1;
+  const anchoGrupo = puntos.length ? anchoUtil / puntos.length : anchoUtil;
+  const anchoBarra = Math.max(3, Math.min(18, (anchoGrupo - 16) / 3));
+  const referencias = [0, 0.25, 0.5, 0.75, 1];
+  const grupos = [
+    {
+      clave: 'canal',
+      etiqueta: 'Venta canal',
+      valor: function (p: PuntoSerieGerencial) {
+        return p.canalCentavos;
+      },
+    },
+    {
+      clave: 'b2b',
+      etiqueta: 'Venta B2B',
+      valor: function (p: PuntoSerieGerencial) {
+        return p.b2bCentavos;
+      },
+    },
+    {
+      clave: 'facturado',
+      etiqueta: 'Facturado',
+      valor: function (p: PuntoSerieGerencial) {
+        return p.facturadoCentavos;
+      },
+    },
+  ];
+  return (
+    <div className="grafica-series">
+      <svg
+        role="img"
+        aria-label="Serie mensual de venta canal, venta B2B y facturacion"
+        viewBox={'0 0 ' + ancho + ' ' + alto}
+      >
+        {referencias.map(function (fraccion) {
+          const y = margen.arriba + altoUtil * (1 - fraccion);
+          return (
+            <g key={fraccion}>
+              <line
+                className="grafica-linea"
+                x1={margen.izquierda}
+                y1={y}
+                x2={ancho - margen.derecha}
+                y2={y}
+              />
+              <text className="grafica-eje" x={margen.izquierda - 8} y={y + 4} textAnchor="end">
+                {formatearPesosCorto(Math.round(techo * fraccion))}
+              </text>
+            </g>
+          );
+        })}
+        {puntos.map(function (punto, indice) {
+          const centro = margen.izquierda + anchoGrupo * indice + anchoGrupo / 2;
+          return (
+            <g key={punto.periodo}>
+              {grupos.map(function (grupo, posicion) {
+                const valor = grupo.valor(punto);
+                const altura = (valor / techo) * altoUtil;
+                const x = centro + (posicion - 1) * (anchoBarra + 3) - anchoBarra / 2;
+                return (
+                  <rect
+                    key={grupo.clave}
+                    className={'grafica-barra grafica-barra--' + grupo.clave}
+                    x={x}
+                    y={margen.arriba + altoUtil - altura}
+                    width={anchoBarra}
+                    height={altura}
+                  >
+                    <title>
+                      {etiquetaPeriodo(punto.periodo) +
+                        ' - ' +
+                        grupo.etiqueta +
+                        ': ' +
+                        formatearPesos(valor)}
+                    </title>
+                  </rect>
+                );
+              })}
+              <text className="grafica-eje" x={centro} y={alto - 12} textAnchor="middle">
+                {etiquetaPeriodo(punto.periodo)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <ul className="grafica-leyenda">
+        {grupos.map(function (grupo) {
+          return (
+            <li key={grupo.clave}>
+              <span className={'grafica-punto grafica-barra--' + grupo.clave} />
+              {grupo.etiqueta}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 async function peticion(
   ruta: string,
   token: string,
@@ -436,6 +790,8 @@ function ContenidoAplicacion(): JSX.Element {
   const [correoNuevo, setCorreoNuevo] = useState('');
   const [direccionNueva, setDireccionNueva] = useState('');
   const [sitioNuevo, setSitioNuevo] = useState('');
+  // IVA pactado con el proveedor en porcentaje (se envia a la API en puntos basicos).
+  const [ivaProveedorPct, setIvaProveedorPct] = useState('19');
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   // Estado del modulo Inventario (CU-INV-001..008).
@@ -457,10 +813,14 @@ function ContenidoAplicacion(): JSX.Element {
   const [catalogoCompras, setCatalogoCompras] = useState<ProductoCorto[]>([]);
   const [bodegasCompras, setBodegasCompras] = useState<BodegaInv[]>([]);
   const [proveedorSel, setProveedorSel] = useState('');
-  const [productoCompraSel, setProductoCompraSel] = useState('');
   const [bodegaCompraSel, setBodegaCompraSel] = useState('');
-  const [cantidadOrden, setCantidadOrden] = useState('');
-  const [precioOrden, setPrecioOrden] = useState('');
+  // Borrador de la orden multi-linea (CU-ERP-003) y recepcion por renglon (CU-ERP-007).
+  const [lineasOrden, setLineasOrden] = useState<LineaOrdenBorrador[]>([]);
+  const [productoLineaSel, setProductoLineaSel] = useState('');
+  const [cantidadLinea, setCantidadLinea] = useState('');
+  const [precioLinea, setPrecioLinea] = useState('');
+  const [ordenDetalleId, setOrdenDetalleId] = useState<number | null>(null);
+  const [recepcionLineas, setRecepcionLineas] = useState<Record<number, string>>({});
   // Estado del modulo Ventas (CU-CM-007 base).
   const [ventas, setVentas] = useState<FilaVenta[]>([]);
   const [resumenVentas, setResumenVentas] = useState<ResumenVentas | null>(null);
@@ -542,6 +902,14 @@ function ContenidoAplicacion(): JSX.Element {
   const [montoNovedadPesos, setMontoNovedadPesos] = useState('');
   const [resumenGerencia, setResumenGerencia] = useState<ResumenGerencia | null>(null);
   const [periodoGerencia, setPeriodoGerencia] = useState('');
+  // Reportes gerenciales avanzados (CU-GE): serie mensual, ranking y cartera.
+  const [serieGerencia, setSerieGerencia] = useState<SerieGerencial | null>(null);
+  const [rankingGerencia, setRankingGerencia] = useState<RankingGerencial | null>(null);
+  const [carteraGerencia, setCarteraGerencia] = useState<CarteraGerencial | null>(null);
+  const [mesesSerieGerencia, setMesesSerieGerencia] = useState(String(MESES_SERIE_DEFECTO));
+  const [limiteRankingGerencia, setLimiteRankingGerencia] = useState(
+    String(LIMITE_RANKING_DEFECTO),
+  );
   // Estado del modulo Logistica (CU-LG-001..006).
   const [transportistasLog, setTransportistasLog] = useState<TransportistaLog[]>([]);
   const [vehiculosLog, setVehiculosLog] = useState<VehiculoLog[]>([]);
@@ -556,6 +924,20 @@ function ContenidoAplicacion(): JSX.Element {
   const [ventaSelLog, setVentaSelLog] = useState('');
   const [vehiculoSelLog, setVehiculoSelLog] = useState('');
   const [rutaDespacho, setRutaDespacho] = useState('');
+  // Rutas de distribucion (CU-LG-005): planificacion con paradas y consolidacion de despachos.
+  const [rutasLog, setRutasLog] = useState<RutaLog[]>([]);
+  const [despachosConsolidablesLog, setDespachosConsolidablesLog] = useState<
+    DespachoConsolidableLog[]
+  >([]);
+  const [codigoRutaNueva, setCodigoRutaNueva] = useState('');
+  const [nombreRutaNueva, setNombreRutaNueva] = useState('');
+  const [vehiculoRutaSel, setVehiculoRutaSel] = useState('');
+  const [destinoParada, setDestinoParada] = useState('');
+  const [despachoParadaSel, setDespachoParadaSel] = useState('');
+  const [paradasRuta, setParadasRuta] = useState<ParadaRutaBorrador[]>([]);
+  const [rutaConsolidarSel, setRutaConsolidarSel] = useState('');
+  const [despachosConsolidar, setDespachosConsolidar] = useState<string[]>([]);
+  const [detalleRutaLog, setDetalleRutaLog] = useState<RutaLog | null>(null);
 
   async function cargarResumen(tokenActivo: string): Promise<void> {
     try {
@@ -608,6 +990,7 @@ function ContenidoAplicacion(): JSX.Element {
     setCorreoNuevo('');
     setDireccionNueva('');
     setSitioNuevo('');
+    setIvaProveedorPct('19');
   }
 
   function iniciarEdicion(proveedor: Proveedor): void {
@@ -619,6 +1002,8 @@ function ContenidoAplicacion(): JSX.Element {
     setCorreoNuevo(proveedor.correo || '');
     setDireccionNueva(proveedor.direccion || '');
     setSitioNuevo(proveedor.sitioWeb || '');
+    // El IVA viaja en puntos basicos y se edita en porcentaje (1900 -> 19).
+    setIvaProveedorPct(String((proveedor.tarifaIvaBps || 0) / 100));
   }
 
   function cancelarEdicion(): void {
@@ -629,6 +1014,13 @@ function ContenidoAplicacion(): JSX.Element {
   // Alta (POST) o edicion (PATCH) de proveedor segun editandoId (CU-ERP-001).
   async function guardarProveedor(): Promise<void> {
     if (!token) return;
+    // Guard clause del IVA pactado: porcentaje entero entre 0 y 100 (se envia en puntos basicos).
+    const ivaPct = ivaProveedorPct.trim() === '' ? 19 : Number(ivaProveedorPct);
+    if (!Number.isFinite(ivaPct) || ivaPct < 0 || ivaPct > 100) {
+      setMensaje('El IVA del proveedor debe estar entre 0 y 100%');
+      return;
+    }
+    const tarifaIvaBps = Math.round(ivaPct * 100);
     if (editandoId !== null) {
       // Modo edicion: el NIT no cambia (identificador); enviamos '' para limpiar opcionales.
       if (!nombreNuevo.trim()) {
@@ -642,10 +1034,18 @@ function ContenidoAplicacion(): JSX.Element {
         correo: correoNuevo.trim(),
         direccion: direccionNueva.trim(),
         sitioWeb: sitioNuevo.trim(),
+        tarifaIvaBps: tarifaIvaBps,
       };
       const respuesta = await peticion('/erp/proveedores/' + editandoId, token, 'PATCH', cuerpo);
       if (!respuesta.ok) {
-        setMensaje('No se pudo guardar el proveedor');
+        const json = await respuesta.json().catch(function () {
+          return {};
+        });
+        setMensaje(
+          json.error === 'correo_invalido'
+            ? 'El correo electronico no es valido'
+            : mensajeErrorApi(json.error),
+        );
         return;
       }
       setEditandoId(null);
@@ -666,6 +1066,7 @@ function ContenidoAplicacion(): JSX.Element {
       correo: correoNuevo.trim() || undefined,
       direccion: direccionNueva.trim() || undefined,
       sitioWeb: sitioNuevo.trim() || undefined,
+      tarifaIvaBps: tarifaIvaBps,
     };
     const respuesta = await peticion('/erp/proveedores', token, 'POST', cuerpo);
     if (!respuesta.ok) {
@@ -673,7 +1074,11 @@ function ContenidoAplicacion(): JSX.Element {
         return {};
       });
       setMensaje(
-        json.error === 'nit_ya_existe' ? 'El NIT ya existe' : 'No se pudo crear el proveedor',
+        json.error === 'nit_ya_existe'
+          ? 'El NIT ya existe'
+          : json.error === 'correo_invalido'
+            ? 'El correo electronico no es valido'
+            : mensajeErrorApi(json.error),
       );
       return;
     }
@@ -850,42 +1255,143 @@ function ContenidoAplicacion(): JSX.Element {
     }
   }
 
-  // Crea una orden de compra directa (CU-ERP-003).
+  // Nombre del producto de un renglon en borrador (catalogo cargado en el modulo).
+  function nombreProductoLinea(productoId: string): string {
+    const producto = catalogoCompras.find(function (p) {
+      return String(p.id) === String(productoId);
+    });
+    return producto ? producto.nombre : 'Producto ' + productoId;
+  }
+
+  // Agrega un renglon al borrador de la orden multi-linea (CU-ERP-003).
+  function agregarLineaOrdenUI(): void {
+    const productoId = Number(productoLineaSel);
+    const cantidad = Number(cantidadLinea);
+    const precioPesos = Number(precioLinea);
+    if (
+      !productoId ||
+      !Number.isInteger(cantidad) ||
+      cantidad <= 0 ||
+      !Number.isFinite(precioPesos) ||
+      precioPesos <= 0
+    ) {
+      setMensaje('Seleccione producto, cantidad entera y precio unitario (COP)');
+      return;
+    }
+    if (lineasOrden.length >= MAXIMO_LINEAS_ORDEN) {
+      setMensaje('La orden admite maximo ' + MAXIMO_LINEAS_ORDEN + ' renglones');
+      return;
+    }
+    const repetido = lineasOrden.some(function (linea) {
+      return Number(linea.productoId) === productoId;
+    });
+    if (repetido) {
+      setMensaje('El producto ya esta en la orden (no se repite producto por renglon)');
+      return;
+    }
+    setLineasOrden(
+      lineasOrden.concat([
+        {
+          productoId: String(productoId),
+          cantidad: String(cantidad),
+          precioPesos: String(precioPesos),
+        },
+      ]),
+    );
+    setProductoLineaSel('');
+    setCantidadLinea('');
+    setPrecioLinea('');
+  }
+
+  // Quita un renglon del borrador antes de crear la orden (CU-ERP-003).
+  function quitarLineaOrdenUI(indice: number): void {
+    setLineasOrden(
+      lineasOrden.filter(function (_linea, posicion) {
+        return posicion !== indice;
+      }),
+    );
+  }
+
+  // Crea la orden de compra multi-linea (CU-ERP-003): renglones + IVA pactado del proveedor.
   async function crearOrdenUI(): Promise<void> {
     if (!token) return;
     const proveedorId = Number(proveedorSel);
-    const productoId = Number(productoCompraSel);
     const bodegaId = Number(bodegaCompraSel);
-    const cantidad = Number(cantidadOrden);
-    // El precio se captura en pesos colombianos (COP) y se almacena en centavos (MONEDA_COP).
-    const precioPesos = Number(precioOrden);
-    if (
-      !proveedorId ||
-      !productoId ||
-      !bodegaId ||
-      !cantidad ||
-      cantidad <= 0 ||
-      !precioPesos ||
-      precioPesos <= 0
-    ) {
-      setMensaje('Complete proveedor, producto, bodega, cantidad y precio (COP)');
+    if (!proveedorId || !bodegaId) {
+      setMensaje('Seleccione proveedor y bodega destino');
       return;
     }
-    const precioCentavos = Math.round(precioPesos * 100);
+    if (!lineasOrden.length) {
+      setMensaje('Agregue al menos un renglon a la orden');
+      return;
+    }
+    const lineas = lineasOrden.map(function (linea) {
+      return {
+        productoId: Number(linea.productoId),
+        cantidad: Number(linea.cantidad),
+        // El precio se captura en pesos colombianos (COP) y viaja a la API en centavos.
+        precioUnitarioCentavos: Math.round(Number(linea.precioPesos) * 100),
+      };
+    });
     const respuesta = await peticion('/compras/ordenes', token, 'POST', {
       proveedorId: proveedorId,
-      productoId: productoId,
       bodegaDestinoId: bodegaId,
-      cantidad: cantidad,
-      precioUnitarioCentavos: precioCentavos,
+      lineas: lineas,
     });
     if (!respuesta.ok) {
-      setMensaje('No se pudo crear la orden de compra');
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(mensajeErrorApi(json.error));
       return;
     }
-    setCantidadOrden('');
-    setPrecioOrden('');
-    await cargarComprasAvanzado(token);
+    setLineasOrden([]);
+    await Promise.all([cargarComprasAvanzado(token), cargarProveedores(token)]);
+  }
+
+  // Muestra u oculta el detalle de renglones de una orden (CU-ERP-006).
+  function alternarDetalleOrdenUI(id: number): void {
+    setOrdenDetalleId(ordenDetalleId === id ? null : id);
+    setRecepcionLineas({});
+  }
+
+  // Registra la recepcion por renglon de una orden multi-linea (CU-ERP-007/008).
+  async function recibirLineasOrdenUI(orden: FilaOrden): Promise<void> {
+    if (!token) return;
+    const lineas = orden.lineas
+      .map(function (linea) {
+        return { lineaId: linea.id, cantidad: Number(recepcionLineas[linea.id] || 0) };
+      })
+      .filter(function (linea) {
+        return linea.cantidad > 0;
+      });
+    if (!lineas.length) {
+      setMensaje('Indique al menos una cantidad a recibir por renglon');
+      return;
+    }
+    const noEntera = lineas.some(function (linea) {
+      return !Number.isInteger(linea.cantidad);
+    });
+    if (noEntera) {
+      setMensaje('Las cantidades recibidas deben ser enteras');
+      return;
+    }
+    const respuesta = await peticion('/compras/ordenes/' + orden.id + '/recepcion', token, 'POST', {
+      lineas: lineas,
+    });
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        respuesta.status === 403
+          ? 'Requiere rol ALMACENISTA o ADMIN para registrar la recepcion'
+          : mensajeErrorApi(json.error),
+      );
+      return;
+    }
+    setRecepcionLineas({});
+    await Promise.all([cargarComprasAvanzado(token), cargarProveedores(token)]);
   }
 
   async function aprobarOrdenUI(id: number): Promise<void> {
@@ -918,6 +1424,12 @@ function ContenidoAplicacion(): JSX.Element {
       setMensaje('No hay saldo pendiente por recibir');
       return;
     }
+    // Orden multi-linea: la API exige recepcion por renglon (recepcion_por_linea_requerida).
+    if (orden.totalLineas > 1) {
+      setMensaje('Orden multi-linea: abra el detalle y reciba por renglon');
+      setOrdenDetalleId(orden.id);
+      return;
+    }
     const respuesta = await peticion('/compras/ordenes/' + id + '/recepcion', token, 'POST', {
       cantidadRecibida: orden.saldoPendiente,
     });
@@ -925,11 +1437,7 @@ function ContenidoAplicacion(): JSX.Element {
       const json = await respuesta.json().catch(function () {
         return {};
       });
-      setMensaje(
-        json.error === 'cantidad_excede_saldo'
-          ? 'La cantidad excede el saldo'
-          : 'No se pudo registrar la recepcion',
-      );
+      setMensaje(mensajeErrorApi(json.error));
       return;
     }
     await Promise.all([cargarComprasAvanzado(token), cargarProveedores(token)]);
@@ -1363,17 +1871,104 @@ function ContenidoAplicacion(): JSX.Element {
     await cargarHorariosNovedades(token);
   }
 
-  // Reportes gerenciales (CU-GE base).
-  async function cargarGerencia(tokenActivo: string, periodo: string): Promise<void> {
-    const ruta = periodo ? '/gerencia/resumen?periodo=' + periodo : '/gerencia/resumen';
+  // Reportes gerenciales (CU-GE): resumen ejecutivo del periodo, serie mensual, ranking y cartera.
+  async function cargarGerencia(
+    tokenActivo: string,
+    periodo: string,
+    meses: string,
+    limite: string,
+  ): Promise<void> {
+    const ruta = periodo
+      ? '/gerencia/resumen?periodo=' + encodeURIComponent(periodo)
+      : '/gerencia/resumen';
     const respuesta = await peticion(ruta, tokenActivo);
     if (!respuesta.ok) {
       setResumenGerencia(null);
-      setMensaje('Requiere rol ADMIN o GERENTE_ZONA');
+      setSerieGerencia(null);
+      setRankingGerencia(null);
+      setCarteraGerencia(null);
+      setMensaje(
+        respuesta.status === 400
+          ? 'El periodo debe tener formato AAAA-MM'
+          : 'Requiere rol ADMIN o GERENTE_ZONA',
+      );
       return;
     }
     const json = await respuesta.json();
     setResumenGerencia((json.data as ResumenGerencia) || null);
+    await cargarReportesGerencia(tokenActivo, periodo, meses, limite);
+  }
+
+  // Carga los reportes avanzados de Gerencia: serie de meses, ranking de productos y cartera.
+  async function cargarReportesGerencia(
+    tokenActivo: string,
+    periodo: string,
+    meses: string,
+    limite: string,
+  ): Promise<void> {
+    const serieRespuesta = await peticion(
+      '/gerencia/series?meses=' + encodeURIComponent(meses),
+      tokenActivo,
+    );
+    if (serieRespuesta.ok) {
+      const serieJson = await serieRespuesta.json();
+      setSerieGerencia((serieJson.data as SerieGerencial) || null);
+    } else {
+      setSerieGerencia(null);
+    }
+    const rankingRespuesta = await peticion(
+      '/gerencia/ranking-productos?limite=' +
+        encodeURIComponent(limite) +
+        (periodo ? '&periodo=' + encodeURIComponent(periodo) : ''),
+      tokenActivo,
+    );
+    if (rankingRespuesta.ok) {
+      const rankingJson = await rankingRespuesta.json();
+      setRankingGerencia((rankingJson.data as RankingGerencial) || null);
+    } else {
+      setRankingGerencia(null);
+    }
+    const carteraRespuesta = await peticion('/gerencia/cartera', tokenActivo);
+    if (carteraRespuesta.ok) {
+      const carteraJson = await carteraRespuesta.json();
+      setCarteraGerencia((carteraJson.data as CarteraGerencial) || null);
+    } else {
+      setCarteraGerencia(null);
+    }
+  }
+
+  // Descarga un reporte gerencial en CSV reutilizando el token de la sesion (CU-GE).
+  async function descargarReporteGerencia(reporte: string): Promise<void> {
+    if (!token) return;
+    const consulta =
+      '/gerencia/exportar?reporte=' +
+      encodeURIComponent(reporte) +
+      '&meses=' +
+      encodeURIComponent(mesesSerieGerencia) +
+      '&limite=' +
+      encodeURIComponent(limiteRankingGerencia) +
+      (periodoGerencia.trim() ? '&periodo=' + encodeURIComponent(periodoGerencia.trim()) : '');
+    const respuesta = await peticion(consulta, token);
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(mensajeErrorApi(json.error));
+      return;
+    }
+    const contenido = await respuesta.text();
+    const nombreArchivo = nombreDesdeCabecera(
+      respuesta.headers.get('Content-Disposition'),
+      'reporte-' + reporte + '.csv',
+    );
+    const url = URL.createObjectURL(new Blob([contenido], { type: 'text/csv;charset=utf-8' }));
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombreArchivo;
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    URL.revokeObjectURL(url);
   }
 
   async function emitirDianUI(id: number): Promise<void> {
@@ -1440,6 +2035,176 @@ function ContenidoAplicacion(): JSX.Element {
     if (vdResp.ok) setVentasDesp(((await vdResp.json()).data as VentaDespachable[]) || []);
     const dpResp = await peticion('/logistica/despachos', tokenActivo);
     if (dpResp.ok) setDespachosLog(((await dpResp.json()).data as DespachoLog[]) || []);
+    await cargarRutasLog(tokenActivo);
+  }
+
+  // Carga las rutas de distribucion y los despachos consolidables (CU-LG-005).
+  async function cargarRutasLog(tokenActivo: string): Promise<void> {
+    const rutasRespuesta = await peticion('/logistica/rutas', tokenActivo);
+    if (rutasRespuesta.ok) {
+      const rutasJson = await rutasRespuesta.json();
+      setRutasLog((rutasJson.data as RutaLog[]) || []);
+    } else {
+      setRutasLog([]);
+    }
+    const consolidablesRespuesta = await peticion(
+      '/logistica/despachos-consolidables',
+      tokenActivo,
+    );
+    if (consolidablesRespuesta.ok) {
+      const consolidablesJson = await consolidablesRespuesta.json();
+      setDespachosConsolidablesLog((consolidablesJson.data as DespachoConsolidableLog[]) || []);
+    } else {
+      setDespachosConsolidablesLog([]);
+    }
+  }
+
+  // Agrega una parada secuenciada al borrador de la ruta (RN-LG-02: destino unico y tope).
+  function agregarParadaRutaUI(): void {
+    const destino = destinoParada.trim();
+    if (!destino) {
+      setMensaje('Escriba el destino de la parada');
+      return;
+    }
+    if (paradasRuta.length >= MAXIMO_PARADAS_RUTA) {
+      setMensaje('La ruta admite maximo ' + MAXIMO_PARADAS_RUTA + ' paradas');
+      return;
+    }
+    const repetido = paradasRuta.some(function (parada) {
+      return parada.destino.trim().toLowerCase() === destino.toLowerCase();
+    });
+    if (repetido) {
+      setMensaje('El destino ya esta en la ruta (no se repiten destinos)');
+      return;
+    }
+    setParadasRuta(paradasRuta.concat([{ destino: destino, despachoId: despachoParadaSel }]));
+    setDestinoParada('');
+    setDespachoParadaSel('');
+  }
+
+  // Quita una parada del borrador y renumera la secuencia (CU-LG-005).
+  function quitarParadaRutaUI(indice: number): void {
+    setParadasRuta(
+      paradasRuta.filter(function (_parada, posicion) {
+        return posicion !== indice;
+      }),
+    );
+  }
+
+  // Planifica la ruta de distribucion con sus paradas (CU-LG-005).
+  async function crearRutaLogUI(): Promise<void> {
+    if (!token) return;
+    const vehiculoId = Number(vehiculoRutaSel);
+    if (!nombreRutaNueva.trim()) {
+      setMensaje('El nombre de la ruta es obligatorio');
+      return;
+    }
+    if (!vehiculoId) {
+      setMensaje('Seleccione el vehiculo de la ruta');
+      return;
+    }
+    if (!paradasRuta.length) {
+      setMensaje('Agregue al menos una parada a la ruta');
+      return;
+    }
+    const respuesta = await peticion('/logistica/rutas', token, 'POST', {
+      codigo: codigoRutaNueva.trim() || undefined,
+      nombre: nombreRutaNueva.trim(),
+      vehiculoId: vehiculoId,
+      paradas: paradasRuta.map(function (parada) {
+        return {
+          destino: parada.destino,
+          despachoId: parada.despachoId ? Number(parada.despachoId) : undefined,
+        };
+      }),
+    });
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(
+        respuesta.status === 403
+          ? 'Requiere rol LOGISTICA o ADMIN para planificar rutas'
+          : mensajeErrorApi(json.error),
+      );
+      return;
+    }
+    setCodigoRutaNueva('');
+    setNombreRutaNueva('');
+    setVehiculoRutaSel('');
+    setParadasRuta([]);
+    setDestinoParada('');
+    setDespachoParadaSel('');
+    await cargarLogistica(token);
+  }
+
+  // Ejecuta una transicion de estado de la ruta: iniciar, completar o cancelar (CU-LG-005).
+  async function accionRutaUI(id: number, accion: string): Promise<void> {
+    if (!token) return;
+    const respuesta = await peticion('/logistica/rutas/' + id + '/' + accion, token, 'PATCH');
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(mensajeErrorApi(json.error));
+      return;
+    }
+    setDetalleRutaLog(null);
+    await cargarLogistica(token);
+  }
+
+  // Marca o desmarca un despacho programado para consolidarlo en una ruta (CU-LG-005).
+  function alternarDespachoConsolidar(id: number, marcado: boolean): void {
+    const clave = String(id);
+    setDespachosConsolidar(
+      marcado
+        ? despachosConsolidar.concat([clave])
+        : despachosConsolidar.filter(function (valor) {
+            return valor !== clave;
+          }),
+    );
+  }
+
+  // Consolida los despachos marcados en la ruta planificada elegida (CU-LG-005).
+  async function consolidarDespachosUI(): Promise<void> {
+    if (!token) return;
+    const rutaId = Number(rutaConsolidarSel);
+    if (!rutaId) {
+      setMensaje('Seleccione la ruta destino');
+      return;
+    }
+    if (!despachosConsolidar.length) {
+      setMensaje('Marque al menos un despacho programado');
+      return;
+    }
+    const respuesta = await peticion('/logistica/rutas/' + rutaId + '/despachos', token, 'POST', {
+      despachoIds: despachosConsolidar.map(Number),
+    });
+    if (!respuesta.ok) {
+      const json = await respuesta.json().catch(function () {
+        return {};
+      });
+      setMensaje(mensajeErrorApi(json.error));
+      return;
+    }
+    setDespachosConsolidar([]);
+    await cargarLogistica(token);
+  }
+
+  // Consulta el detalle de una ruta con sus paradas secuenciadas (CU-LG-005).
+  async function verDetalleRutaUI(id: number): Promise<void> {
+    if (!token) return;
+    if (detalleRutaLog && detalleRutaLog.id === id) {
+      setDetalleRutaLog(null);
+      return;
+    }
+    const respuesta = await peticion('/logistica/rutas/' + id, token);
+    if (!respuesta.ok) {
+      setMensaje('No se pudo consultar la ruta');
+      return;
+    }
+    const json = await respuesta.json();
+    setDetalleRutaLog((json.data as RutaLog) || null);
   }
 
   async function crearTransportistaLogUI(): Promise<void> {
@@ -1789,7 +2554,7 @@ function ContenidoAplicacion(): JSX.Element {
   useEffect(
     function () {
       if (token && moduloActivo === 'Gerencia') {
-        cargarGerencia(token, periodoGerencia.trim());
+        cargarGerencia(token, periodoGerencia.trim(), mesesSerieGerencia, limiteRankingGerencia);
       }
     },
     [moduloActivo, token],
@@ -1814,6 +2579,21 @@ function ContenidoAplicacion(): JSX.Element {
         );
       })
     : proveedores;
+  // IVA del proveedor elegido: define el impuesto del borrador de orden (CU-ERP-003).
+  const proveedorSelDatos = proveedores.find(function (proveedor) {
+    return String(proveedor.id) === proveedorSel;
+  });
+  const tarifaIVABorradorBps = proveedorSelDatos
+    ? proveedorSelDatos.tarifaIvaBps
+    : TARIFA_IVA_BPS_POR_DEFECTO;
+  const subtotalBorradorCentavos = lineasOrden.reduce(function (total, linea) {
+    const precioCentavos = Math.round(Number(linea.precioPesos || '0') * 100);
+    return total + Math.round(Number(linea.cantidad || '0')) * precioCentavos;
+  }, 0);
+  const ivaBorradorCentavos = Math.round(
+    (subtotalBorradorCentavos * tarifaIVABorradorBps) / BASE_PUNTOS_BASICOS,
+  );
+  const totalBorradorCentavos = subtotalBorradorCentavos + ivaBorradorCentavos;
 
   return (
     <div className="app-shell">
@@ -2018,6 +2798,19 @@ function ContenidoAplicacion(): JSX.Element {
                       setSitioNuevo(e.target.value);
                     }}
                   />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="IVA (%)"
+                    title="IVA pactado con el proveedor en porcentaje (se guarda en puntos basicos)"
+                    value={ivaProveedorPct}
+                    onChange={function (e) {
+                      setIvaProveedorPct(e.target.value);
+                    }}
+                  />
                   <button className="btn btn--primary" onClick={guardarProveedor}>
                     {editandoId !== null ? 'Guardar cambios' : 'Crear'}
                   </button>
@@ -2052,6 +2845,7 @@ function ContenidoAplicacion(): JSX.Element {
                       <th>Correo</th>
                       <th>Direccion</th>
                       <th>Sitio web</th>
+                      <th>IVA</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
@@ -2067,8 +2861,11 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{proveedor.correo || '-'}</td>
                           <td>{proveedor.direccion || '-'}</td>
                           <td>{proveedor.sitioWeb || '-'}</td>
+                          <td>{formatearPorcentaje(proveedor.tarifaIvaBps)}</td>
                           <td>
-                            <span className="badge badge--ok">{proveedor.estado}</span>
+                            <span className={claseBadgeEstado(proveedor.estado)}>
+                              {proveedor.estado}
+                            </span>
                           </td>
                           <td>
                             <div className="acciones-fila">
@@ -2095,14 +2892,14 @@ function ContenidoAplicacion(): JSX.Element {
                     })}
                     {proveedores.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={10} className="muted" style={{ padding: '12px 16px' }}>
                           Sin proveedores registrados.
                         </td>
                       </tr>
                     )}
                     {proveedores.length > 0 && proveedoresFiltrados.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={10} className="muted" style={{ padding: '12px 16px' }}>
                           Sin coincidencias para la busqueda.
                         </td>
                       </tr>
@@ -2133,22 +2930,6 @@ function ContenidoAplicacion(): JSX.Element {
                   </select>
                   <select
                     className="input"
-                    value={productoCompraSel}
-                    onChange={function (e) {
-                      setProductoCompraSel(e.target.value);
-                    }}
-                  >
-                    <option value="">Producto...</option>
-                    {catalogoCompras.map(function (p) {
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <select
-                    className="input"
                     value={bodegaCompraSel}
                     onChange={function (e) {
                       setBodegaCompraSel(e.target.value);
@@ -2163,14 +2944,36 @@ function ContenidoAplicacion(): JSX.Element {
                       );
                     })}
                   </select>
+                  <span className="chip chip--info">
+                    IVA del proveedor: {formatearPorcentaje(tarifaIVABorradorBps)}
+                  </span>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={productoLineaSel}
+                    onChange={function (e) {
+                      setProductoLineaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Producto del renglon...</option>
+                    {catalogoCompras.map(function (p) {
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      );
+                    })}
+                  </select>
                   <input
                     className="input"
                     type="number"
                     min="1"
+                    step="1"
                     placeholder="Cantidad"
-                    value={cantidadOrden}
+                    value={cantidadLinea}
                     onChange={function (e) {
-                      setCantidadOrden(e.target.value);
+                      setCantidadLinea(e.target.value);
                     }}
                   />
                   <input
@@ -2179,14 +2982,75 @@ function ContenidoAplicacion(): JSX.Element {
                     min="0.01"
                     step="0.01"
                     placeholder="Precio unitario (COP)"
-                    title="Valor en pesos colombianos (COP), ej. 1000,50"
-                    value={precioOrden}
+                    title="Valor en pesos colombianos (COP), ej. 1.000,50"
+                    value={precioLinea}
                     onChange={function (e) {
-                      setPrecioOrden(e.target.value);
+                      setPrecioLinea(e.target.value);
                     }}
                   />
+                  <button className="btn btn--line" onClick={agregarLineaOrdenUI}>
+                    Agregar renglon
+                  </button>
+                </div>
+                <table className="table table--compacta">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio unitario</th>
+                      <th>Subtotal</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineasOrden.map(function (linea, indice) {
+                      const precioCentavos = Math.round(Number(linea.precioPesos) * 100);
+                      const subtotalLinea = Math.round(Number(linea.cantidad)) * precioCentavos;
+                      return (
+                        <tr key={linea.productoId}>
+                          <td>{indice + 1}</td>
+                          <td>{nombreProductoLinea(linea.productoId)}</td>
+                          <td>{linea.cantidad}</td>
+                          <td>{formatearPesos(precioCentavos)}</td>
+                          <td>{formatearPesos(subtotalLinea)}</td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                quitarLineaOrdenUI(indice);
+                              }}
+                            >
+                              Quitar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {lineasOrden.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin renglones: agregue productos antes de crear la orden.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="totales-orden">
+                  <span>
+                    Renglones: <strong>{lineasOrden.length}</strong>
+                  </span>
+                  <span>
+                    Subtotal: <strong>{formatearPesos(subtotalBorradorCentavos)}</strong>
+                  </span>
+                  <span>
+                    IVA: <strong>{formatearPesos(ivaBorradorCentavos)}</strong>
+                  </span>
+                  <span>
+                    Total: <strong>{formatearPesos(totalBorradorCentavos)}</strong>
+                  </span>
                   <button className="btn btn--primary" onClick={crearOrdenUI}>
-                    Crear orden
+                    Crear orden multi-linea
                   </button>
                 </div>
                 <table className="table">
@@ -2194,9 +3058,12 @@ function ContenidoAplicacion(): JSX.Element {
                     <tr>
                       <th>Referencia</th>
                       <th>Proveedor</th>
-                      <th>Producto</th>
+                      <th>Bodega</th>
+                      <th>Renglones</th>
                       <th>Pedido</th>
                       <th>Recibido</th>
+                      <th>Subtotal</th>
+                      <th>IVA</th>
                       <th>Total</th>
                       <th>Estado</th>
                       <th>Acciones</th>
@@ -2204,55 +3071,159 @@ function ContenidoAplicacion(): JSX.Element {
                   </thead>
                   <tbody>
                     {ordenesCompra.map(function (o) {
+                      const recibible = o.estado === 'aprobada' || o.estado === 'recibida_parcial';
+                      const detalles = o.lineas || [];
                       return (
-                        <tr key={o.id}>
-                          <td>{o.referencia}</td>
-                          <td>{o.proveedorNombre}</td>
-                          <td>{o.productoNombre}</td>
-                          <td>{o.cantidadPedida}</td>
-                          <td>{o.cantidadRecibida}</td>
-                          <td>{formatearPesos(o.totalCentavos)}</td>
-                          <td>{o.estado}</td>
-                          <td>
-                            <div className="acciones-fila">
-                              {o.estado === 'pendiente_aprobacion' && (
-                                <button
-                                  className="btn btn--primary"
-                                  onClick={function () {
-                                    aprobarOrdenUI(o.id);
-                                  }}
-                                >
-                                  Aprobar
-                                </button>
-                              )}
-                              {(o.estado === 'aprobada' || o.estado === 'recibida_parcial') && (
-                                <button
-                                  className="btn btn--warm"
-                                  onClick={function () {
-                                    recibirSaldoOrdenUI(o.id);
-                                  }}
-                                >
-                                  Recibir ({o.saldoPendiente})
-                                </button>
-                              )}
-                              {(o.estado === 'pendiente_aprobacion' || o.estado === 'aprobada') && (
-                                <button
-                                  className="btn btn--line"
-                                  onClick={function () {
-                                    cancelarOrdenUI(o.id);
-                                  }}
-                                >
-                                  Cancelar
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                        <Fragment key={o.id}>
+                          <tr>
+                            <td>{o.referencia}</td>
+                            <td>{o.proveedorNombre}</td>
+                            <td>{o.bodegaNombre}</td>
+                            <td>
+                              {o.totalLineas}{' '}
+                              <button
+                                className="btn btn--line btn--sm"
+                                onClick={function () {
+                                  alternarDetalleOrdenUI(o.id);
+                                }}
+                              >
+                                {ordenDetalleId === o.id ? 'Ocultar' : 'Ver'}
+                              </button>
+                            </td>
+                            <td>{o.cantidadPedida}</td>
+                            <td>{o.cantidadRecibida}</td>
+                            <td>{formatearPesos(o.subtotalCentavos)}</td>
+                            <td>
+                              {formatearPesos(o.impuestoCentavos)}
+                              <span className="muted">
+                                {' '}
+                                ({formatearPorcentaje(o.tarifaIvaBps)})
+                              </span>
+                            </td>
+                            <td>{formatearPesos(o.totalCentavos)}</td>
+                            <td>
+                              <span className={claseBadgeEstado(o.estado)}>{o.estado}</span>
+                            </td>
+                            <td>
+                              <div className="acciones-fila">
+                                {o.estado === 'pendiente_aprobacion' && (
+                                  <button
+                                    className="btn btn--primary btn--sm"
+                                    onClick={function () {
+                                      aprobarOrdenUI(o.id);
+                                    }}
+                                  >
+                                    Aprobar
+                                  </button>
+                                )}
+                                {recibible && o.totalLineas <= 1 && (
+                                  <button
+                                    className="btn btn--warm btn--sm"
+                                    onClick={function () {
+                                      recibirSaldoOrdenUI(o.id);
+                                    }}
+                                  >
+                                    Recibir ({o.saldoPendiente})
+                                  </button>
+                                )}
+                                {(o.estado === 'pendiente_aprobacion' ||
+                                  o.estado === 'aprobada') && (
+                                  <button
+                                    className="btn btn--line btn--sm"
+                                    onClick={function () {
+                                      cancelarOrdenUI(o.id);
+                                    }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                          {ordenDetalleId === o.id && (
+                            <tr className="fila-detalle">
+                              <td colSpan={11}>
+                                <table className="table table--compacta">
+                                  <thead>
+                                    <tr>
+                                      <th>#</th>
+                                      <th>Producto</th>
+                                      <th>Precio unitario</th>
+                                      <th>Pedido</th>
+                                      <th>Recibido</th>
+                                      <th>Saldo</th>
+                                      <th>Subtotal</th>
+                                      <th>Recibir ahora</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {detalles.map(function (linea) {
+                                      return (
+                                        <tr key={linea.id}>
+                                          <td>{linea.numeroLinea}</td>
+                                          <td>{linea.productoNombre}</td>
+                                          <td>{formatearPesos(linea.precioUnitarioCentavos)}</td>
+                                          <td>{linea.cantidadPedida}</td>
+                                          <td>{linea.cantidadRecibida}</td>
+                                          <td>{linea.saldoPendiente}</td>
+                                          <td>{formatearPesos(linea.subtotalCentavos)}</td>
+                                          <td>
+                                            <input
+                                              className="input input--sm"
+                                              type="number"
+                                              min="0"
+                                              step="1"
+                                              max={linea.saldoPendiente}
+                                              placeholder="0"
+                                              disabled={!recibible || linea.saldoPendiente <= 0}
+                                              value={recepcionLineas[linea.id] || ''}
+                                              onChange={function (e) {
+                                                const proximas = { ...recepcionLineas };
+                                                proximas[linea.id] = e.target.value;
+                                                setRecepcionLineas(proximas);
+                                              }}
+                                            />
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                    {detalles.length === 0 && (
+                                      <tr>
+                                        <td
+                                          colSpan={8}
+                                          className="muted"
+                                          style={{ padding: '12px 16px' }}
+                                        >
+                                          La orden no tiene renglones registrados.
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                                <div className="totales-orden">
+                                  <span className="muted">
+                                    Recepcion por renglon (CU-ERP-007/008); la cuenta por pagar se
+                                    causa al completar la orden.
+                                  </span>
+                                  <button
+                                    className="btn btn--warm"
+                                    disabled={!recibible}
+                                    onClick={function () {
+                                      recibirLineasOrdenUI(o);
+                                    }}
+                                  >
+                                    Registrar recepcion
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
                       );
                     })}
                     {ordenesCompra.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={11} className="muted" style={{ padding: '12px 16px' }}>
                           Sin ordenes de compra.
                         </td>
                       </tr>
@@ -2964,7 +3935,7 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{c.periodo}</td>
                           <td>{formatearPesos(c.montoMetaCentavos)}</td>
                           <td>{formatearPesos(c.avanceCentavos)}</td>
-                          <td>{c.cumplimientoPct.toFixed(2)}%</td>
+                          <td>{formatearDecimal(c.cumplimientoPct)}%</td>
                         </tr>
                       );
                     })}
@@ -3038,7 +4009,7 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{c.vendedorId}</td>
                           <td>{c.periodo}</td>
                           <td>{formatearPesos(c.baseCentavos)}</td>
-                          <td>{(c.porcentajeBps / 100).toFixed(2)}%</td>
+                          <td>{formatearPorcentaje(c.porcentajeBps)}%</td>
                           <td>{formatearPesos(c.montoCentavos)}</td>
                           <td>{c.estado}</td>
                           <td>
@@ -3287,6 +4258,7 @@ function ContenidoAplicacion(): JSX.Element {
                       <th>Transportista</th>
                       <th>Capacidad kg</th>
                       <th>Estado</th>
+                      <th>Operativo</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -3297,7 +4269,18 @@ function ContenidoAplicacion(): JSX.Element {
                           <td>{v.placa}</td>
                           <td>{v.transportistaNombre}</td>
                           <td>{v.capacidadKg}</td>
-                          <td>{v.estado}</td>
+                          <td>
+                            <span className={claseBadgeEstado(v.estado)}>{v.estado}</span>
+                          </td>
+                          <td>
+                            <span
+                              className={claseBadgeEstado(
+                                v.estadoOperativo === 'disponible' ? 'activo' : 'en_ruta',
+                              )}
+                            >
+                              {v.estadoOperativo}
+                            </span>
+                          </td>
                           <td>
                             <button
                               className="btn btn--warm btn--sm"
@@ -3313,7 +4296,7 @@ function ContenidoAplicacion(): JSX.Element {
                     })}
                     {vehiculosLog.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="muted" style={{ padding: '12px 16px' }}>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
                           Sin vehiculos.
                         </td>
                       </tr>
@@ -3451,6 +4434,309 @@ function ContenidoAplicacion(): JSX.Element {
                       <tr>
                         <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
                           Sin despachos.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Rutas de distribucion (CU-LG-005)</h2>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Codigo (opcional, ej. RT-2025-001)"
+                    title="4 a 20 caracteres alfanumericos; vacio lo genera la API"
+                    value={codigoRutaNueva}
+                    onChange={function (e) {
+                      setCodigoRutaNueva(e.target.value);
+                    }}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Nombre de la ruta"
+                    value={nombreRutaNueva}
+                    onChange={function (e) {
+                      setNombreRutaNueva(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={vehiculoRutaSel}
+                    onChange={function (e) {
+                      setVehiculoRutaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Vehiculo...</option>
+                    {vehiculosLog.map(function (v) {
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.placa} - {v.transportistaNombre} ({v.estadoOperativo})
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button className="btn btn--primary" onClick={crearRutaLogUI}>
+                    Planificar ruta
+                  </button>
+                </div>
+                <div className="form-grid">
+                  <input
+                    className="input"
+                    placeholder="Destino de la parada (ej. Bogota - Cali)"
+                    value={destinoParada}
+                    onChange={function (e) {
+                      setDestinoParada(e.target.value);
+                    }}
+                  />
+                  <select
+                    className="input"
+                    value={despachoParadaSel}
+                    onChange={function (e) {
+                      setDespachoParadaSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Despacho de la parada (opcional)</option>
+                    {despachosConsolidablesLog.map(function (d) {
+                      return (
+                        <option key={d.id} value={d.id}>
+                          {d.referencia} - {d.guia}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button className="btn btn--line" onClick={agregarParadaRutaUI}>
+                    Agregar parada
+                  </button>
+                </div>
+                <table className="table table--compacta">
+                  <thead>
+                    <tr>
+                      <th>Secuencia</th>
+                      <th>Destino</th>
+                      <th>Despacho</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paradasRuta.map(function (parada, indice) {
+                      return (
+                        <tr key={parada.destino}>
+                          <td>{indice + 1}</td>
+                          <td>{parada.destino}</td>
+                          <td>
+                            {parada.despachoId
+                              ? 'Despacho ' + parada.despachoId
+                              : 'Sin despacho asociado'}
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn--warm btn--sm"
+                              onClick={function () {
+                                quitarParadaRutaUI(indice);
+                              }}
+                            >
+                              Quitar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {paradasRuta.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin paradas: la ruta necesita al menos un destino.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Codigo</th>
+                      <th>Nombre</th>
+                      <th>Transportista</th>
+                      <th>Vehiculo</th>
+                      <th>Paradas</th>
+                      <th>Despachos</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rutasLog.map(function (ruta) {
+                      const modificable = ruta.estado === 'planificada';
+                      return (
+                        <tr key={ruta.id}>
+                          <td>{ruta.codigo}</td>
+                          <td>{ruta.nombre}</td>
+                          <td>{ruta.transportistaNombre}</td>
+                          <td>
+                            {ruta.placa} ({ruta.capacidadKg} kg)
+                          </td>
+                          <td>{ruta.totalParadas}</td>
+                          <td>{ruta.totalDespachos}</td>
+                          <td>
+                            <span className={claseBadgeEstado(ruta.estado)}>{ruta.estado}</span>
+                          </td>
+                          <td>
+                            <div className="acciones-fila">
+                              <button
+                                className="btn btn--line btn--sm"
+                                onClick={function () {
+                                  verDetalleRutaUI(ruta.id);
+                                }}
+                              >
+                                {detalleRutaLog && detalleRutaLog.id === ruta.id
+                                  ? 'Ocultar paradas'
+                                  : 'Ver paradas'}
+                              </button>
+                              {modificable && (
+                                <button
+                                  className="btn btn--primary btn--sm"
+                                  onClick={function () {
+                                    accionRutaUI(ruta.id, 'iniciar');
+                                  }}
+                                >
+                                  Iniciar
+                                </button>
+                              )}
+                              {ruta.estado === 'en_progreso' && (
+                                <button
+                                  className="btn btn--warm btn--sm"
+                                  onClick={function () {
+                                    accionRutaUI(ruta.id, 'completar');
+                                  }}
+                                >
+                                  Completar
+                                </button>
+                              )}
+                              {modificable && (
+                                <button
+                                  className="btn btn--line btn--sm"
+                                  onClick={function () {
+                                    accionRutaUI(ruta.id, 'cancelar');
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {rutasLog.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin rutas de distribucion.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                {detalleRutaLog && (
+                  <table className="table table--compacta">
+                    <thead>
+                      <tr>
+                        <th>Secuencia</th>
+                        <th>Destino</th>
+                        <th>Guia del despacho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detalleRutaLog.paradas.map(function (parada) {
+                        return (
+                          <tr key={parada.id}>
+                            <td>{parada.secuencia}</td>
+                            <td>{parada.destino}</td>
+                            <td>{parada.guia || 'Sin despacho asociado'}</td>
+                          </tr>
+                        );
+                      })}
+                      {detalleRutaLog.paradas.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="muted" style={{ padding: '12px 16px' }}>
+                            La ruta no tiene paradas registradas.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Consolidar despachos programados (CU-LG-005/006)</h2>
+                </div>
+                <div className="form-grid">
+                  <select
+                    className="input"
+                    value={rutaConsolidarSel}
+                    onChange={function (e) {
+                      setRutaConsolidarSel(e.target.value);
+                    }}
+                  >
+                    <option value="">Ruta destino...</option>
+                    {rutasLog
+                      .filter(function (ruta) {
+                        return ruta.estado === 'planificada';
+                      })
+                      .map(function (ruta) {
+                        return (
+                          <option key={ruta.id} value={ruta.id}>
+                            {ruta.codigo} - {ruta.nombre}
+                          </option>
+                        );
+                      })}
+                  </select>
+                  <button className="btn btn--primary" onClick={consolidarDespachosUI}>
+                    Consolidar despachos
+                  </button>
+                  <span className="muted">
+                    Marcados: {despachosConsolidar.length} de {despachosConsolidablesLog.length}
+                  </span>
+                </div>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Consolidar</th>
+                      <th>Despacho</th>
+                      <th>Guia</th>
+                      <th>Venta</th>
+                      <th>Cliente</th>
+                      <th>Ruta asignada</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {despachosConsolidablesLog.map(function (despacho) {
+                      return (
+                        <tr key={despacho.id}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              aria-label={'Consolidar despacho ' + despacho.referencia}
+                              checked={despachosConsolidar.indexOf(String(despacho.id)) >= 0}
+                              onChange={function (e) {
+                                alternarDespachoConsolidar(despacho.id, e.target.checked);
+                              }}
+                            />
+                          </td>
+                          <td>{despacho.referencia}</td>
+                          <td>{despacho.guia}</td>
+                          <td>{despacho.referenciaPedido}</td>
+                          <td>{despacho.clienteNombre || '-'}</td>
+                          <td>{despacho.rutaId ? 'Ruta ' + despacho.rutaId : 'Sin ruta'}</td>
+                        </tr>
+                      );
+                    })}
+                    {despachosConsolidablesLog.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="muted" style={{ padding: '12px 16px' }}>
+                          Sin despachos programados disponibles para consolidar.
                         </td>
                       </tr>
                     )}
@@ -3955,7 +5241,7 @@ function ContenidoAplicacion(): JSX.Element {
                         <tr key={i.id}>
                           <td>{i.nombre}</td>
                           <td>{i.tipo}</td>
-                          <td>{(i.tarifaBps / 100).toFixed(2)}%</td>
+                          <td>{formatearPorcentaje(i.tarifaBps)}%</td>
                           <td>{i.estado}</td>
                         </tr>
                       );
@@ -4291,10 +5577,50 @@ function ContenidoAplicacion(): JSX.Element {
                       setPeriodoGerencia(e.target.value);
                     }}
                   />
+                  <select
+                    className="input"
+                    value={mesesSerieGerencia}
+                    onChange={function (e) {
+                      setMesesSerieGerencia(e.target.value);
+                    }}
+                  >
+                    {Array.from({ length: MESES_SERIE_MAXIMO }, function (_valor, indice) {
+                      return indice + 1;
+                    }).map(function (mes) {
+                      return (
+                        <option key={mes} value={mes}>
+                          {mes} {mes === 1 ? 'mes' : 'meses'} de serie
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="input"
+                    value={limiteRankingGerencia}
+                    onChange={function (e) {
+                      setLimiteRankingGerencia(e.target.value);
+                    }}
+                  >
+                    {Array.from({ length: LIMITE_RANKING_MAXIMO }, function (_valor, indice) {
+                      return indice + 1;
+                    }).map(function (tope) {
+                      return (
+                        <option key={tope} value={tope}>
+                          Top {tope} productos
+                        </option>
+                      );
+                    })}
+                  </select>
                   <button
                     className="btn btn--primary"
                     onClick={function () {
-                      if (token) cargarGerencia(token, periodoGerencia.trim());
+                      if (token)
+                        cargarGerencia(
+                          token,
+                          periodoGerencia.trim(),
+                          mesesSerieGerencia,
+                          limiteRankingGerencia,
+                        );
                     }}
                   >
                     Consultar periodo
@@ -4368,6 +5694,236 @@ function ContenidoAplicacion(): JSX.Element {
                         </tr>
                       </tbody>
                     </table>
+                  </>
+                )}
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Serie mensual de ventas y facturacion (CU-GE)</h2>
+                </div>
+                <div className="form-grid">
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      if (token)
+                        cargarReportesGerencia(
+                          token,
+                          periodoGerencia.trim(),
+                          mesesSerieGerencia,
+                          limiteRankingGerencia,
+                        );
+                    }}
+                  >
+                    Consultar serie
+                  </button>
+                  <button
+                    className="btn btn--line"
+                    onClick={function () {
+                      descargarReporteGerencia('series');
+                    }}
+                  >
+                    Descargar CSV de serie
+                  </button>
+                </div>
+                {serieGerencia ? (
+                  <>
+                    <GraficaSeriesGerencial puntos={serieGerencia.serie || []} />
+                    <section className="kpi-grid">
+                      <article className="kpi-card">
+                        <span className="muted">Venta canal ({serieGerencia.meses} meses)</span>
+                        <strong>{formatearPesos(serieGerencia.totales.canalCentavos)}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Venta B2B pagada</span>
+                        <strong>{formatearPesos(serieGerencia.totales.b2bCentavos)}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Facturado</span>
+                        <strong>{formatearPesos(serieGerencia.totales.facturadoCentavos)}</strong>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">IVA causado</span>
+                        <strong>{formatearPesos(serieGerencia.totales.ivaCentavos)}</strong>
+                      </article>
+                    </section>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Periodo</th>
+                          <th>Pedidos canal</th>
+                          <th>Venta canal</th>
+                          <th>Ordenes B2B</th>
+                          <th>Venta B2B</th>
+                          <th>Facturas</th>
+                          <th>Facturado</th>
+                          <th>IVA</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(serieGerencia.serie || []).map(function (punto) {
+                          return (
+                            <tr key={punto.periodo}>
+                              <td>{etiquetaPeriodo(punto.periodo)}</td>
+                              <td>{punto.pedidos}</td>
+                              <td>{formatearPesos(punto.canalCentavos)}</td>
+                              <td>{punto.ordenesB2b}</td>
+                              <td>{formatearPesos(punto.b2bCentavos)}</td>
+                              <td>{punto.facturas}</td>
+                              <td>{formatearPesos(punto.facturadoCentavos)}</td>
+                              <td>{formatearPesos(punto.ivaCentavos)}</td>
+                              <td>{formatearPesos(punto.totalCentavos)}</td>
+                            </tr>
+                          );
+                        })}
+                        {(serieGerencia.serie || []).length === 0 && (
+                          <tr>
+                            <td colSpan={9} className="muted" style={{ padding: '12px 16px' }}>
+                              Sin movimientos en los meses consultados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <p className="muted" style={{ padding: '12px 16px' }}>
+                    Consulte la serie para ver la grafica y el detalle mensual.
+                  </p>
+                )}
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Ranking de productos vendidos (CU-GE)</h2>
+                </div>
+                <div className="form-grid">
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      if (token)
+                        cargarReportesGerencia(
+                          token,
+                          periodoGerencia.trim(),
+                          mesesSerieGerencia,
+                          limiteRankingGerencia,
+                        );
+                    }}
+                  >
+                    Consultar ranking
+                  </button>
+                  <button
+                    className="btn btn--line"
+                    onClick={function () {
+                      descargarReporteGerencia('ranking');
+                    }}
+                  >
+                    Descargar CSV de ranking
+                  </button>
+                  <span className="muted">
+                    Periodo del ranking: {periodoGerencia.trim() || 'mes en curso'}
+                  </span>
+                </div>
+                {rankingGerencia && (
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th>Unidades</th>
+                        <th>Monto total</th>
+                        <th>Unidades canal</th>
+                        <th>Monto canal</th>
+                        <th>Unidades B2B</th>
+                        <th>Monto B2B</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(rankingGerencia.productos || []).map(function (producto, indice) {
+                        return (
+                          <tr key={producto.productoId}>
+                            <td>{indice + 1}</td>
+                            <td>{producto.productoNombre}</td>
+                            <td>{producto.unidades}</td>
+                            <td>{formatearPesos(producto.montoCentavos)}</td>
+                            <td>{producto.unidadesCanal}</td>
+                            <td>{formatearPesos(producto.montoCanalCentavos)}</td>
+                            <td>{producto.unidadesB2b}</td>
+                            <td>{formatearPesos(producto.montoB2bCentavos)}</td>
+                          </tr>
+                        );
+                      })}
+                      {(rankingGerencia.productos || []).length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="muted" style={{ padding: '12px 16px' }}>
+                            Sin ventas registradas para el periodo.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Cartera por pagar y por cobrar (CU-GE)</h2>
+                </div>
+                <div className="form-grid">
+                  <button
+                    className="btn btn--primary"
+                    onClick={function () {
+                      if (token)
+                        cargarReportesGerencia(
+                          token,
+                          periodoGerencia.trim(),
+                          mesesSerieGerencia,
+                          limiteRankingGerencia,
+                        );
+                    }}
+                  >
+                    Actualizar cartera
+                  </button>
+                  <button
+                    className="btn btn--line"
+                    onClick={function () {
+                      descargarReporteGerencia('cartera');
+                    }}
+                  >
+                    Descargar CSV de cartera
+                  </button>
+                  <button
+                    className="btn btn--line"
+                    onClick={function () {
+                      descargarReporteGerencia('resumen');
+                    }}
+                  >
+                    Descargar CSV de resumen
+                  </button>
+                </div>
+                {carteraGerencia && (
+                  <>
+                    <section className="kpi-grid">
+                      <article className="kpi-card">
+                        <span className="muted">Cuentas por pagar pendientes</span>
+                        <strong>{formatearPesos(carteraGerencia.porPagar.totalCentavos)}</strong>
+                        <span className="muted">{carteraGerencia.porPagar.cuentas} cuentas</span>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Por pagar vencido</span>
+                        <strong>{formatearPesos(carteraGerencia.porPagar.vencidoCentavos)}</strong>
+                        <span className="muted">
+                          {carteraGerencia.porPagar.vencidas} cuentas vencidas
+                        </span>
+                      </article>
+                      <article className="kpi-card">
+                        <span className="muted">Por cobrar (facturas emitidas)</span>
+                        <strong>{formatearPesos(carteraGerencia.porCobrar.totalCentavos)}</strong>
+                        <span className="muted">{carteraGerencia.porCobrar.facturas} facturas</span>
+                      </article>
+                    </section>
+                    <p className="muted" style={{ padding: '0 16px 16px' }}>
+                      Corte de cartera: {String(carteraGerencia.generadoEn || '').slice(0, 10)} (los
+                      importes viajan y se muestran en pesos colombianos, COP).
+                    </p>
                   </>
                 )}
               </section>
